@@ -7,6 +7,7 @@ import '../../common/theme.dart';
 import '../login.dart' show kSessionKey;
 import '../home.dart';
 import 'add_customer.dart';
+import '../../common/pagination.dart';
 
 // ── Customer Model ─────────────────────────────────────────────────────────
 class Customer {
@@ -178,14 +179,10 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   // ── Pagination helpers ─────────────────────────────────────────────────────
-  int get _totalPages =>
-      (_filtered.length / _pageSize).ceil().clamp(1, 9999);
+  int get _totalPages => paginationTotalPages(_filtered.length, _pageSize);
 
-  List<Customer> get _pageItems {
-    final start = (_currentPage - 1) * _pageSize;
-    final end   = (start + _pageSize).clamp(0, _filtered.length);
-    return _filtered.sublist(start, end);
-  }
+  List<Customer> get _pageItems =>
+      paginationPageItems(_filtered, _currentPage, _pageSize);
 
   // ── Navigate: New Customer ─────────────────────────────────────────────────
   Future<void> _openAddCustomer() async {
@@ -612,7 +609,12 @@ class _CustomersPageState extends State<CustomersPage> {
             ),
 
             if (!_isLoading && _errorMessage == null && _filtered.isNotEmpty)
-              _buildPagination(hPad),
+              AppPagination(
+                currentPage:       _currentPage,
+                totalPages:        _totalPages,
+                horizontalPadding: hPad,
+                onPageChanged:     (page) => setState(() => _currentPage = page),
+              ),
           ],
         ),
       ),
@@ -839,15 +841,15 @@ class _CustomersPageState extends State<CustomersPage> {
                   children: [
                     _actionIcon(
                       icon:    Icons.remove_red_eye_outlined,
-                      color:   AppColors.primary,
-                      bgColor: AppColors.primaryLight,
+                      color:   AppColors.success,
+                      bgColor: AppColors.successBg,
                       onTap:   () => _showViewDialog(c),
                     ),
                     const SizedBox(width: 7),
                     _actionIcon(
                       icon:    Icons.edit_outlined,
-                      color:   const Color(0xFF0D9488),
-                      bgColor: const Color(0xFFECFDF5),
+                      color:   AppColors.primary,
+                      bgColor: AppColors.primaryLight,
                       onTap:   () => _openEditCustomer(c),
                     ),
                     const SizedBox(width: 7),
@@ -884,126 +886,6 @@ class _CustomersPageState extends State<CustomersPage> {
       ),
     );
   }
-
-  // ── Smart pagination ───────────────────────────────────────────────────────
-  Widget _buildPagination(double hPad) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 14),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: AppColors.borderLight)),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: _buildPageButtons(),
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildPageButtons() {
-    final total   = _totalPages;
-    final current = _currentPage;
-    final buttons = <Widget>[];
-
-    final Set<int> show = {1, total};
-    for (int p = current - 1; p <= current + 1; p++) {
-      if (p >= 1 && p <= total) show.add(p);
-    }
-    final sorted = show.toList()..sort();
-
-    buttons.add(_arrowBtn(
-      icon: Icons.chevron_left_rounded,
-      enabled: current > 1,
-      onTap: () => setState(() => _currentPage--),
-    ));
-
-    int? prev;
-    for (final page in sorted) {
-      if (prev != null && page - prev > 1) buttons.add(_ellipsis());
-      buttons.add(_pageNumBtn(page, page == current));
-      prev = page;
-    }
-
-    buttons.add(_arrowBtn(
-      icon: Icons.chevron_right_rounded,
-      enabled: current < total,
-      onTap: () => setState(() => _currentPage++),
-    ));
-
-    return buttons;
-  }
-
-  Widget _arrowBtn(
-      {required IconData icon,
-      required bool enabled,
-      required VoidCallback onTap}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: GestureDetector(
-        onTap: enabled ? onTap : null,
-        child: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: enabled ? AppColors.primaryLight : AppColors.borderLight,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon,
-              size: 20,
-              color: enabled ? AppColors.primary : AppColors.textMuted),
-        ),
-      ),
-    );
-  }
-
-  Widget _pageNumBtn(int page, bool isActive) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: GestureDetector(
-        onTap: isActive ? null : () => setState(() => _currentPage = page),
-        child: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: isActive ? AppColors.primary : Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isActive ? AppColors.primary : AppColors.border,
-              width: 1.2,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              '$page',
-              style: TextStyle(
-                color:      isActive ? Colors.white : AppColors.textLabel,
-                fontSize:   12.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _ellipsis() => const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 4),
-        child: SizedBox(
-          width: 20,
-          height: 32,
-          child: Center(
-            child: Text('…',
-                style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600)),
-          ),
-        ),
-      );
 
   // ── Skeleton ───────────────────────────────────────────────────────────────
   Widget _buildSkeletonList(double hPad) {

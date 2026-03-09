@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'theme.dart';
 import '../screens/customer/customers.dart';
+import '../screens/department/departments.dart';
+import '../screens/team/teams.dart';
+import '../screens/attendance_machine/attendance_machines.dart';
+import '../screens/deals/deals.dart';
+import '../screens/employee/employee.dart';
 
 class AppSideDrawer extends StatefulWidget {
   final String username;
@@ -306,11 +311,53 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
       onTap: () {
         Navigator.pop(context); // close drawer first
         switch (item.label) {
+          case 'Department':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DepartmentPage(username: widget.username),
+              ),
+            );
+            break;
           case 'Customer':
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) => CustomersPage(username: widget.username),
+              ),
+            );
+            break;
+          case 'Teams':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TeamsPage(username: widget.username),
+              ),
+            );
+            break;
+          case 'Employee':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    EmployeePage(username: widget.username),
+              ),
+            );
+            break;
+          case 'Deals':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DealsPage(username: widget.username),
+              ),
+            );
+            break;
+          case 'Attendance Machines':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    AttendanceMachinePage(username: widget.username),
               ),
             );
             break;
@@ -321,9 +368,9 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
       },
       borderRadius: BorderRadius.circular(10),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.symmetric(vertical: 0),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           child: Row(
             children: [
               // Connector line + dot
