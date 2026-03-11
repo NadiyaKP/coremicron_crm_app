@@ -7,6 +7,7 @@ import '../../common/theme.dart';
 import '../login.dart' show kSessionKey;
 import '../home.dart';
 import '../../common/pagination.dart';
+import 'add_employee.dart';
 
 // ── Employee Model ─────────────────────────────────────────────────────────
 class Employee {
@@ -326,8 +327,14 @@ class _EmployeePageState extends State<EmployeePage> {
   // ── Add Employee button ────────────────────────────────────────────────────
   Widget _addEmployeeButton() {
     return ElevatedButton.icon(
-      onPressed: () {
-        // TODO: navigate to Add Employee page
+      onPressed: () async {
+        final result = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AddEmployeePage(username: widget.username),
+          ),
+        );
+        if (result == true) _fetchEmployees();
       },
       icon: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
       label: const Text('Add Employee',
@@ -447,8 +454,15 @@ class _EmployeePageState extends State<EmployeePage> {
                 icon:    Icons.edit_outlined,
                 color:   AppColors.primary,
                 bgColor: AppColors.primaryLight,
-                onTap:   () {
-                  // TODO: navigate to Edit Employee page
+                onTap:   () async {
+                  final result = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddEmployeePage(
+                          username: widget.username, employee: e),
+                    ),
+                  );
+                  if (result == true) _fetchEmployees();
                 },
               ),
               const SizedBox(height: 6),
@@ -460,9 +474,7 @@ class _EmployeePageState extends State<EmployeePage> {
                 icon:    Icons.settings_outlined,
                 color:   AppColors.textLabel,
                 bgColor: const Color(0xFFF0F0F0),
-                onTap:   () {
-                  // TODO: open settings
-                },
+                onTap:   () {},
               ),
             ],
           ),
@@ -500,24 +512,21 @@ class _EmployeePageState extends State<EmployeePage> {
     );
   }
 
-  // ── Active / Inactive pill button ─────────────────────────────────────────
   Widget _statusButton(Employee e) {
     final isActive = e.isActive;
     return GestureDetector(
-      onTap: () {
-        // TODO: toggle status API call
-      },
+      onTap: () => _showToggleStatusDialog(e),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
         decoration: BoxDecoration(
           color: isActive
               ? AppColors.successBg
-              : const Color(0xFFFFF3CD),
+              : const Color(0xFFFFF1F1),
           borderRadius: BorderRadius.circular(7),
           border: Border.all(
             color: isActive
                 ? AppColors.success.withOpacity(0.4)
-                : const Color(0xFFFFB300).withOpacity(0.4),
+                : AppColors.error.withOpacity(0.4),
             width: 1,
           ),
         ),
@@ -525,19 +534,17 @@ class _EmployeePageState extends State<EmployeePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.lock_outline_rounded,
+              isActive
+                  ? Icons.lock_open_outlined
+                  : Icons.lock_outline_rounded,
               size:  11,
-              color: isActive
-                  ? AppColors.success
-                  : const Color(0xFF856404),
+              color: isActive ? AppColors.success : AppColors.error,
             ),
             const SizedBox(width: 3),
             Text(
               isActive ? 'Active' : 'Inactive',
               style: TextStyle(
-                color: isActive
-                    ? AppColors.success
-                    : const Color(0xFF856404),
+                color:      isActive ? AppColors.success : AppColors.error,
                 fontSize:   10.5,
                 fontWeight: FontWeight.w600,
               ),
@@ -546,6 +553,261 @@ class _EmployeePageState extends State<EmployeePage> {
         ),
       ),
     );
+  }
+
+  // ── Toggle Status Dialog ───────────────────────────────────────────────────
+  void _showToggleStatusDialog(Employee e) {
+    bool isProcessing = false;
+    final isActive    = e.isActive;
+    final newStatus   = isActive ? 'inactive' : 'active';
+    final actionText  = isActive ? 'inactivate' : 'activate';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? const Color(0xFFFFF1F1)
+                            : AppColors.successBg,
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(
+                        isActive
+                            ? Icons.lock_outline_rounded
+                            : Icons.lock_open_outlined,
+                        color: isActive
+                            ? AppColors.error
+                            : AppColors.success,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        isActive
+                            ? 'Inactivate Employee'
+                            : 'Activate Employee',
+                        style: const TextStyle(
+                            color:      AppColors.textPrimary,
+                            fontSize:   15,
+                            fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+                const Divider(height: 1, color: AppColors.borderLight),
+                const SizedBox(height: 16),
+
+                // Employee details
+                _dialogDetailRow('Employee Name', e.employeeName),
+                const SizedBox(height: 8),
+                _dialogDetailRow('Employee ID', e.employeeId),
+                const SizedBox(height: 8),
+                _dialogDetailRow('Department', e.departmentName),
+                const SizedBox(height: 8),
+                _dialogDetailRow('Phone Number', e.phoneNumber),
+                const SizedBox(height: 8),
+                _dialogDetailRow('Current Status',
+                    isActive ? 'Active' : 'Inactive',
+                    valueColor:
+                        isActive ? AppColors.success : AppColors.error),
+
+                const SizedBox(height: 18),
+
+                // Confirmation text
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? const Color(0xFFFFF8F8)
+                        : const Color(0xFFF0FFF4),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isActive
+                          ? AppColors.error.withOpacity(0.2)
+                          : AppColors.success.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Text(
+                    'Are you sure you want to $actionText this employee?',
+                    style: TextStyle(
+                      color: isActive
+                          ? AppColors.error
+                          : AppColors.success,
+                      fontSize:   13,
+                      fontWeight: FontWeight.w500,
+                      height:     1.4,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: isProcessing
+                            ? null
+                            : () => Navigator.pop(dialogCtx),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                              color: AppColors.border, width: 1.3),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11)),
+                          backgroundColor: Colors.white,
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 13),
+                        ),
+                        child: const Text('Cancel',
+                            style: TextStyle(
+                                color:      AppColors.textLabel,
+                                fontWeight: FontWeight.w600,
+                                fontSize:   14)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: isProcessing
+                            ? null
+                            : () async {
+                                setDialogState(
+                                    () => isProcessing = true);
+                                Navigator.pop(dialogCtx);
+                                await _toggleStatus(e, newStatus);
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isActive
+                              ? AppColors.error
+                              : AppColors.success,
+                          disabledBackgroundColor: (isActive
+                                  ? AppColors.error
+                                  : AppColors.success)
+                              .withOpacity(0.5),
+                          elevation: 0,
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11)),
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: isProcessing
+                              ? const SizedBox(
+                                  key: ValueKey('proc-loader'),
+                                  width: 18, height: 18,
+                                  child: CircularProgressIndicator(
+                                      color:       Colors.white,
+                                      strokeWidth: 2.3))
+                              : const Text('Yes',
+                                  key: ValueKey('proc-label'),
+                                  style: TextStyle(
+                                      color:      Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize:   14)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dialogDetailRow(String label, String value,
+      {Color? valueColor}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(label,
+              style: const TextStyle(
+                  color:      AppColors.textMuted,
+                  fontSize:   12,
+                  fontWeight: FontWeight.w500)),
+        ),
+        Expanded(
+          child: Text(value,
+              style: TextStyle(
+                  color:      valueColor ?? AppColors.textPrimary,
+                  fontSize:   12.5,
+                  fontWeight: FontWeight.w600)),
+        ),
+      ],
+    );
+  }
+
+  // ── Toggle Status API ──────────────────────────────────────────────────────
+  Future<void> _toggleStatus(Employee e, String newStatus) async {
+    try {
+      final prefs     = await SharedPreferences.getInstance();
+      final sessionId = prefs.getString(kSessionKey) ?? '';
+      final url = Uri.parse(
+          '${ApiService.baseUrl}/api/employee/toggle_status.php');
+      final body = {'id': e.id, 'status': newStatus};
+
+      debugPrint('📤  [TOGGLE STATUS] $url  ${jsonEncode(body)}');
+
+      final response = await http.post(url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept':       'application/json',
+            'X-Session-ID': sessionId,
+            'Cookie':       'PHPSESSID=$sessionId',
+          },
+          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+
+      if (!mounted) return;
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      debugPrint(
+          '📥  [TOGGLE STATUS] ${response.statusCode}  ${response.body}');
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        AppSnackBar.show(context,
+            'Employee ${newStatus == 'active' ? 'activated' : 'inactivated'} successfully.');
+        _fetchEmployees();
+      } else {
+        AppSnackBar.show(
+            context,
+            data['error'] ?? data['message'] ?? 'Failed to update status.',
+            isError: true);
+      }
+    } on http.ClientException {
+      if (mounted)
+        AppSnackBar.show(context, 'Unable to reach the server.',
+            isError: true);
+    } catch (_) {
+      if (mounted)
+        AppSnackBar.show(context, 'Something went wrong.', isError: true);
+    }
   }
 
   Widget _actionIcon({
