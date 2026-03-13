@@ -7,6 +7,7 @@ import '../../../common/theme.dart';
 import '../../login.dart' show kSessionKey;
 import '../../home.dart';
 import '../../../common/pagination.dart';
+import '../../../common/string_extensions.dart';
 
 // ── Attendance Machine Model ───────────────────────────────────────────────
 class AttendanceMachine {
@@ -286,7 +287,7 @@ class _AttendanceMachinePageState extends State<AttendanceMachinePage> {
               // Machine Name
               _detailRow(icon: Icons.fingerprint_rounded,
                   label: 'Machine Name',
-                  value: m.machineName.isNotEmpty ? m.machineName : '—'),
+                  value: m.machineName.isNotEmpty ? m.machineName.capitalize() : '—'),
               const SizedBox(height: 12),
 
               // Serial Number
@@ -333,7 +334,7 @@ class _AttendanceMachinePageState extends State<AttendanceMachinePage> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            m.status.isNotEmpty ? m.status : '—',
+                            m.status.isNotEmpty ? m.status.capitalize() : '—',
                             style: TextStyle(
                               color: isActive
                                   ? AppColors.success
@@ -660,7 +661,7 @@ class _AttendanceMachinePageState extends State<AttendanceMachinePage> {
                     const SizedBox(height: 10),
 
                     Text(
-                      'Are you sure you want to delete\n"${m.machineName}"?\nThis action cannot be undone.',
+                      'Are you sure you want to delete\n"${m.machineName.capitalize()}"?\nThis action cannot be undone.',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                           color: AppColors.textSecondary,
@@ -987,7 +988,7 @@ class _AttendanceMachinePageState extends State<AttendanceMachinePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(m.machineName,
+                Text(m.machineName.capitalize(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

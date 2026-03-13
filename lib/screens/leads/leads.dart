@@ -9,6 +9,7 @@ import '../home.dart';
 import '../../common/pagination.dart';
 import 'lead_view.dart';
 import 'new_lead.dart';
+import '../../common/string_extensions.dart';
 
 // ── Lead Model ─────────────────────────────────────────────────────────────
 class Lead {
@@ -275,14 +276,14 @@ class _LeadsPageState extends State<LeadsPage> {
                     'Lead No', l.enquiryNumber),
                 const SizedBox(height: 8),
                 _deleteDialogRow(Icons.person_outline_rounded,
-                    'Customer', l.customerName),
+                    'Customer', l.customerName.capitalize()),
                 const SizedBox(height: 8),
                 _deleteDialogRow(Icons.phone_outlined,
                     'Phone', l.customerPhone),
                 const SizedBox(height: 8),
                 _deleteDialogRow(Icons.title_rounded,
                     'Title',
-                    l.title.isEmpty ? '(No title)' : l.title),
+                    l.title.isEmpty ? '(No title)' : l.title.capitalize()),
 
                 const SizedBox(height: 20),
 
@@ -637,7 +638,7 @@ class _LeadsPageState extends State<LeadsPage> {
 
           // ── Title ────────────────────────────────────────────────────
           Text(
-            l.title.isEmpty ? '(No title)' : l.title,
+            l.title.isEmpty ? '(No title)' : l.title.capitalize(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -662,7 +663,7 @@ class _LeadsPageState extends State<LeadsPage> {
               const SizedBox(width: 3),
               Expanded(
                 child: Text(
-                  l.customerName,
+                  l.customerName.capitalize(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

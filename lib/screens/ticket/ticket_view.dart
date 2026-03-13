@@ -6,6 +6,7 @@ import '../../common/api_service.dart';
 import '../../common/theme.dart';
 import '../login.dart' show kSessionKey;
 import 'tickets.dart' show Ticket;
+import '../../common/string_extensions.dart';
 
 // ── Ticket View Page ───────────────────────────────────────────────────────
 class TicketViewPage extends StatefulWidget {
@@ -88,8 +89,6 @@ class _TicketViewPageState extends State<TicketViewPage>
     return raw;
   }
 
-  String _capitalize(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
   Color _jobStatusColor(String s) {
     switch (s.toLowerCase()) {
@@ -192,7 +191,7 @@ class _TicketViewPageState extends State<TicketViewPage>
                       letterSpacing: -0.3),
                 ),
                 Text(
-                  t.customerName,
+                  t.customerName.capitalize(),
                   style: const TextStyle(
                       color:    AppColors.textSecondary,
                       fontSize: 12),
@@ -272,8 +271,8 @@ class _TicketViewPageState extends State<TicketViewPage>
               _detailRow(
                 icon:  Icons.flag_outlined,
                 label: 'Priority',
-                value: _capitalize(t.priority),
-                valueWidget: _priorityChip(t.priority),
+                value: t.priority.capitalize(),
+                valueWidget: _priorityChip(t.priority.capitalize()),
               ),
               _divider(),
               _detailRow(
@@ -291,7 +290,7 @@ class _TicketViewPageState extends State<TicketViewPage>
               _detailRow(
                 icon:  Icons.support_agent_outlined,
                 label: 'Task Handled By',
-                value: t.taskHandlerName.isEmpty ? '—' : t.taskHandlerName,
+                value: t.taskHandlerName.isEmpty ? '—' : t.taskHandlerName.capitalize(),
               ),
             ],
           ),
@@ -306,7 +305,7 @@ class _TicketViewPageState extends State<TicketViewPage>
               _detailRow(
                 icon:  Icons.person_outline_rounded,
                 label: 'Customer Name',
-                value: t.customerName,
+                value: t.customerName.capitalize(),
               ),
               _divider(),
               _detailRow(
@@ -464,7 +463,7 @@ class _TicketViewPageState extends State<TicketViewPage>
                               width: 1),
                         ),
                         child: Text(
-                          _capitalize(status),
+                          status.capitalize(),
                           style: TextStyle(
                               color:      statusClr,
                               fontSize:   10.5,
@@ -493,7 +492,7 @@ class _TicketViewPageState extends State<TicketViewPage>
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        assignName.isEmpty ? '—' : assignName,
+                        assignName.isEmpty ? '—' : assignName.capitalize(),
                         style: const TextStyle(
                             color:      AppColors.textPrimary,
                             fontSize:   12,
@@ -731,7 +730,7 @@ class _TicketViewPageState extends State<TicketViewPage>
         children: [
           Icon(Icons.flag_outlined, size: 11, color: clr),
           const SizedBox(width: 3),
-          Text(_capitalize(priority),
+          Text(priority.capitalize(),
               style: TextStyle(
                   color:      clr,
                   fontSize:   11,

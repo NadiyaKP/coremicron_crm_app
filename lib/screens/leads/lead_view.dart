@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../common/api_service.dart';
 import '../../common/theme.dart';
 import '../login.dart' show kSessionKey;
+import '../../common/string_extensions.dart';
 
 // ── Lead View Page ─────────────────────────────────────────────────────────
 class LeadViewPage extends StatefulWidget {
@@ -180,7 +181,7 @@ class _LeadViewPageState extends State<LeadViewPage>
                 ),
                 if (!_isLoading && _enquiry['customer'] != null)
                   Text(
-                    _str(_enquiry['customer']['name']),
+                    _str(_enquiry['customer']['name']).capitalize(),
                     style: const TextStyle(
                         color:    AppColors.textSecondary,
                         fontSize: 12),
@@ -477,7 +478,7 @@ class _LeadViewPageState extends State<LeadViewPage>
               _detailRow(
                 icon:  Icons.person_pin_outlined,
                 label: 'Assigned To',
-                value: _str(assignedTo['name']),
+                value: _str(assignedTo['name']).capitalize(),
               ),
             ],
           ),
@@ -492,7 +493,7 @@ class _LeadViewPageState extends State<LeadViewPage>
               _detailRow(
                 icon:  Icons.person_outline_rounded,
                 label: 'Name',
-                value: _str(customer['name']),
+                value: _str(customer['name']).capitalize(),
               ),
               _divider(),
               _detailRow(
@@ -700,7 +701,7 @@ class _LeadViewPageState extends State<LeadViewPage>
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(
-                          _capitalize(type),
+                          type.capitalize(),
                           style: TextStyle(
                               color:      typeColor,
                               fontSize:   10.5,
@@ -774,7 +775,7 @@ class _LeadViewPageState extends State<LeadViewPage>
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text: byName,
+                                text: byName.capitalize(),
                                 style: const TextStyle(
                                     color:      AppColors.textPrimary,
                                     fontSize:   12,
@@ -841,7 +842,7 @@ class _LeadViewPageState extends State<LeadViewPage>
         border: Border.all(color: clr.withOpacity(0.3)),
       ),
       child: Text(
-        _capitalize(status),
+        status.capitalize(),
         style: TextStyle(
             color: clr, fontSize: 10.5, fontWeight: FontWeight.w600),
       ),
@@ -971,10 +972,6 @@ class _LeadViewPageState extends State<LeadViewPage>
     }
   }
 
-  String _capitalize(String s) {
-    if (s.isEmpty) return s;
-    return s[0].toUpperCase() + s.substring(1);
-  }
 
   // Converts "YYYY-MM-DD" → "DD-MM-YYYY"
   String _formatDate(String raw) {

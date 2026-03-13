@@ -7,6 +7,7 @@ import '../../../common/theme.dart';
 import '../../login.dart' show kSessionKey;
 import '../../home.dart';
 import '../../../common/pagination.dart';
+import '../../../common/string_extensions.dart';
 import 'add_deal.dart';
 
 // ── Hex helpers (also imported by add_deal.dart) ───────────────────────────
@@ -244,7 +245,7 @@ class _DealsPageState extends State<DealsPage> {
                 const SizedBox(height: 10),
 
                 Text(
-                  'Are you sure you want to delete\n"${d.dealsName}"?\nThis action cannot be undone.',
+                  'Are you sure you want to delete\n"${d.dealsName.capitalize()}"?\nThis action cannot be undone.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       color:    AppColors.textSecondary,
@@ -539,7 +540,7 @@ class _DealsPageState extends State<DealsPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  d.dealsName,
+                  d.dealsName.capitalize(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

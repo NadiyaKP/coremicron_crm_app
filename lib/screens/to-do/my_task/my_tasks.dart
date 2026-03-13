@@ -10,6 +10,7 @@ import '../../home.dart';
 import '../../ticket/tickets.dart' show Ticket;
 import '../../ticket/ticket_view.dart';
 import 'tasks_view.dart';
+import '../../../common/string_extensions.dart';
 
 // ── My Tasks Page ──────────────────────────────────────────────────────────
 class MyTasksPage extends StatefulWidget {
@@ -119,8 +120,6 @@ class _MyTasksPageState extends State<MyTasksPage> {
     return raw;
   }
 
-  String _capitalize(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
   Color _priorityColor(String p) {
     switch (p.toLowerCase()) {
@@ -384,7 +383,7 @@ class _MyTasksPageState extends State<MyTasksPage> {
 
           // ── Title ──────────────────────────────────────────────────────
           Text(
-            t.title.isEmpty ? '(No title)' : t.title,
+            t.title.isEmpty ? '(No title)' : t.title.capitalize(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -408,7 +407,7 @@ class _MyTasksPageState extends State<MyTasksPage> {
                   size: 11, color: AppColors.textMuted),
               const SizedBox(width: 3),
               Expanded(
-                child: Text(t.customerName,
+                child: Text(t.customerName.capitalize(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -447,7 +446,7 @@ class _MyTasksPageState extends State<MyTasksPage> {
                     Icon(Icons.flag_outlined,
                         size: 10, color: priorityClr),
                     const SizedBox(width: 3),
-                    Text(_capitalize(t.priority),
+                    Text(t.priority.capitalize(),
                         style: TextStyle(
                             color:      priorityClr,
                             fontSize:   10.5,
@@ -473,6 +472,7 @@ class _MyTasksPageState extends State<MyTasksPage> {
                           fontSize:   10.5,
                           fontWeight: FontWeight.w500)),
                 ),
+
 
               const Spacer(),
 

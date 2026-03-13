@@ -6,6 +6,7 @@ import '../../../common/api_service.dart';
 import '../../../common/theme.dart';
 import '../../login.dart' show kSessionKey;
 import '../../ticket/tickets.dart' show Ticket;
+import '../../../common/string_extensions.dart';
 
 // ── Task View Page ─────────────────────────────────────────────────────────
 class TasksViewPage extends StatefulWidget {
@@ -58,6 +59,10 @@ class _TasksViewPageState extends State<TasksViewPage> {
         _ticketNumber = data['ticket_number']?.toString() ?? '';
         _title        = data['title']?.toString()         ?? '';
         _jobs         = data['jobs'] as List? ?? [];
+        if (_jobs.isNotEmpty) {
+          debugPrint('🔍  [TASK VIEW] First Job Keys: ${_jobs.first.keys}');
+          debugPrint('🖼️  [TASK VIEW] First Job Image: ${_jobs.first['image']}');
+        }
       } else {
         _errorMessage =
             data['error'] ?? data['message'] ?? 'Failed to load tasks.';
@@ -80,8 +85,6 @@ class _TasksViewPageState extends State<TasksViewPage> {
     return raw;
   }
 
-  String _capitalize(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
   bool _isCompleted(dynamic job) =>
       (job['status'] ?? '').toString().toLowerCase() == 'completed';
@@ -102,6 +105,100 @@ class _TasksViewPageState extends State<TasksViewPage> {
       case 'cancelled': return const Color(0xFFFFF1F1);
       default:          return const Color(0xFFFFF3E0);
     }
+  }
+
+  Widget? _buildDeadlineIndicator(dynamic job) {
+    if (_isCompleted(job)) return null;
+
+    final rawDate = job['fixby_date']?.toString();
+    if (rawDate == null || rawDate.isEmpty || rawDate == 'null') return null;
+
+    try {
+      final fixBy = DateTime.parse(rawDate);
+      final now   = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final diff  = fixBy.difference(today).inDays;
+
+      if (diff < 0) {
+        return Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            '${diff} days - You have exceeded the deadline',
+            style: const TextStyle(
+                color: AppColors.error,
+                fontSize: 11,
+                fontWeight: FontWeight.w600),
+          ),
+        );
+      } else if (diff <= 3) {
+        return Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            '$diff day${diff == 1 ? '' : 's'} left',
+            style: const TextStyle(
+                color: Color(0xFFE65100),
+                fontSize: 11,
+                fontWeight: FontWeight.w600),
+          ),
+        );
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  void _viewImage(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty || imageUrl == 'null') return;
+    
+    final fullUrl = imageUrl.startsWith('http')
+        ? imageUrl
+        : '${ApiService.baseUrl}/uploads/$imageUrl';
+        
+    debugPrint('🖼️  [IMAGE VIEW] URL: $fullUrl');
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            children: [
+              Center(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 4.0,
+                  child: Image.network(
+                    fullUrl,
+                    fit: BoxFit.contain,
+                    width: double.infinity,
+                    height: double.infinity,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => const Center(
+                      child: Text('Failed to load image',
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: IconButton(
+                    icon: const Icon(Icons.close_rounded,
+                        color: Colors.white, size: 32),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // ── Reply dialog ───────────────────────────────────────────────────────────
@@ -335,6 +432,52 @@ class _TasksViewPageState extends State<TasksViewPage> {
     }
   }
 
+  Future<void> _toggleJobCompletion(dynamic job) async {
+    final jobId = job['job_id']?.toString() ?? '';
+    if (jobId.isEmpty) return;
+
+    try {
+      final prefs     = await SharedPreferences.getInstance();
+      final sessionId = prefs.getString(kSessionKey) ?? '';
+      final url  = Uri.parse('${ApiService.baseUrl}/api/ticket/job_complete.php');
+      final body = {'job_id': jobId};
+
+      debugPrint('📤  [JOB COMPLETE] $url  ${jsonEncode(body)}');
+
+      final response = await http.post(url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept':       'application/json',
+            'X-Session-ID': sessionId,
+            'Cookie':       'PHPSESSID=$sessionId',
+          },
+          body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
+
+      if (!mounted) return;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      debugPrint('📥  [JOB COMPLETE] ${response.statusCode}  ${response.body}');
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        AppSnackBar.show(context, 'Task updated successfully.');
+        _fetchJobs(); // Refresh to update status
+      } else {
+        AppSnackBar.show(
+            context,
+            data['error'] ?? data['message'] ?? 'Failed to complete job.',
+            isError: true);
+      }
+    } on http.ClientException {
+      if (mounted)
+        AppSnackBar.show(context, 'Unable to reach the server.',
+            isError: true);
+    } catch (_) {
+      if (mounted)
+        AppSnackBar.show(context, 'Something went wrong.',
+            isError: true);
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // ── Build ───────────────────────────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════════════════════════
@@ -393,12 +536,12 @@ class _TasksViewPageState extends State<TasksViewPage> {
               children: [
                 Text(
                   _isLoading
-                      ? widget.ticket.title.isEmpty
+                      ? (widget.ticket.title.isEmpty
                           ? 'Task Details'
-                          : widget.ticket.title
-                      : _title.isEmpty
+                          : widget.ticket.title.capitalize())
+                      : (_title.isEmpty
                           ? 'Task Details'
-                          : _title,
+                          : _title.capitalize()),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -520,7 +663,7 @@ class _TasksViewPageState extends State<TasksViewPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                _title,
+                _title.capitalize(),
                 style: const TextStyle(
                     color:      AppColors.textPrimary,
                     fontSize:   14.5,
@@ -600,7 +743,11 @@ class _TasksViewPageState extends State<TasksViewPage> {
                     width: 22, height: 22,
                     child: Checkbox(
                       value:          completed,
-                      onChanged:      null, // read-only display
+                      onChanged: (val) {
+                        if (val != null) {
+                          _toggleJobCompletion(job);
+                        }
+                      },
                       activeColor:    const Color(0xFF2E7D32),
                       checkColor:     Colors.white,
                       shape: RoundedRectangleBorder(
@@ -660,6 +807,43 @@ class _TasksViewPageState extends State<TasksViewPage> {
                           decorationThickness: 1.8,
                         ),
                       ),
+                      if (_buildDeadlineIndicator(job) != null)
+                        _buildDeadlineIndicator(job)!,
+
+                      // Attachment
+                      if (job['image'] != null &&
+                          job['image'].toString().isNotEmpty &&
+                          job['image'].toString() != 'null')
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: GestureDetector(
+                            onTap: () => _viewImage(job['image'].toString()),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE3F2FD),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                    color: Colors.blue.withOpacity(0.3),
+                                    width: 1),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(Icons.attachment_rounded,
+                                      size: 11, color: Colors.blue),
+                                  SizedBox(width: 3),
+                                  Text('Attachment',
+                                      style: TextStyle(
+                                          color: Colors.blue,
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w700)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -695,7 +879,7 @@ class _TasksViewPageState extends State<TasksViewPage> {
                         color: statusClr,
                       ),
                       const SizedBox(width: 3),
-                      Text(_capitalize(status),
+                      Text(status.capitalize(),
                           style: TextStyle(
                               color:      statusClr,
                               fontSize:   10.5,

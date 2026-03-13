@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../common/api_service.dart';
 import '../../../common/theme.dart';
 import '../../login.dart' show kSessionKey;
+import '../../../common/string_extensions.dart';
 
 // ── Employee Model ─────────────────────────────────────────────────────────
 class Employee {
@@ -635,7 +636,7 @@ class _AddTeamPageState extends State<AddTeamPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    emp.name,
+                    emp.name.capitalize(),
                     style: TextStyle(
                       color: isSelected
                           ? AppColors.primary
@@ -653,7 +654,7 @@ class _AddTeamPageState extends State<AddTeamPage> {
                       const SizedBox(width: 3),
                       Expanded(
                         child: Text(
-                          emp.departmentName,
+                          emp.departmentName.capitalize(),
                           style: const TextStyle(
                               color:    AppColors.textSecondary,
                               fontSize: 11.5),

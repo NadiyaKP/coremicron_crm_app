@@ -7,6 +7,7 @@ import '../../../common/theme.dart';
 import '../../login.dart' show kSessionKey;
 import '../../home.dart';
 import '../../../common/pagination.dart';
+import '../../../common/string_extensions.dart';
 
 // ── Department Model ───────────────────────────────────────────────────────
 class Department {
@@ -537,7 +538,7 @@ class _DepartmentPageState extends State<DepartmentPage> {
                 const SizedBox(height: 10),
 
                 Text(
-                  'Are you sure you want to delete\n"${d.name}"?\nThis action cannot be undone.',
+                  'Are you sure you want to delete\n"${d.name.capitalize()}"?\nThis action cannot be undone.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color:    AppColors.textSecondary,
@@ -838,7 +839,7 @@ class _DepartmentPageState extends State<DepartmentPage> {
           // Department name
           Expanded(
             child: Text(
-              d.name,
+              d.name.capitalize(),
               style: const TextStyle(
                 color:      AppColors.textPrimary,
                 fontSize:   13.5,

@@ -7,6 +7,7 @@ import '../../common/api_service.dart';
 import '../../common/theme.dart';
 import '../login.dart' show kSessionKey;
 import 'leads.dart' show Lead;
+import '../../common/string_extensions.dart';
 
 // ── Simple models ──────────────────────────────────────────────────────────
 class _Customer {
@@ -97,11 +98,11 @@ class _NewLeadPageState extends State<NewLeadPage> {
     // Pre-fill for edit mode
     if (_isEdit) {
       final l = widget.lead!;
-      _customerCtrl.text    = l.customerName;
+      _customerCtrl.text    = l.customerName.capitalize();
       _phoneCtrl.text       = l.customerPhone;
       _titleCtrl.text       = l.title;
       _leadDetailsCtrl.text = l.enquiry;
-      _assignCtrl.text      = l.employeeName;
+      _assignCtrl.text      = l.employeeName.capitalize();
       // Create placeholder selected customer/employee so form validates
       _selectedCustomer = _Customer(
           id: l.customerId, name: l.customerName, phone: l.customerPhone);
@@ -263,7 +264,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
     _removeCustomerOverlay();
     setState(() {
       _selectedCustomer = c;
-      _customerCtrl.text = c.name;
+      _customerCtrl.text = c.name.capitalize();
       if (_phoneCtrl.text.trim().isEmpty) {
         _phoneCtrl.text = c.phone;
       }
@@ -291,7 +292,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
     _removeEmployeeOverlay();
     setState(() {
       _selectedEmployee = e;
-      _assignCtrl.text = e.name;
+      _assignCtrl.text = e.name.capitalize();
     });
     FocusScope.of(context).unfocus();
   }
@@ -362,7 +363,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(c.name,
+                  Text(c.name.capitalize(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -412,7 +413,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(e.name,
+                  Text(e.name.capitalize(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(

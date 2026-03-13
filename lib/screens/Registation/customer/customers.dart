@@ -8,6 +8,7 @@ import '../../login.dart' show kSessionKey;
 import '../../home.dart';
 import 'add_customer.dart';
 import '../../../common/pagination.dart';
+import '../../../common/string_extensions.dart';
 
 // ── Customer Model ─────────────────────────────────────────────────────────
 class Customer {
@@ -262,7 +263,7 @@ class _CustomersPageState extends State<CustomersPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(c.name,
+                        Text(c.name.capitalize(),
                             style: const TextStyle(
                                 color: AppColors.textPrimary,
                                 fontSize: 15,
@@ -287,7 +288,7 @@ class _CustomersPageState extends State<CustomersPage> {
               _detailRow(Icons.email_outlined,
                   'Email',   c.email.isNotEmpty   ? c.email   : '—'),
               _detailRow(Icons.location_on_outlined,
-                  'Address', c.address.isNotEmpty ? c.address : '—'),
+                  'Address', c.address.isNotEmpty ? c.address.capitalize() : '—'),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -418,7 +419,7 @@ class _CustomersPageState extends State<CustomersPage> {
                             color: AppColors.borderLight, width: 1),
                       ),
                       child: Text(
-                        c.name,
+                        c.name.capitalize(),
                         style: const TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 13.5,
@@ -786,7 +787,7 @@ class _CustomersPageState extends State<CustomersPage> {
               children: [
                 // Full name — no ellipsis
                 Text(
-                  c.name,
+                  c.name.capitalize(),
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 13.5,

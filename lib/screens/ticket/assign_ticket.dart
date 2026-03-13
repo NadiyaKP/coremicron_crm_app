@@ -11,6 +11,7 @@ import '../../common/api_service.dart';
 import '../../common/theme.dart';
 import '../login.dart' show kSessionKey;
 import 'tickets.dart' show Ticket;
+import '../../common/string_extensions.dart';
 
 // ── Employee model ─────────────────────────────────────────────────────────
 class _Employee {
@@ -345,7 +346,7 @@ class _AssignTicketPageState extends State<AssignTicketPage>
     _removeEmployeeOverlay();
     setState(() {
       _selectedEmployee  = e;
-      _employeeCtrl.text = e.name;
+      _employeeCtrl.text = e.name.capitalize();
     });
     FocusScope.of(context).requestFocus(_workFocus);
   }
@@ -379,7 +380,7 @@ class _AssignTicketPageState extends State<AssignTicketPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(e.name,
+                  Text(e.name.capitalize(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -697,7 +698,7 @@ class _AssignTicketPageState extends State<AssignTicketPage>
                 const Divider(height: 1, color: AppColors.borderLight),
                 const SizedBox(height: 12),
                 _dialogRow(Icons.person_outline_rounded,
-                    'Assigned To', job.assignName),
+                    'Assigned To', job.assignName.capitalize()),
                 const SizedBox(height: 8),
                 _dialogRow(Icons.work_outline_rounded,
                     'Work',
@@ -1734,7 +1735,7 @@ class _AssignTicketPageState extends State<AssignTicketPage>
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(job.assignName,
+                child: Text(job.assignName.capitalize(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

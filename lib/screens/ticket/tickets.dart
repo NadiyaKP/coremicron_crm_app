@@ -10,6 +10,7 @@ import '../../common/pagination.dart';
 import 'ticket_view.dart';
 import 'new_ticket.dart';
 import 'assign_ticket.dart';
+import '../../common/string_extensions.dart';
 
 // ── Ticket Model ───────────────────────────────────────────────────────────
 class Ticket {
@@ -28,6 +29,7 @@ class Ticket {
   final String customerName;
   final String phoneNumber;
   final String taskHandlerName;
+  final String? image;
 
   const Ticket({
     required this.ticketId,
@@ -45,6 +47,7 @@ class Ticket {
     required this.customerName,
     required this.phoneNumber,
     required this.taskHandlerName,
+    this.image,
   });
 
   factory Ticket.fromJson(Map<String, dynamic> j) => Ticket(
@@ -63,6 +66,7 @@ class Ticket {
         customerName:    j['customer_name']      ?? '',
         phoneNumber:     j['phone_number']       ?? '',
         taskHandlerName: j['task_handler_name']  ?? '',
+        image:           j['image'],
       );
 }
 
@@ -222,8 +226,6 @@ class _TicketsPageState extends State<TicketsPage> {
     return raw;
   }
 
-  String _capitalize(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
   // Priority colors
   Color _priorityColor(String p) {
@@ -529,7 +531,7 @@ class _TicketsPageState extends State<TicketsPage> {
 
           // ── Title ────────────────────────────────────────────────────
           Text(
-            t.title.isEmpty ? '(No title)' : t.title,
+            t.title.isEmpty ? '(No title)' : t.title.capitalize(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -553,7 +555,7 @@ class _TicketsPageState extends State<TicketsPage> {
                   size: 11, color: AppColors.textMuted),
               const SizedBox(width: 3),
               Expanded(
-                child: Text(t.customerName,
+                child: Text(t.customerName.capitalize(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -592,7 +594,7 @@ class _TicketsPageState extends State<TicketsPage> {
                     Icon(Icons.flag_outlined,
                         size: 10, color: priorityClr),
                     const SizedBox(width: 3),
-                    Text(_capitalize(t.priority),
+                    Text(t.priority.capitalize(),
                         style: TextStyle(
                             color:      priorityClr,
                             fontSize:   10.5,
@@ -953,7 +955,7 @@ class _DeleteTicketDialogState extends State<_DeleteTicketDialog> {
                     widget.ticket.ticketNumber),
                 const SizedBox(height: 8),
                 _ticketInfoRow(Icons.person_outline_rounded, 'Customer',
-                    widget.ticket.customerName),
+                    widget.ticket.customerName.capitalize()),
                 const SizedBox(height: 8),
                 _ticketInfoRow(Icons.phone_outlined, 'Phone',
                     widget.ticket.phoneNumber),

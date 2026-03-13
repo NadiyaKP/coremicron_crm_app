@@ -7,6 +7,7 @@ import '../../../../common/theme.dart';
 import '../../../login.dart' show kSessionKey;
 import '../../../home.dart';
 import '../../../../common/pagination.dart';
+import '../../../../common/string_extensions.dart';
 import 'add_employee.dart';
 
 // ── Employee Model ─────────────────────────────────────────────────────────
@@ -412,7 +413,7 @@ class _EmployeePageState extends State<EmployeePage> {
               children: [
                 // Name
                 Text(
-                  e.employeeName,
+                  e.employeeName.capitalize(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -437,7 +438,7 @@ class _EmployeePageState extends State<EmployeePage> {
                 ),
                 const SizedBox(height: 3),
                 // Department
-                _infoChip(Icons.apartment_rounded, e.departmentName,
+                _infoChip(Icons.apartment_rounded, e.departmentName.capitalize(),
                     ellipsis: true),
               ],
             ),
@@ -619,11 +620,11 @@ class _EmployeePageState extends State<EmployeePage> {
                 const SizedBox(height: 16),
 
                 // Employee details
-                _dialogDetailRow('Employee Name', e.employeeName),
+                _dialogDetailRow('Employee Name', e.employeeName.capitalize()),
                 const SizedBox(height: 8),
                 _dialogDetailRow('Employee ID', e.employeeId),
                 const SizedBox(height: 8),
-                _dialogDetailRow('Department', e.departmentName),
+                _dialogDetailRow('Department', e.departmentName.capitalize()),
                 const SizedBox(height: 8),
                 _dialogDetailRow('Phone Number', e.phoneNumber),
                 const SizedBox(height: 8),

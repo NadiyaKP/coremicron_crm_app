@@ -7,6 +7,7 @@ import '../../common/api_service.dart';
 import '../../common/theme.dart';
 import '../login.dart' show kSessionKey;
 import 'tickets.dart' show Ticket;
+import '../../common/string_extensions.dart';
 
 // ── Simple models ──────────────────────────────────────────────────────────
 class _Customer {
@@ -123,8 +124,8 @@ class _NewTicketPageState extends State<NewTicketPage> {
         ? 'New Works'
         : 'Complaints';
     _priority          = t.priority.toLowerCase();
-    _customerCtrl.text = t.customerName;
-    _employeeCtrl.text = t.taskHandlerName;
+    _customerCtrl.text = t.customerName.capitalize();
+    _employeeCtrl.text = t.taskHandlerName.capitalize();
     _selectedCustomer  = _Customer(
         id: t.customerId, name: t.customerName, phone: t.phoneNumber);
     if (t.taskHandlerName.isNotEmpty) {
@@ -274,7 +275,7 @@ class _NewTicketPageState extends State<NewTicketPage> {
     _removeCustomerOverlay();
     setState(() {
       _selectedCustomer = c;
-      _customerCtrl.text = c.name;
+      _customerCtrl.text = c.name.capitalize();
     });
     FocusScope.of(context).requestFocus(_employeeFocus);
   }
@@ -298,7 +299,7 @@ class _NewTicketPageState extends State<NewTicketPage> {
     _removeEmployeeOverlay();
     setState(() {
       _selectedEmployee = e;
-      _employeeCtrl.text = e.name;
+      _employeeCtrl.text = e.name.capitalize();
     });
     FocusScope.of(context).requestFocus(_notesFocus);
   }
@@ -374,7 +375,7 @@ class _NewTicketPageState extends State<NewTicketPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(c.name,
+                  Text(c.name.capitalize(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -427,7 +428,7 @@ class _NewTicketPageState extends State<NewTicketPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(e.name,
+                  Text(e.name.capitalize(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(

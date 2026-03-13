@@ -7,6 +7,7 @@ import '../../../common/theme.dart';
 import '../../login.dart' show kSessionKey;
 import '../../home.dart';
 import '../../../common/pagination.dart';
+import '../../../common/string_extensions.dart';
 import 'add_team.dart';
 
 // ── Models ─────────────────────────────────────────────────────────────────
@@ -272,7 +273,7 @@ class _TeamsPageState extends State<TeamsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            team.name,
+                            team.name.capitalize(),
                             style: const TextStyle(
                               color:      AppColors.textPrimary,
                               fontSize:   15,
@@ -410,7 +411,7 @@ class _TeamsPageState extends State<TeamsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  m.employeeName,
+                  m.employeeName.capitalize(),
                   style: const TextStyle(
                     color:      AppColors.textPrimary,
                     fontSize:   13.5,
@@ -425,7 +426,7 @@ class _TeamsPageState extends State<TeamsPage> {
                     const SizedBox(width: 3),
                     Expanded(
                       child: Text(
-                        m.departmentName,
+                        m.departmentName.capitalize(),
                         style: const TextStyle(
                           color:    AppColors.textSecondary,
                           fontSize: 11.5,
@@ -668,7 +669,7 @@ class _TeamsPageState extends State<TeamsPage> {
               children: [
                 // Team name
                 Text(
-                  t.name,
+                  t.name.capitalize(),
                   style: const TextStyle(
                     color:      AppColors.textPrimary,
                     fontSize:   13.5,
@@ -692,7 +693,7 @@ class _TeamsPageState extends State<TeamsPage> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        t.status,
+                        t.status.capitalize(),
                         style: TextStyle(
                           color: isActive
                               ? AppColors.success
