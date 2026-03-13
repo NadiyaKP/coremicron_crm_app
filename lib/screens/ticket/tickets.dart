@@ -8,6 +8,8 @@ import '../login.dart' show kSessionKey;
 import '../home.dart';
 import '../../common/pagination.dart';
 import 'ticket_view.dart';
+import 'new_ticket.dart';
+import 'assign_ticket.dart';
 
 // ── Ticket Model ───────────────────────────────────────────────────────────
 class Ticket {
@@ -161,14 +163,18 @@ class _TicketsPageState extends State<TicketsPage> {
   }
 
   // ── Delete ─────────────────────────────────────────────────────────────────
-  Future<void> _deleteTicket(String ticketId) async {
+  Future<void> _deleteTicket(String ticketId, String reason) async {
     try {
       final prefs     = await SharedPreferences.getInstance();
       final sessionId = prefs.getString(kSessionKey) ?? '';
       final url  = Uri.parse('${ApiService.baseUrl}/api/ticket/delete.php');
-      final body = {'ticket_id': ticketId};
+      final body = {
+        'ticket_id': ticketId,
+        'reason':    reason,
+      };
 
       debugPrint('📤  [DELETE TICKET] $url  ${jsonEncode(body)}');
+
 
       final response = await http.post(url,
           headers: {
@@ -427,8 +433,15 @@ class _TicketsPageState extends State<TicketsPage> {
   // ── New Ticket button ──────────────────────────────────────────────────────
   Widget _newTicketButton() {
     return ElevatedButton.icon(
-      onPressed: () {
-        // TODO: navigate to New Ticket page
+      onPressed: () async {
+        final result = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                NewTicketPage(username: widget.username),
+          ),
+        );
+        if (result == true) _fetchTickets();
       },
       icon: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
       label: const Text('New Ticket',
@@ -634,8 +647,15 @@ class _TicketsPageState extends State<TicketsPage> {
                 icon:    Icons.edit_outlined,
                 color:   AppColors.primary,
                 bgColor: AppColors.primaryLight,
-                onTap:   () {
-                  // TODO: navigate to Edit Ticket page
+                onTap:   () async {
+                  final result = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => NewTicketPage(
+                          username: widget.username, ticket: t),
+                    ),
+                  );
+                  if (result == true) _fetchTickets();
                 },
               ),
               const SizedBox(width: 6),
@@ -644,7 +664,12 @@ class _TicketsPageState extends State<TicketsPage> {
                 icon:    Icons.person_add_outlined,
                 color:   const Color(0xFF6A1B9A),
                 bgColor: const Color(0xFFF3E5F5),
-                onTap:   () => _showAssignDialog(t),
+                onTap:   () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AssignTicketPage(ticket: t),
+                  ),
+                ),
               ),
               const SizedBox(width: 6),
               // Delete
@@ -679,242 +704,20 @@ class _TicketsPageState extends State<TicketsPage> {
     );
   }
 
-  // ── Assign Dialog ──────────────────────────────────────────────────────────
-  void _showAssignDialog(Ticket t) {
+  // ── Delete Dialog ──────────────────────────────────────────────────────────
+  void _showDeleteDialog(Ticket t) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
-        insetPadding:
-            const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40, height: 40,
-                    decoration: BoxDecoration(
-                      color:        const Color(0xFFF3E5F5),
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    child: const Icon(Icons.person_add_outlined,
-                        color: Color(0xFF6A1B9A), size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Assign Ticket',
-                            style: TextStyle(
-                                color:      AppColors.textPrimary,
-                                fontSize:   15,
-                                fontWeight: FontWeight.w700)),
-                        Text('Ticket #${t.ticketNumber}',
-                            style: const TextStyle(
-                                color:    AppColors.textMuted,
-                                fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              const Divider(height: 1, color: AppColors.borderLight),
-              const SizedBox(height: 12),
-              if (t.taskHandlerName.isNotEmpty) ...[
-                Row(
-                  children: [
-                    const Icon(Icons.person_pin_outlined,
-                        size: 14, color: AppColors.textMuted),
-                    const SizedBox(width: 6),
-                    const Text('Current:  ',
-                        style: TextStyle(
-                            color:    AppColors.textMuted,
-                            fontSize: 12.5)),
-                    Text(t.taskHandlerName,
-                        style: const TextStyle(
-                            color:      AppColors.textPrimary,
-                            fontSize:   13,
-                            fontWeight: FontWeight.w600)),
-                  ],
-                ),
-                const SizedBox(height: 14),
-              ],
-              const Text(
-                'Assign functionality coming soon.',
-                style: TextStyle(
-                    color:    AppColors.textSecondary,
-                    fontSize: 13.5,
-                    height:   1.5),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(
-                        color: AppColors.border, width: 1.3),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(11)),
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: const Text('Close',
-                      style: TextStyle(
-                          color:      AppColors.textLabel,
-                          fontWeight: FontWeight.w600,
-                          fontSize:   14)),
-                ),
-              ),
-            ],
-          ),
-        ),
+      barrierDismissible: false,
+      builder: (dialogCtx) => _DeleteTicketDialog(
+        ticket: t,
+        onDelete: (reason) async {
+          await _deleteTicket(t.ticketId, reason);
+        },
       ),
     );
   }
 
-  // ── Delete Dialog ──────────────────────────────────────────────────────────
-  void _showDeleteDialog(Ticket t) {
-    bool isDeleting = false;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (ctx, setS) => Dialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20)),
-          backgroundColor: Colors.white,
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 42, height: 42,
-                      decoration: BoxDecoration(
-                        color:        const Color(0xFFFFF1F1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.delete_outline_rounded,
-                          color: AppColors.error, size: 22),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text('Delete Ticket',
-                          style: TextStyle(
-                              color:      AppColors.textPrimary,
-                              fontSize:   15,
-                              fontWeight: FontWeight.w700)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                const Text(
-                  'Are you sure you want to delete this ticket?',
-                  style: TextStyle(
-                      color:    AppColors.textSecondary,
-                      fontSize: 13.5,
-                      height:   1.5),
-                ),
-                const SizedBox(height: 14),
-                const Divider(height: 1, color: AppColors.borderLight),
-                const SizedBox(height: 12),
-                _dialogRow(Icons.tag_rounded,
-                    'Ticket No', t.ticketNumber),
-                const SizedBox(height: 8),
-                _dialogRow(Icons.person_outline_rounded,
-                    'Customer', t.customerName),
-                const SizedBox(height: 8),
-                _dialogRow(Icons.phone_outlined,
-                    'Phone', t.phoneNumber),
-                const SizedBox(height: 8),
-                _dialogRow(Icons.title_rounded,
-                    'Title',
-                    t.title.isEmpty ? '(No title)' : t.title),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: isDeleting
-                            ? null
-                            : () => Navigator.pop(dialogCtx),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                              color: AppColors.border, width: 1.3),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(11)),
-                          backgroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 13),
-                        ),
-                        child: const Text('Cancel',
-                            style: TextStyle(
-                                color:      AppColors.textLabel,
-                                fontWeight: FontWeight.w600,
-                                fontSize:   14)),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: isDeleting
-                            ? null
-                            : () async {
-                                setS(() => isDeleting = true);
-                                Navigator.pop(dialogCtx);
-                                await _deleteTicket(t.ticketId);
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.error,
-                          disabledBackgroundColor:
-                              AppColors.error.withOpacity(0.5),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 13),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(11)),
-                        ),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child: isDeleting
-                              ? const SizedBox(
-                                  key: ValueKey('del-loader'),
-                                  width: 18, height: 18,
-                                  child: CircularProgressIndicator(
-                                      color:       Colors.white,
-                                      strokeWidth: 2.3))
-                              : const Text('Delete',
-                                  key: ValueKey('del-label'),
-                                  style: TextStyle(
-                                      color:      Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize:   14)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _dialogRow(IconData icon, String label, String value) {
     return Row(
@@ -1073,6 +876,222 @@ class _TicketsPageState extends State<TicketsPage> {
     );
   }
 }
+
+// ── Delete Ticket Dialog ──────────────────────────────────────────────────
+class _DeleteTicketDialog extends StatefulWidget {
+  final Ticket ticket;
+  final Future<void> Function(String reason) onDelete;
+
+  const _DeleteTicketDialog({
+    required this.ticket,
+    required this.onDelete,
+  });
+
+  @override
+  State<_DeleteTicketDialog> createState() => _DeleteTicketDialogState();
+}
+
+class _DeleteTicketDialogState extends State<_DeleteTicketDialog> {
+  bool _isDeleting = false;
+  final _reasonCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _reasonCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 42, height: 42,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF1F1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.delete_outline_rounded,
+                          color: AppColors.error, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text('Delete Ticket',
+                          style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Are you sure you want to delete this ticket?',
+                  style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13.5,
+                      height: 1.5),
+                ),
+                const SizedBox(height: 14),
+                const Divider(height: 1, color: AppColors.borderLight),
+                const SizedBox(height: 12),
+                _ticketInfoRow(Icons.tag_rounded, 'Ticket No',
+                    widget.ticket.ticketNumber),
+                const SizedBox(height: 8),
+                _ticketInfoRow(Icons.person_outline_rounded, 'Customer',
+                    widget.ticket.customerName),
+                const SizedBox(height: 8),
+                _ticketInfoRow(Icons.phone_outlined, 'Phone',
+                    widget.ticket.phoneNumber),
+                const SizedBox(height: 16),
+                const Text(
+                  'Reason for deletion',
+                  style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _reasonCtrl,
+                  maxLines: 2,
+                  style: const TextStyle(fontSize: 13.5),
+                  decoration: InputDecoration(
+                    hintText: 'Type a reason here...',
+                    hintStyle:
+                        const TextStyle(color: AppColors.textHint, fontSize: 13),
+                    filled: true,
+                    fillColor: AppColors.inputFill,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(11),
+                      borderSide:
+                          const BorderSide(color: AppColors.border, width: 1.2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(11),
+                      borderSide:
+                          const BorderSide(color: AppColors.border, width: 1.2),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(11),
+                      borderSide: const BorderSide(
+                          color: AppColors.primary, width: 1.8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                  ),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Please enter a reason'
+                      : null,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed:
+                            _isDeleting ? null : () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                              color: AppColors.border, width: 1.3),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11)),
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                        ),
+                        child: const Text('Cancel',
+                            style: TextStyle(
+                                color: AppColors.textLabel,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _isDeleting
+                            ? null
+                            : () async {
+                                if (_formKey.currentState!.validate()) {
+                                  setState(() => _isDeleting = true);
+                                  await widget.onDelete(_reasonCtrl.text.trim());
+                                  if (mounted) Navigator.pop(context);
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          disabledBackgroundColor:
+                              AppColors.error.withOpacity(0.5),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11)),
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: _isDeleting
+                              ? const SizedBox(
+                                  key: ValueKey('del-loader'),
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2.3))
+                              : const Text('Delete',
+                                  key: ValueKey('del-label'),
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _ticketInfoRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: AppColors.textSecondary),
+        const SizedBox(width: 6),
+        Text('$label: ',
+            style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500)),
+        Expanded(
+          child: Text(value,
+              style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600)),
+        ),
+      ],
+    );
+  }
+}
+
 
 // ── Shimmer box ────────────────────────────────────────────────────────────
 class _ShimmerBox extends StatefulWidget {

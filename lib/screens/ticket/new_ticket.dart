@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../common/api_service.dart';
 import '../../common/theme.dart';
 import '../login.dart' show kSessionKey;
-import 'leads.dart' show Lead;
+import 'tickets.dart' show Ticket;
 
 // ── Simple models ──────────────────────────────────────────────────────────
 class _Customer {
@@ -21,62 +21,65 @@ class _Employee {
   final String name;
   final String phone;
   final String employeeId;
-  _Employee({
-    required this.id,
-    required this.name,
-    required this.phone,
-    required this.employeeId,
-  });
+  _Employee(
+      {required this.id,
+      required this.name,
+      required this.phone,
+      required this.employeeId});
 }
 
-// ── New Lead Page ──────────────────────────────────────────────────────────
-class NewLeadPage extends StatefulWidget {
-  final String username;
-  final Lead?  lead; // null = add mode, non-null = edit mode
+// ── New Ticket Page ────────────────────────────────────────────────────────
+class NewTicketPage extends StatefulWidget {
+  final String  username;
+  final Ticket? ticket; // null = add, non-null = edit
 
-  const NewLeadPage({super.key, required this.username, this.lead});
+  const NewTicketPage({super.key, required this.username, this.ticket});
 
   @override
-  State<NewLeadPage> createState() => _NewLeadPageState();
+  State<NewTicketPage> createState() => _NewTicketPageState();
 }
 
-class _NewLeadPageState extends State<NewLeadPage> {
-  bool get _isEdit => widget.lead != null;
+class _NewTicketPageState extends State<NewTicketPage> {
+  bool get _isEdit => widget.ticket != null;
+
+  // ── Ticket type radio ──────────────────────────────────────────────────────
+  String? _ticketType; // null = nothing selected yet
+
+  // ── Priority dropdown ──────────────────────────────────────────────────────
+  String _priority = 'low';
+  final List<String> _priorities = ['low', 'medium', 'high'];
+
   // ── Controllers ────────────────────────────────────────────────────────────
-  final _customerCtrl    = TextEditingController();
-  final _phoneCtrl       = TextEditingController();
-  final _titleCtrl       = TextEditingController();
-  final _leadDetailsCtrl = TextEditingController();
-  final _assignCtrl      = TextEditingController();
+  final _titleCtrl    = TextEditingController();
+  final _customerCtrl = TextEditingController();
+  final _employeeCtrl = TextEditingController();
+  final _notesCtrl    = TextEditingController();
 
   // ── Focus nodes ────────────────────────────────────────────────────────────
-  final _customerFocus    = FocusNode();
-  final _phoneFocus       = FocusNode();
-  final _titleFocus       = FocusNode();
-  final _leadDetailsFocus = FocusNode();
-  final _assignFocus      = FocusNode();
+  final _titleFocus    = FocusNode();
+  final _customerFocus = FocusNode();
+  final _employeeFocus = FocusNode();
+  final _notesFocus    = FocusNode();
 
   // ── Selected values ────────────────────────────────────────────────────────
   _Customer? _selectedCustomer;
   _Employee? _selectedEmployee;
 
   // ── Customer autocomplete ──────────────────────────────────────────────────
-  List<_Customer> _allCustomers      = [];
+  List<_Customer> _allCustomers        = [];
   List<_Customer> _customerSuggestions = [];
-  bool            _customersLoaded   = false;
-  bool            _showCustomerDrop  = false;
+  bool            _customersLoaded     = false;
   Timer?          _customerDebounce;
 
   // ── Employee autocomplete ──────────────────────────────────────────────────
-  List<_Employee> _allEmployees      = [];
+  List<_Employee> _allEmployees        = [];
   List<_Employee> _employeeSuggestions = [];
-  bool            _employeesLoaded   = false;
-  bool            _showEmployeeDrop  = false;
+  bool            _employeesLoaded     = false;
   Timer?          _employeeDebounce;
 
   bool _isSaving = false;
 
-  // ── Layer links for overlays ───────────────────────────────────────────────
+  // ── Overlay links ──────────────────────────────────────────────────────────
   final _customerLayerLink = LayerLink();
   final _employeeLayerLink = LayerLink();
   OverlayEntry? _customerOverlay;
@@ -86,31 +89,14 @@ class _NewLeadPageState extends State<NewLeadPage> {
   void initState() {
     super.initState();
     for (final fn in [
-      _customerFocus, _phoneFocus, _titleFocus,
-      _leadDetailsFocus, _assignFocus,
+      _titleFocus, _customerFocus, _employeeFocus, _notesFocus
     ]) {
       fn.addListener(() => setState(() {}));
     }
     _customerFocus.addListener(_onCustomerFocusChange);
-    _assignFocus.addListener(_onEmployeeFocusChange);
+    _employeeFocus.addListener(_onEmployeeFocusChange);
 
-    // Pre-fill for edit mode
-    if (_isEdit) {
-      final l = widget.lead!;
-      _customerCtrl.text    = l.customerName;
-      _phoneCtrl.text       = l.customerPhone;
-      _titleCtrl.text       = l.title;
-      _leadDetailsCtrl.text = l.enquiry;
-      _assignCtrl.text      = l.employeeName;
-      // Create placeholder selected customer/employee so form validates
-      _selectedCustomer = _Customer(
-          id: l.customerId, name: l.customerName, phone: l.customerPhone);
-      if (l.employeeName.isNotEmpty) {
-        _selectedEmployee = _Employee(
-            id: l.assignId, name: l.employeeName,
-            phone: '', employeeId: '');
-      }
-    }
+    if (_isEdit) _preFill();
   }
 
   @override
@@ -120,14 +106,32 @@ class _NewLeadPageState extends State<NewLeadPage> {
     _customerDebounce?.cancel();
     _employeeDebounce?.cancel();
     for (final c in [
-      _customerCtrl, _phoneCtrl, _titleCtrl,
-      _leadDetailsCtrl, _assignCtrl,
+      _titleCtrl, _customerCtrl, _employeeCtrl, _notesCtrl
     ]) { c.dispose(); }
     for (final fn in [
-      _customerFocus, _phoneFocus, _titleFocus,
-      _leadDetailsFocus, _assignFocus,
+      _titleFocus, _customerFocus, _employeeFocus, _notesFocus
     ]) { fn.dispose(); }
     super.dispose();
+  }
+
+  // ── Pre-fill for edit ──────────────────────────────────────────────────────
+  void _preFill() {
+    final t = widget.ticket!;
+    _titleCtrl.text    = t.title;
+    _notesCtrl.text    = t.notes;
+    _ticketType        = t.typeOfTickets.toLowerCase() == 'new works'
+        ? 'New Works'
+        : 'Complaints';
+    _priority          = t.priority.toLowerCase();
+    _customerCtrl.text = t.customerName;
+    _employeeCtrl.text = t.taskHandlerName;
+    _selectedCustomer  = _Customer(
+        id: t.customerId, name: t.customerName, phone: t.phoneNumber);
+    if (t.taskHandlerName.isNotEmpty) {
+      _selectedEmployee = _Employee(
+          id: t.taskHandlerId, name: t.taskHandlerName,
+          phone: '', employeeId: '');
+    }
   }
 
   // ── Focus listeners ────────────────────────────────────────────────────────
@@ -139,60 +143,68 @@ class _NewLeadPageState extends State<NewLeadPage> {
   }
 
   void _onEmployeeFocusChange() {
-    if (!_assignFocus.hasFocus) {
+    if (!_employeeFocus.hasFocus) {
       Future.delayed(const Duration(milliseconds: 150),
           _removeEmployeeOverlay);
     }
   }
 
-  // ── Load all customers (once) ──────────────────────────────────────────────
+  // ── Load customers (once) ──────────────────────────────────────────────────
   Future<void> _loadCustomers() async {
     if (_customersLoaded) return;
     try {
       final prefs     = await SharedPreferences.getInstance();
       final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url = Uri.parse('${ApiService.baseUrl}/api/customer/list.php?view=dropdown');
-      final res = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final res = await http.get(
+        Uri.parse('${ApiService.baseUrl}/api/customer/list.php?view=dropdown'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept':       'application/json',
+          'X-Session-ID': sessionId,
+          'Cookie':       'PHPSESSID=$sessionId',
+        },
+      ).timeout(const Duration(seconds: 15));
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       if (data['success'] == true) {
         final list = data['data'] as List? ?? [];
-        _allCustomers = list.map((e) => _Customer(
-          id:    e['id']            ?? '',
-          name:  e['customer_name'] ?? '',
-          phone: e['phone_number']  ?? '',
-        )).toList();
+        _allCustomers = list
+            .map((e) => _Customer(
+                  id:    e['id']            ?? '',
+                  name:  e['customer_name'] ?? '',
+                  phone: e['phone_number']  ?? '',
+                ))
+            .toList();
         _customersLoaded = true;
       }
     } catch (_) {}
   }
 
-  // ── Load all employees (once) ──────────────────────────────────────────────
+  // ── Load employees (once) ──────────────────────────────────────────────────
   Future<void> _loadEmployees() async {
     if (_employeesLoaded) return;
     try {
       final prefs     = await SharedPreferences.getInstance();
       final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url = Uri.parse('${ApiService.baseUrl}/api/employee/list.php?view=dropdown');
-      final res = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final res = await http.get(
+        Uri.parse('${ApiService.baseUrl}/api/employee/list.php?view=dropdown'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept':       'application/json',
+          'X-Session-ID': sessionId,
+          'Cookie':       'PHPSESSID=$sessionId',
+        },
+      ).timeout(const Duration(seconds: 15));
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       if (data['success'] == true) {
         final list = data['data'] as List? ?? [];
-        _allEmployees = list.map((e) => _Employee(
-          id:         e['id']            ?? '',
-          name:       e['employee_name'] ?? '',
-          phone:      e['phone_number']  ?? '',
-          employeeId: e['employee_id']   ?? '',
-        )).toList();
+        _allEmployees = list
+            .map((e) => _Employee(
+                  id:         e['id']            ?? '',
+                  name:       e['employee_name'] ?? '',
+                  phone:      e['phone_number']  ?? '',
+                  employeeId: e['employee_id']   ?? '',
+                ))
+            .toList();
         _employeesLoaded = true;
       }
     } catch (_) {}
@@ -202,16 +214,15 @@ class _NewLeadPageState extends State<NewLeadPage> {
   void _onCustomerChanged(String query) {
     _selectedCustomer = null;
     _customerDebounce?.cancel();
-    _customerDebounce = Timer(const Duration(milliseconds: 250), () async {
+    _customerDebounce =
+        Timer(const Duration(milliseconds: 250), () async {
       await _loadCustomers();
       final q = query.trim().toLowerCase();
-      if (q.isEmpty) {
-        _removeCustomerOverlay();
-        return;
-      }
-      _customerSuggestions = _allCustomers.where((c) =>
-          c.name.toLowerCase().contains(q) ||
-          c.phone.contains(q)).toList();
+      if (q.isEmpty) { _removeCustomerOverlay(); return; }
+      _customerSuggestions = _allCustomers
+          .where((c) =>
+              c.name.toLowerCase().contains(q) || c.phone.contains(q))
+          .toList();
       if (_customerSuggestions.isNotEmpty) {
         _showCustomerDropdown();
       } else {
@@ -224,17 +235,17 @@ class _NewLeadPageState extends State<NewLeadPage> {
   void _onEmployeeChanged(String query) {
     _selectedEmployee = null;
     _employeeDebounce?.cancel();
-    _employeeDebounce = Timer(const Duration(milliseconds: 250), () async {
+    _employeeDebounce =
+        Timer(const Duration(milliseconds: 250), () async {
       await _loadEmployees();
       final q = query.trim().toLowerCase();
-      if (q.isEmpty) {
-        _removeEmployeeOverlay();
-        return;
-      }
-      _employeeSuggestions = _allEmployees.where((e) =>
-          e.name.toLowerCase().contains(q) ||
-          e.phone.contains(q) ||
-          e.employeeId.toLowerCase().contains(q)).toList();
+      if (q.isEmpty) { _removeEmployeeOverlay(); return; }
+      _employeeSuggestions = _allEmployees
+          .where((e) =>
+              e.name.toLowerCase().contains(q) ||
+              e.phone.contains(q) ||
+              e.employeeId.toLowerCase().contains(q))
+          .toList();
       if (_employeeSuggestions.isNotEmpty) {
         _showEmployeeDropdown();
       } else {
@@ -243,12 +254,12 @@ class _NewLeadPageState extends State<NewLeadPage> {
     });
   }
 
-  // ── Customer overlay ───────────────────────────────────────────────────────
+  // ── Overlays ───────────────────────────────────────────────────────────────
   void _showCustomerDropdown() {
     _removeCustomerOverlay();
     _customerOverlay = _buildOverlay(
-      link:     _customerLayerLink,
-      items:    _customerSuggestions,
+      link:        _customerLayerLink,
+      items:       _customerSuggestions,
       itemBuilder: (c) => _customerTile(c as _Customer),
     );
     Overlay.of(context).insert(_customerOverlay!);
@@ -264,19 +275,15 @@ class _NewLeadPageState extends State<NewLeadPage> {
     setState(() {
       _selectedCustomer = c;
       _customerCtrl.text = c.name;
-      if (_phoneCtrl.text.trim().isEmpty) {
-        _phoneCtrl.text = c.phone;
-      }
     });
-    FocusScope.of(context).requestFocus(_titleFocus);
+    FocusScope.of(context).requestFocus(_employeeFocus);
   }
 
-  // ── Employee overlay ───────────────────────────────────────────────────────
   void _showEmployeeDropdown() {
     _removeEmployeeOverlay();
     _employeeOverlay = _buildOverlay(
-      link:     _employeeLayerLink,
-      items:    _employeeSuggestions,
+      link:        _employeeLayerLink,
+      items:       _employeeSuggestions,
       itemBuilder: (e) => _employeeTile(e as _Employee),
     );
     Overlay.of(context).insert(_employeeOverlay!);
@@ -291,30 +298,32 @@ class _NewLeadPageState extends State<NewLeadPage> {
     _removeEmployeeOverlay();
     setState(() {
       _selectedEmployee = e;
-      _assignCtrl.text = e.name;
+      _employeeCtrl.text = e.name;
     });
-    FocusScope.of(context).unfocus();
+    FocusScope.of(context).requestFocus(_notesFocus);
   }
 
   // ── Generic overlay builder ────────────────────────────────────────────────
   OverlayEntry _buildOverlay({
-    required LayerLink      link,
-    required List<dynamic>  items,
+    required LayerLink            link,
+    required List<dynamic>        items,
     required Widget Function(dynamic) itemBuilder,
   }) {
     return OverlayEntry(
       builder: (_) => Positioned(
         width: link.leaderSize?.width ?? 300,
         child: CompositedTransformFollower(
-          link:            link,
+          link:             link,
           showWhenUnlinked: false,
-          offset:          Offset(0, (link.leaderSize?.height ?? 48) + 4),
+          offset:
+              Offset(0, (link.leaderSize?.height ?? 48) + 4),
           child: Material(
             elevation:    6,
             borderRadius: BorderRadius.circular(12),
             color:        Colors.white,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 220),
+              constraints:
+                  const BoxConstraints(maxHeight: 220),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: ListView.separated(
@@ -338,7 +347,8 @@ class _NewLeadPageState extends State<NewLeadPage> {
     return InkWell(
       onTap: () => _selectCustomer(c),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: Row(
           children: [
             Container(
@@ -349,7 +359,9 @@ class _NewLeadPageState extends State<NewLeadPage> {
               ),
               child: Center(
                 child: Text(
-                  c.name.isNotEmpty ? c.name[0].toUpperCase() : 'C',
+                  c.name.isNotEmpty
+                      ? c.name[0].toUpperCase()
+                      : 'C',
                   style: const TextStyle(
                       color:      AppColors.primary,
                       fontSize:   13,
@@ -388,7 +400,8 @@ class _NewLeadPageState extends State<NewLeadPage> {
     return InkWell(
       onTap: () => _selectEmployee(e),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: Row(
           children: [
             Container(
@@ -399,7 +412,9 @@ class _NewLeadPageState extends State<NewLeadPage> {
               ),
               child: Center(
                 child: Text(
-                  e.name.isNotEmpty ? e.name[0].toUpperCase() : 'E',
+                  e.name.isNotEmpty
+                      ? e.name[0].toUpperCase()
+                      : 'E',
                   style: const TextStyle(
                       color:      AppColors.primary,
                       fontSize:   13,
@@ -426,22 +441,24 @@ class _NewLeadPageState extends State<NewLeadPage> {
                           style: const TextStyle(
                               color:    AppColors.textSecondary,
                               fontSize: 12)),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 1),
-                        decoration: BoxDecoration(
-                          color:        AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(4),
+                      if (e.employeeId.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color:        AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'ID: ${e.employeeId}',
+                            style: const TextStyle(
+                                color:      AppColors.primary,
+                                fontSize:   10.5,
+                                fontWeight: FontWeight.w600),
+                          ),
                         ),
-                        child: Text(
-                          'ID: ${e.employeeId}',
-                          style: const TextStyle(
-                              color:      AppColors.primary,
-                              fontSize:   10.5,
-                              fontWeight: FontWeight.w600),
-                        ),
-                      ),
+                      ],
                     ],
                   ),
                 ],
@@ -455,6 +472,10 @@ class _NewLeadPageState extends State<NewLeadPage> {
 
   // ── Submit ─────────────────────────────────────────────────────────────────
   Future<void> _submit() async {
+    if (_ticketType == null) {
+      AppSnackBar.show(context, 'Please select a ticket type.', isError: true);
+      return;
+    }
     if (_selectedCustomer == null) {
       AppSnackBar.show(context,
           'Please select a customer from the suggestions.',
@@ -476,43 +497,52 @@ class _NewLeadPageState extends State<NewLeadPage> {
       final Map<String, dynamic> body;
 
       if (_isEdit) {
-        url  = Uri.parse('${ApiService.baseUrl}/api/leads/update.php');
+        url  = Uri.parse(
+            '${ApiService.baseUrl}/api/ticket/update.php');
         body = {
-          'enquiry_id':  widget.lead!.enquiryId,
-          'customer_id': _selectedCustomer!.id,
-          'assign_id':   _selectedEmployee?.id ?? '',
-          'title':       _titleCtrl.text.trim(),
-          'lead':        _leadDetailsCtrl.text.trim(),
+          'ticket_id':       widget.ticket!.ticketId,
+          'customer_id':     _selectedCustomer!.id,
+          'task_handler_id': _selectedEmployee?.id ?? '',
+          'type':            _ticketType!,
+          'title':           _titleCtrl.text.trim(),
+          'notes':           _notesCtrl.text.trim(),
+          'priority':        _priority,
         };
       } else {
-        url  = Uri.parse('${ApiService.baseUrl}/api/leads/create.php');
+        url  = Uri.parse(
+            '${ApiService.baseUrl}/api/ticket/create.php');
         body = {
-          'customer_id': _selectedCustomer!.id,
-          'assign_id':   _selectedEmployee?.id ?? '',
-          'title':       _titleCtrl.text.trim(),
-          'lead':        _leadDetailsCtrl.text.trim(),
+          'customer_id':     _selectedCustomer!.id,
+          'task_handler_id': _selectedEmployee?.id ?? '',
+          'type':            _ticketType!,
+          'title':           _titleCtrl.text.trim(),
+          'notes':           _notesCtrl.text.trim(),
+          'priority':        _priority,
         };
       }
 
       debugPrint('─────────────────────────────────────────');
-      debugPrint('📤  [${_isEdit ? 'UPDATE' : 'CREATE'} LEAD] Request');
+      debugPrint(
+          '📤  [${_isEdit ? 'UPDATE' : 'CREATE'} TICKET] Request');
       debugPrint('   🌐  URL  : $url');
       debugPrint('   📦  Body : ${jsonEncode(body)}');
       debugPrint('─────────────────────────────────────────');
 
-      final response = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final response = await http
+          .post(url,
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept':       'application/json',
+                'X-Session-ID': sessionId,
+                'Cookie':       'PHPSESSID=$sessionId',
+              },
+              body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
-      debugPrint('📥  [${_isEdit ? 'UPDATE' : 'CREATE'} LEAD] '
+      debugPrint('📥  [${_isEdit ? 'UPDATE' : 'CREATE'} TICKET] '
           '${response.statusCode}  ${response.body}');
 
       if (response.statusCode == 200 && data['success'] == true) {
@@ -520,20 +550,25 @@ class _NewLeadPageState extends State<NewLeadPage> {
       } else {
         AppSnackBar.show(
           context,
-          data['error'] ?? data['message'] ??
-              (_isEdit ? 'Failed to update lead.' : 'Failed to create lead.'),
+          data['error'] ??
+              data['message'] ??
+              (_isEdit
+                  ? 'Failed to update ticket.'
+                  : 'Failed to create ticket.'),
           isError: true,
         );
         setState(() => _isSaving = false);
       }
     } on http.ClientException {
       if (mounted) {
-        AppSnackBar.show(context, 'Unable to reach the server.', isError: true);
+        AppSnackBar.show(context, 'Unable to reach the server.',
+            isError: true);
         setState(() => _isSaving = false);
       }
     } catch (_) {
       if (mounted) {
-        AppSnackBar.show(context, 'Something went wrong.', isError: true);
+        AppSnackBar.show(context, 'Something went wrong.',
+            isError: true);
         setState(() => _isSaving = false);
       }
     }
@@ -554,78 +589,85 @@ class _NewLeadPageState extends State<NewLeadPage> {
             _buildAppBar(isTablet, hPad),
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 32),
+                padding:
+                    EdgeInsets.fromLTRB(hPad, 20, hPad, 32),
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
-                    // ── 1. Customer Name ────────────────────────────────
-                    _fieldLabel('Customer Name', required: true),
+                    // ── 1. Ticket Type ──────────────────────────────────
+                    _fieldLabel('Type of Ticket', required: true),
                     const SizedBox(height: 8),
-                    CompositedTransformTarget(
-                      link: _customerLayerLink,
-                      child: _buildSearchField(
-                        controller:  _customerCtrl,
-                        focusNode:   _customerFocus,
-                        hint:        'Type to search existing customers…',
-                        icon:        Icons.person_search_outlined,
-                        onChanged:   _onCustomerChanged,
-                        isSelected:  _selectedCustomer != null,
-                      ),
-                    ),
+                    _buildTypeSelector(),
 
                     const SizedBox(height: 16),
 
-                    // ── 2. Phone Number ─────────────────────────────────
-                    _fieldLabel('Phone Number'),
-                    const SizedBox(height: 8),
-                    _buildTextField(
-                      controller:   _phoneCtrl,
-                      focusNode:    _phoneFocus,
-                      hint:         'Phone number',
-                      icon:         Icons.phone_outlined,
-                      keyboardType: TextInputType.phone,
-                      nextFocus:    _titleFocus,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ── 3. Title (required) ─────────────────────────────
+                    // ── 2. Title ────────────────────────────────────────
                     _fieldLabel('Title', required: true),
                     const SizedBox(height: 8),
                     _buildTextField(
                       controller: _titleCtrl,
                       focusNode:  _titleFocus,
-                      hint:       'Enter lead title',
+                      hint:       'Enter ticket title',
                       icon:       Icons.title_rounded,
-                      nextFocus:  _leadDetailsFocus,
+                      nextFocus:  _customerFocus,
                     ),
 
                     const SizedBox(height: 16),
 
-                    // ── 4. Lead Details ─────────────────────────────────
-                    _fieldLabel('Lead Details'),
+                    // ── 3. Customer Name ────────────────────────────────
+                    _fieldLabel('Customer Name', required: true),
+                    const SizedBox(height: 8),
+                    CompositedTransformTarget(
+                      link: _customerLayerLink,
+                      child: _buildSearchField(
+                        controller: _customerCtrl,
+                        focusNode:  _customerFocus,
+                        hint:
+                            'Type here to search existing customer…',
+                        icon:       Icons.person_search_outlined,
+                        onChanged:  _onCustomerChanged,
+                        isSelected: _selectedCustomer != null,
+                        onClear: () => setState(
+                            () => _selectedCustomer = null),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ── 4. Project Manager / Team Leader ────────────────
+                    _fieldLabel('Project Manager / Team Leader'),
+                    const SizedBox(height: 8),
+                    CompositedTransformTarget(
+                      link: _employeeLayerLink,
+                      child: _buildSearchField(
+                        controller: _employeeCtrl,
+                        focusNode:  _employeeFocus,
+                        hint:
+                            'Type to search employee (name, phone, code)…',
+                        icon:       Icons.manage_accounts_outlined,
+                        onChanged:  _onEmployeeChanged,
+                        isSelected: _selectedEmployee != null,
+                        onClear: () => setState(
+                            () => _selectedEmployee = null),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ── 5. Notes ────────────────────────────────────────
+                    _fieldLabel('Notes'),
                     const SizedBox(height: 8),
                     _buildMultilineField(),
 
                     const SizedBox(height: 16),
 
-                    // ── 5. Assign To ────────────────────────────────────
-                    _fieldLabel('Assign To'),
+                    // ── 6. Priority dropdown ────────────────────────────
+                    _fieldLabel('Priority', required: true),
                     const SizedBox(height: 8),
-                    CompositedTransformTarget(
-                      link: _employeeLayerLink,
-                      child: _buildSearchField(
-                        controller: _assignCtrl,
-                        focusNode:  _assignFocus,
-                        hint:       'Type to search employee (name, phone, code)…',
-                        icon:       Icons.person_pin_outlined,
-                        onChanged:  _onEmployeeChanged,
-                        isSelected: _selectedEmployee != null,
-                      ),
-                    ),
+                    _buildPriorityDropdown(),
 
                     const SizedBox(height: 32),
 
@@ -639,9 +681,11 @@ class _NewLeadPageState extends State<NewLeadPage> {
                                 : () => Navigator.pop(context),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(
-                                  color: AppColors.border, width: 1.3),
+                                  color: AppColors.border,
+                                  width: 1.3),
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(11)),
+                                  borderRadius:
+                                      BorderRadius.circular(11)),
                               backgroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
                                   vertical: 14),
@@ -656,7 +700,8 @@ class _NewLeadPageState extends State<NewLeadPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: _isSaving ? null : _submit,
+                            onPressed:
+                                _isSaving ? null : _submit,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               disabledBackgroundColor:
@@ -665,24 +710,29 @@ class _NewLeadPageState extends State<NewLeadPage> {
                               padding: const EdgeInsets.symmetric(
                                   vertical: 14),
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(11)),
+                                  borderRadius:
+                                      BorderRadius.circular(11)),
                             ),
                             child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 200),
+                              duration:
+                                  const Duration(milliseconds: 200),
                               child: _isSaving
                                   ? const SizedBox(
                                       key: ValueKey('s-loader'),
-                                      width: 20, height: 20,
-                                      child: CircularProgressIndicator(
-                                          color:       Colors.white,
-                                          strokeWidth: 2.4))
+                                      width:  20,
+                                      height: 20,
+                                      child:
+                                          CircularProgressIndicator(
+                                              color:       Colors.white,
+                                              strokeWidth: 2.4))
                                   : Text(
                                       _isEdit ? 'Update' : 'Save',
-                                      key: ValueKey('s-label'),
-                                      style: TextStyle(
+                                      key: const ValueKey('s-label'),
+                                      style: const TextStyle(
                                           color:      Colors.white,
                                           fontSize:   14,
-                                          fontWeight: FontWeight.w700)),
+                                          fontWeight:
+                                              FontWeight.w700)),
                             ),
                           ),
                         ),
@@ -698,13 +748,14 @@ class _NewLeadPageState extends State<NewLeadPage> {
     );
   }
 
-  // ── App Bar ────────────────────────────────────────────────────────────────
+  // ── App bar ────────────────────────────────────────────────────────────────
   Widget _buildAppBar(bool isTablet, double hPad) {
     return Container(
       padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 13),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.borderLight)),
+        border:
+            Border(bottom: BorderSide(color: AppColors.borderLight)),
       ),
       child: Row(
         children: [
@@ -715,19 +766,22 @@ class _NewLeadPageState extends State<NewLeadPage> {
               decoration: BoxDecoration(
                 color:        AppColors.background,
                 borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: AppColors.border, width: 1.2),
+                border: Border.all(
+                    color: AppColors.border, width: 1.2),
               ),
               child: const Icon(Icons.arrow_back_ios_new_rounded,
                   size: 15, color: AppColors.textPrimary),
             ),
           ),
           const SizedBox(width: 12),
-          Text(_isEdit ? 'Edit Lead' : 'New Lead',
-              style: TextStyle(
-                  color:         AppColors.textPrimary,
-                  fontSize:      isTablet ? 20 : 17,
-                  fontWeight:    FontWeight.w800,
-                  letterSpacing: -0.3)),
+          Text(
+            _isEdit ? 'Edit Ticket' : 'New Ticket',
+            style: TextStyle(
+                color:         AppColors.textPrimary,
+                fontSize:      isTablet ? 20 : 17,
+                fontWeight:    FontWeight.w800,
+                letterSpacing: -0.3),
+          ),
         ],
       ),
     );
@@ -751,7 +805,161 @@ class _NewLeadPageState extends State<NewLeadPage> {
     );
   }
 
-  // ── Search field (with selected state highlight) ───────────────────────────
+  // ── Ticket type radio selector ─────────────────────────────────────────────
+  Widget _buildTypeSelector() {
+    return Container(
+      decoration: BoxDecoration(
+        color:        Colors.white,
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: AppColors.border, width: 1.2),
+      ),
+      child: Row(
+        children: [
+          _typeOption('Complaints', Icons.report_problem_outlined),
+          Container(width: 1, height: 48, color: AppColors.borderLight),
+          _typeOption('New Works', Icons.construction_outlined),
+        ],
+      ),
+    );
+  }
+
+  Widget _typeOption(String value, IconData icon) {
+    final selected = _ticketType == value;
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _ticketType = value),
+        borderRadius: BorderRadius.circular(11),
+        child: Container(
+          padding:
+              const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.primary.withOpacity(0.07)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon,
+                  size:  18,
+                  color: selected
+                      ? AppColors.primary
+                      : AppColors.iconDefault),
+              const SizedBox(width: 7),
+              Text(value,
+                  style: TextStyle(
+                      color: selected
+                          ? AppColors.primary
+                          : AppColors.textLabel,
+                      fontSize:   13.5,
+                      fontWeight: selected
+                          ? FontWeight.w700
+                          : FontWeight.w500)),
+              const SizedBox(width: 6),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: 18, height: 18,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: selected
+                          ? AppColors.primary
+                          : AppColors.border,
+                      width: 2),
+                  color: selected
+                      ? AppColors.primary
+                      : Colors.transparent,
+                ),
+                child: selected
+                    ? const Icon(Icons.check_rounded,
+                        size: 11, color: Colors.white)
+                    : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Priority dropdown ──────────────────────────────────────────────────────
+  Widget _buildPriorityDropdown() {
+    Color priorityColor(String p) {
+      switch (p) {
+        case 'high':   return const Color(0xFFD32F2F);
+        case 'medium': return const Color(0xFFE65100);
+        default:       return const Color(0xFF2E7D32);
+      }
+    }
+
+    Color priorityBg(String p) {
+      switch (p) {
+        case 'high':   return const Color(0xFFFFF1F1);
+        case 'medium': return const Color(0xFFFFF3E0);
+        default:       return const Color(0xFFE8F5E9);
+      }
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color:        Colors.white,
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: AppColors.border, width: 1.2),
+      ),
+      padding:
+          const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value:        _priority,
+          isExpanded:   true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded,
+              color: AppColors.iconDefault),
+          items: _priorities.map((p) {
+            final clr = priorityColor(p);
+            final bg  = priorityBg(p);
+            return DropdownMenuItem(
+              value: p,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color:        bg,
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(
+                          color: clr.withOpacity(0.3), width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.flag_outlined,
+                            size: 12, color: clr),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${p[0].toUpperCase()}${p.substring(1)}',
+                          style: TextStyle(
+                              color:      clr,
+                              fontSize:   13,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (v) {
+            if (v != null) setState(() => _priority = v);
+          },
+        ),
+      ),
+    );
+  }
+
+  // ── Search field (autocomplete) ────────────────────────────────────────────
   Widget _buildSearchField({
     required TextEditingController controller,
     required FocusNode             focusNode,
@@ -759,6 +967,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
     required IconData              icon,
     required ValueChanged<String>  onChanged,
     required bool                  isSelected,
+    required VoidCallback          onClear,
   }) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
@@ -767,7 +976,8 @@ class _NewLeadPageState extends State<NewLeadPage> {
               color:        AppColors.successBg,
               borderRadius: BorderRadius.circular(11),
               border: Border.all(
-                  color: AppColors.success.withOpacity(0.5), width: 1.4),
+                  color: AppColors.success.withOpacity(0.5),
+                  width: 1.4),
             )
           : focusNode.hasFocus
               ? AppDecorations.inputFocused
@@ -799,14 +1009,8 @@ class _NewLeadPageState extends State<NewLeadPage> {
           suffixIcon: isSelected
               ? GestureDetector(
                   onTap: () {
-                    setState(() {
-                      if (icon == Icons.person_search_outlined) {
-                        _selectedCustomer = null;
-                      } else {
-                        _selectedEmployee = null;
-                      }
-                      controller.clear();
-                    });
+                    onClear();
+                    controller.clear();
                   },
                   child: const Icon(Icons.check_circle_rounded,
                       size: 18, color: AppColors.success),
@@ -828,8 +1032,8 @@ class _NewLeadPageState extends State<NewLeadPage> {
     required FocusNode             focusNode,
     required String                hint,
     required IconData              icon,
-    TextInputType  keyboardType = TextInputType.text,
-    FocusNode?     nextFocus,
+    FocusNode? nextFocus,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
@@ -875,27 +1079,28 @@ class _NewLeadPageState extends State<NewLeadPage> {
     );
   }
 
-  // ── Multi-line Lead Details field ──────────────────────────────────────────
+  // ── Multi-line notes field ─────────────────────────────────────────────────
   Widget _buildMultilineField() {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
-      decoration: _leadDetailsFocus.hasFocus
+      decoration: _notesFocus.hasFocus
           ? AppDecorations.inputFocused
           : AppDecorations.inputIdle,
       child: TextField(
-        controller:  _leadDetailsCtrl,
-        focusNode:   _leadDetailsFocus,
-        maxLines:    4,
-        minLines:    4,
-        cursorColor: AppColors.primary,
+        controller:      _notesCtrl,
+        focusNode:       _notesFocus,
+        maxLines:        4,
+        minLines:        4,
+        cursorColor:     AppColors.primary,
         textInputAction: TextInputAction.newline,
         style: const TextStyle(
             color:      AppColors.textPrimary,
             fontSize:   14,
             fontWeight: FontWeight.w400),
         decoration: const InputDecoration(
-          hintText:  'Enter lead details…',
-          hintStyle: TextStyle(color: AppColors.textHint, fontSize: 13.5),
+          hintText:  'Enter notes…',
+          hintStyle: TextStyle(
+              color: AppColors.textHint, fontSize: 13.5),
           border:         InputBorder.none,
           enabledBorder:  InputBorder.none,
           focusedBorder:  InputBorder.none,
