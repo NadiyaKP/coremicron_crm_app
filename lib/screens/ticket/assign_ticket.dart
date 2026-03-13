@@ -990,7 +990,7 @@ class _AssignTicketPageState extends State<AssignTicketPage>
               children: [
                 const Icon(Icons.list_alt_outlined, size: 16),
                 const SizedBox(width: 6),
-                const Text('Job Assigns'),
+                const Text('Jobs'),
                 if (_jobs.isNotEmpty) ...[
                   const SizedBox(width: 5),
                   Container(
