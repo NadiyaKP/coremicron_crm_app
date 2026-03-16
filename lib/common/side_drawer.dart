@@ -7,13 +7,17 @@ import '../screens/Registation/attendance_machine/attendance_machines.dart';
 import '../screens/Registation/deals/deals.dart';
 import '../screens/Registation/employee/employee.dart';
 import '../../screens/leads/leads.dart';
+import '.././screens/to-do/my_assigned_leads/my_assigned_leads.dart';
 import '../../screens/ticket/tickets.dart';
 import '../screens/to-do/my_task/my_tasks.dart';
 
 class AppSideDrawer extends StatefulWidget {
   final String username;
   final bool registrationExpanded;
-  const AppSideDrawer({super.key, required this.username, this.registrationExpanded = false});
+  const AppSideDrawer(
+      {super.key,
+      required this.username,
+      this.registrationExpanded = false});
 
   @override
   State<AppSideDrawer> createState() => _AppSideDrawerState();
@@ -39,7 +43,8 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
   ];
 
   final List<_DrawerMenuItem> _todoItems = [
-    _DrawerMenuItem(icon: Icons.task_alt_rounded, label: 'My Task'),
+    _DrawerMenuItem(icon: Icons.task_alt_rounded,       label: 'My Task'),
+    _DrawerMenuItem(icon: Icons.assignment_outlined,    label: 'My Assigned Leads'),
   ];
 
   @override
@@ -56,15 +61,38 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  _buildExpandableSection(icon: Icons.app_registration_rounded, label: 'Registration', expanded: _registrationExpanded, items: _registrationItems, onTap: () => setState(() => _registrationExpanded = !_registrationExpanded)),
+                  _buildExpandableSection(
+                    icon:     Icons.app_registration_rounded,
+                    label:    'Registration',
+                    expanded: _registrationExpanded,
+                    items:    _registrationItems,
+                    onTap:    () => setState(
+                        () => _registrationExpanded = !_registrationExpanded),
+                  ),
                   const SizedBox(height: 4),
-                  _buildStandaloneItem(icon: Icons.format_list_bulleted_rounded, label: 'Leads'),
+                  _buildStandaloneItem(
+                      icon: Icons.format_list_bulleted_rounded,
+                      label: 'Leads'),
                   const SizedBox(height: 4),
-                  _buildStandaloneItem(icon: Icons.confirmation_number_outlined, label: 'Tickets'),
+                  _buildStandaloneItem(
+                      icon: Icons.confirmation_number_outlined,
+                      label: 'Tickets'),
                   const SizedBox(height: 4),
-                  _buildExpandableSection(icon: Icons.checklist_rounded, label: 'To Do', expanded: _todoExpanded, items: _todoItems, onTap: () => setState(() => _todoExpanded = !_todoExpanded)),
+                  _buildExpandableSection(
+                    icon:     Icons.checklist_rounded,
+                    label:    'To Do',
+                    expanded: _todoExpanded,
+                    items:    _todoItems,
+                    onTap:    () =>
+                        setState(() => _todoExpanded = !_todoExpanded),
+                  ),
                   const SizedBox(height: 8),
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Divider(color: AppColors.borderLight, thickness: 1)),
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20),
+                    child: Divider(
+                        color: AppColors.borderLight, thickness: 1),
+                  ),
                 ],
               ),
             ),
@@ -75,24 +103,67 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
     );
   }
 
-  Widget _buildExpandableSection({required IconData icon, required String label, required bool expanded, required List<_DrawerMenuItem> items, required VoidCallback onTap}) {
+  Widget _buildExpandableSection({
+    required IconData             icon,
+    required String               label,
+    required bool                 expanded,
+    required List<_DrawerMenuItem> items,
+    required VoidCallback         onTap,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap: onTap,
+          onTap:        onTap,
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 4),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-              decoration: BoxDecoration(color: expanded ? AppColors.primaryLight : Colors.transparent, borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 13),
+              decoration: BoxDecoration(
+                color:        expanded
+                    ? AppColors.primaryLight
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Row(
                 children: [
-                  Container(width: 34, height: 34, decoration: BoxDecoration(color: expanded ? AppColors.primary : const Color(0xFFF0F4FF), borderRadius: BorderRadius.circular(9)), child: Icon(icon, size: 17, color: expanded ? Colors.white : AppColors.primary)),
+                  Container(
+                    width: 34, height: 34,
+                    decoration: BoxDecoration(
+                      color:        expanded
+                          ? AppColors.primary
+                          : const Color(0xFFF0F4FF),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Icon(icon,
+                        size:  17,
+                        color: expanded
+                            ? Colors.white
+                            : AppColors.primary),
+                  ),
                   const SizedBox(width: 12),
-                  Expanded(child: Text(label, style: TextStyle(color: expanded ? AppColors.primary : AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: -0.1))),
-                  AnimatedRotation(turns: expanded ? 0.5 : 0.0, duration: const Duration(milliseconds: 250), child: Icon(Icons.keyboard_arrow_down_rounded, color: expanded ? AppColors.primary : AppColors.iconDefault, size: 20)),
+                  Expanded(
+                    child: Text(label,
+                        style: TextStyle(
+                            color:         expanded
+                                ? AppColors.primary
+                                : AppColors.textPrimary,
+                            fontSize:      14,
+                            fontWeight:    FontWeight.w600,
+                            letterSpacing: -0.1)),
+                  ),
+                  AnimatedRotation(
+                    turns:    expanded ? 0.5 : 0.0,
+                    duration: const Duration(milliseconds: 250),
+                    child: Icon(Icons.keyboard_arrow_down_rounded,
+                        color: expanded
+                            ? AppColors.primary
+                            : AppColors.iconDefault,
+                        size: 20),
+                  ),
                 ],
               ),
             ),
@@ -100,35 +171,71 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
         ),
         AnimatedSize(
           duration: const Duration(milliseconds: 280),
-          curve: Curves.easeInOut,
-          child: expanded ? Padding(padding: const EdgeInsets.only(left: 28, right: 16), child: Column(children: items.map((item) => _buildSubItem(item)).toList())) : const SizedBox.shrink(),
+          curve:    Curves.easeInOut,
+          child: expanded
+              ? Padding(
+                  padding:
+                      const EdgeInsets.only(left: 28, right: 16),
+                  child: Column(
+                      children: items
+                          .map((item) => _buildSubItem(item))
+                          .toList()),
+                )
+              : const SizedBox.shrink(),
         ),
       ],
     );
   }
 
-  Widget _buildStandaloneItem({required IconData icon, required String label}) {
+  Widget _buildStandaloneItem(
+      {required IconData icon, required String label}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       child: InkWell(
         onTap: () {
           Navigator.of(context).pop();
           switch (label) {
-            case 'Leads':   Navigator.push(context, MaterialPageRoute(builder: (_) => LeadsPage(username: widget.username))); break;
-            case 'Tickets': Navigator.push(context, MaterialPageRoute(builder: (_) => TicketsPage(username: widget.username))); break;
+            case 'Leads':
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) =>
+                          LeadsPage(username: widget.username)));
+              break;
+            case 'Tickets':
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) =>
+                          TicketsPage(username: widget.username)));
+              break;
           }
         },
         borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 14, vertical: 11),
+          decoration:
+              BoxDecoration(borderRadius: BorderRadius.circular(10)),
           child: Row(
             children: [
-              Container(width: 34, height: 34, decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(9)), child: Icon(icon, size: 17, color: AppColors.primary)),
+              Container(
+                width: 34, height: 34,
+                decoration: BoxDecoration(
+                  color:        AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(icon, size: 17, color: AppColors.primary),
+              ),
               const SizedBox(width: 12),
-              Text(label, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+              Text(label,
+                  style: const TextStyle(
+                      color:      AppColors.textPrimary,
+                      fontSize:   14,
+                      fontWeight: FontWeight.w600)),
               const Spacer(),
-              const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textMuted),
+              const Icon(Icons.chevron_right_rounded,
+                  size: 18, color: AppColors.textMuted),
             ],
           ),
         ),
@@ -141,26 +248,97 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
       onTap: () {
         Navigator.pop(context);
         switch (item.label) {
-          case 'Department':          Navigator.push(context, MaterialPageRoute(builder: (_) => DepartmentPage(username: widget.username))); break;
-          case 'Customer':            Navigator.push(context, MaterialPageRoute(builder: (_) => CustomersPage(username: widget.username))); break;
-          case 'Teams':               Navigator.push(context, MaterialPageRoute(builder: (_) => TeamsPage(username: widget.username))); break;
-          case 'Employee':            Navigator.push(context, MaterialPageRoute(builder: (_) => EmployeePage(username: widget.username))); break;
-          case 'Deals':               Navigator.push(context, MaterialPageRoute(builder: (_) => DealsPage(username: widget.username))); break;
-          case 'Attendance Machines': Navigator.push(context, MaterialPageRoute(builder: (_) => AttendanceMachinePage(username: widget.username))); break;
-          case 'My Task':             Navigator.push(context, MaterialPageRoute(builder: (_) => MyTasksPage(username: widget.username))); break;
-          default: break;
+          case 'Department':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        DepartmentPage(username: widget.username)));
+            break;
+          case 'Customer':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        CustomersPage(username: widget.username)));
+            break;
+          case 'Teams':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        TeamsPage(username: widget.username)));
+            break;
+          case 'Employee':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        EmployeePage(username: widget.username)));
+            break;
+          case 'Deals':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        DealsPage(username: widget.username)));
+            break;
+          case 'Attendance Machines':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        AttendanceMachinePage(
+                            username: widget.username)));
+            break;
+          case 'My Task':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        MyTasksPage(username: widget.username)));
+            break;
+          case 'My Assigned Leads':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        MyAssignedLeadsPage(
+                            username: widget.username)));
+            break;
+          default:
+            break;
         }
       },
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         child: Row(
           children: [
-            Column(children: [Container(width: 1.5, height: 10, color: AppColors.border), Container(width: 6, height: 6, decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primary.withOpacity(0.5))), Container(width: 1.5, height: 10, color: AppColors.border)]),
+            Column(
+              children: [
+                Container(
+                    width: 1.5, height: 10, color: AppColors.border),
+                Container(
+                  width: 6, height: 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.primary.withOpacity(0.5),
+                  ),
+                ),
+                Container(
+                    width: 1.5, height: 10, color: AppColors.border),
+              ],
+            ),
             const SizedBox(width: 14),
             Icon(item.icon, size: 18, color: AppColors.textLabel),
             const SizedBox(width: 10),
-            Text(item.label, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w500)),
+            Text(item.label,
+                style: const TextStyle(
+                    color:      AppColors.textPrimary,
+                    fontSize:   13.5,
+                    fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -172,28 +350,106 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryDark], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.28), blurRadius: 20, offset: const Offset(0, 8))],
+        gradient: const LinearGradient(
+          colors: [AppColors.primary, AppColors.primaryDark],
+          begin:  Alignment.topLeft,
+          end:    Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft:  Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        boxShadow: [
+          BoxShadow(
+              color:      AppColors.primary.withOpacity(0.28),
+              blurRadius: 20,
+              offset:     const Offset(0, 8)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Container(width: 38, height: 38, decoration: BoxDecoration(color: Colors.white.withOpacity(0.20), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white.withOpacity(0.25), width: 1)), child: const Icon(Icons.layers_rounded, color: Colors.white, size: 20)),
-            const SizedBox(width: 10),
-            RichText(text: const TextSpan(children: [TextSpan(text: 'Core', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.2)), TextSpan(text: 'micron', style: TextStyle(color: Color(0xFFAAD4FF), fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.2))])),
-          ]),
+          Row(
+            children: [
+              Container(
+                width: 38, height: 38,
+                decoration: BoxDecoration(
+                  color:        Colors.white.withOpacity(0.20),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                      color: Colors.white.withOpacity(0.25), width: 1),
+                ),
+                child: const Icon(Icons.layers_rounded,
+                    color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 10),
+              RichText(
+                text: const TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Core',
+                      style: TextStyle(
+                          color:         Colors.white,
+                          fontSize:      18,
+                          fontWeight:    FontWeight.w800,
+                          letterSpacing: -0.2),
+                    ),
+                    TextSpan(
+                      text: 'micron',
+                      style: TextStyle(
+                          color:         Color(0xFFAAD4FF),
+                          fontSize:      18,
+                          fontWeight:    FontWeight.w800,
+                          letterSpacing: -0.2),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 18),
-          Row(children: [
-            Container(width: 42, height: 42, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.20), border: Border.all(color: Colors.white.withOpacity(0.30), width: 1.5)), child: Center(child: Text(widget.username.isNotEmpty ? widget.username[0].toUpperCase() : 'U', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)))),
-            const SizedBox(width: 12),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(widget.username, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: -0.2)),
-              const SizedBox(height: 2),
-              Text('CRM User', style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 12, fontWeight: FontWeight.w500)),
-            ]),
-          ]),
+          Row(
+            children: [
+              Container(
+                width: 42, height: 42,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.20),
+                  border: Border.all(
+                      color: Colors.white.withOpacity(0.30), width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
+                    widget.username.isNotEmpty
+                        ? widget.username[0].toUpperCase()
+                        : 'U',
+                    style: const TextStyle(
+                        color:      Colors.white,
+                        fontSize:   18,
+                        fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.username,
+                      style: const TextStyle(
+                          color:         Colors.white,
+                          fontSize:      15,
+                          fontWeight:    FontWeight.w700,
+                          letterSpacing: -0.2)),
+                  const SizedBox(height: 2),
+                  Text('CRM User',
+                      style: TextStyle(
+                          color:      Colors.white.withOpacity(0.65),
+                          fontSize:   12,
+                          fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -202,8 +458,18 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
   Widget _buildFooter() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-      decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.borderLight, width: 1))),
-      child: Text('© ${DateTime.now().year} Coremicron CRM', style: const TextStyle(color: AppColors.textMuted, fontSize: 11, letterSpacing: 0.2)),
+      decoration: BoxDecoration(
+        border: Border(
+            top: BorderSide(
+                color: AppColors.borderLight, width: 1)),
+      ),
+      child: Text(
+        '© ${DateTime.now().year} Coremicron CRM',
+        style: const TextStyle(
+            color:         AppColors.textMuted,
+            fontSize:      11,
+            letterSpacing: 0.2),
+      ),
     );
   }
 }

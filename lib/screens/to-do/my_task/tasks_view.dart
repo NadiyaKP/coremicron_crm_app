@@ -7,6 +7,7 @@ import '../../../common/theme.dart';
 import '../../login.dart' show kSessionKey;
 import '../../ticket/tickets.dart' show Ticket;
 import '../../../common/string_extensions.dart';
+import 'tasks_reply.dart'; // ← NEW IMPORT
 
 // ── Task View Page ─────────────────────────────────────────────────────────
 class TasksViewPage extends StatefulWidget {
@@ -201,235 +202,25 @@ class _TasksViewPageState extends State<TasksViewPage> {
     );
   }
 
-  // ── Reply dialog ───────────────────────────────────────────────────────────
-  void _showReplyDialog(dynamic job) {
-    final ctrl = TextEditingController();
-    final focus = FocusNode();
-    bool isSending = false;
+  // ── Reply — now navigates to TasksReplyPage ────────────────────────────────
+  void _openReplyPage(dynamic job) {
+    final jobId    = job['job_id']?.toString() ?? '';
+    final jobTitle = job['to_do']?.toString()  ?? '';
 
-    showModalBottomSheet(
-      context:        context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (bCtx) => StatefulBuilder(
-        builder: (ctx, setS) => Padding(
-          padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom),
-          child: Container(
-            decoration: const BoxDecoration(
-              color:        Colors.white,
-              borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(24)),
-            ),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Handle bar
-                Center(
-                  child: Container(
-                    width: 40, height: 4,
-                    decoration: BoxDecoration(
-                      color:        AppColors.border,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
+    if (jobId.isEmpty) {
+      AppSnackBar.show(context, 'Invalid job ID.', isError: true);
+      return;
+    }
 
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      width: 36, height: 36,
-                      decoration: BoxDecoration(
-                        color:        AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.reply_rounded,
-                          size: 18, color: AppColors.primary),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Reply to Task',
-                              style: TextStyle(
-                                  color:      AppColors.textPrimary,
-                                  fontSize:   15,
-                                  fontWeight: FontWeight.w700)),
-                          Text(
-                            (job['to_do']?.toString() ?? '').length > 45
-                                ? '${job['to_do'].toString().substring(0, 45)}…'
-                                : job['to_do']?.toString() ?? '',
-                            style: const TextStyle(
-                                color:    AppColors.textMuted,
-                                fontSize: 11.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-                const Divider(height: 1, color: AppColors.borderLight),
-                const SizedBox(height: 14),
-
-                // Reply text field
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  decoration: focus.hasFocus
-                      ? AppDecorations.inputFocused
-                      : AppDecorations.inputIdle,
-                  child: TextField(
-                    controller:      ctrl,
-                    focusNode:       focus,
-                    maxLines:        4,
-                    minLines:        3,
-                    cursorColor:     AppColors.primary,
-                    autofocus:       true,
-                    textInputAction: TextInputAction.newline,
-                    style: const TextStyle(
-                        color:      AppColors.textPrimary,
-                        fontSize:   14),
-                    decoration: const InputDecoration(
-                      hintText:  'Type your reply…',
-                      hintStyle: TextStyle(
-                          color:    AppColors.textHint,
-                          fontSize: 13.5),
-                      border:         InputBorder.none,
-                      enabledBorder:  InputBorder.none,
-                      focusedBorder:  InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(bCtx),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                              color: AppColors.border, width: 1.3),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(11)),
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 13),
-                        ),
-                        child: const Text('Cancel',
-                            style: TextStyle(
-                                color:      AppColors.textLabel,
-                                fontWeight: FontWeight.w600,
-                                fontSize:   14)),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: isSending
-                            ? null
-                            : () async {
-                                if (ctrl.text.trim().isEmpty) {
-                                  AppSnackBar.show(
-                                      context,
-                                      'Please type a reply.',
-                                      isError: true);
-                                  return;
-                                }
-                                setS(() => isSending = true);
-                                await _sendReply(
-                                    job['job_id']?.toString() ?? '',
-                                    ctrl.text.trim());
-                                if (mounted) Navigator.pop(bCtx);
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          disabledBackgroundColor:
-                              AppColors.primary.withOpacity(0.45),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 13),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(11)),
-                        ),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child: isSending
-                              ? const SizedBox(
-                                  key: ValueKey('r-loader'),
-                                  width: 18, height: 18,
-                                  child: CircularProgressIndicator(
-                                      color:       Colors.white,
-                                      strokeWidth: 2.3))
-                              : const Text('Send',
-                                  key: ValueKey('r-label'),
-                                  style: TextStyle(
-                                      color:      Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize:   14)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TasksReplyPage(
+          jobId:    jobId,
+          jobTitle: jobTitle,
         ),
       ),
     );
-  }
-
-  Future<void> _sendReply(String jobId, String reply) async {
-    try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url  = Uri.parse(
-          '${ApiService.baseUrl}/api/ticket/job_reply.php');
-      final body = {'job_id': jobId, 'reply': reply};
-
-      debugPrint('📤  [REPLY] $url  ${jsonEncode(body)}');
-
-      final response = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body))
-          .timeout(const Duration(seconds: 15));
-
-      if (!mounted) return;
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      debugPrint('📥  [REPLY] ${response.statusCode}  ${response.body}');
-
-      if (response.statusCode == 200 && data['success'] == true) {
-        AppSnackBar.show(context, 'Reply sent successfully.');
-      } else {
-        AppSnackBar.show(
-            context,
-            data['error'] ?? data['message'] ?? 'Failed to send reply.',
-            isError: true);
-      }
-    } on http.ClientException {
-      if (mounted)
-        AppSnackBar.show(context, 'Unable to reach the server.',
-            isError: true);
-    } catch (_) {
-      if (mounted)
-        AppSnackBar.show(context, 'Something went wrong.',
-            isError: true);
-    }
   }
 
   Future<void> _toggleJobCompletion(dynamic job) async {
@@ -906,9 +697,9 @@ class _TasksViewPageState extends State<TasksViewPage> {
 
                 const Spacer(),
 
-                // Reply button
+                // ── Reply button → navigates to TasksReplyPage ──────────
                 GestureDetector(
-                  onTap: () => _showReplyDialog(job),
+                  onTap: () => _openReplyPage(job),   // ← CHANGED
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 6),
