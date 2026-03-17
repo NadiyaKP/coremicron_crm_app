@@ -6,10 +6,11 @@ import '../screens/Registation/team/teams.dart';
 import '../screens/Registation/attendance_machine/attendance_machines.dart';
 import '../screens/Registation/deals/deals.dart';
 import '../screens/Registation/employee/employee.dart';
-import '../../screens/leads/leads.dart';
-import '.././screens/to-do/my_assigned_leads/my_assigned_leads.dart';
-import '../../screens/ticket/tickets.dart';
+import '../screens/leads/leads.dart';
+import '../screens/to-do/my_assigned_leads/my_assigned_leads.dart';
+import '../screens/ticket/tickets.dart';
 import '../screens/to-do/my_task/my_tasks.dart';
+import '../screens/Follow_Up/follow_ups.dart';
 
 class AppSideDrawer extends StatefulWidget {
   final String username;
@@ -45,6 +46,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
   final List<_DrawerMenuItem> _todoItems = [
     _DrawerMenuItem(icon: Icons.task_alt_rounded,       label: 'My Task'),
     _DrawerMenuItem(icon: Icons.assignment_outlined,    label: 'My Assigned Leads'),
+    _DrawerMenuItem(icon: Icons.event_note_outlined,    label: 'Follow Up'),
   ];
 
   @override
@@ -305,6 +307,13 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                     builder: (_) =>
                         MyAssignedLeadsPage(
                             username: widget.username)));
+            break;
+          case 'Follow Up':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        FollowUpsPage(username: widget.username)));
             break;
           default:
             break;

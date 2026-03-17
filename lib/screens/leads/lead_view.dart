@@ -33,7 +33,6 @@ class _LeadViewPageState extends State<LeadViewPage>
   bool    _isLoading = true;
   String? _errorMessage;
 
-  // ── Parsed data ──────────────────────────────────────────────────────────
   Map<String, dynamic> _enquiry = {};
   List<dynamic>        _history = [];
 
@@ -78,7 +77,7 @@ class _LeadViewPageState extends State<LeadViewPage>
       if (response.statusCode == 200 && data['success'] == true) {
         final d = data['data'] ?? {};
         _enquiry = d['enquiry'] ?? {};
-        _history = d['history']  ?? [];
+        _history = d['history'] ?? [];
       } else {
         _errorMessage =
             data['error'] ?? data['message'] ?? 'Failed to load details.';
@@ -212,11 +211,11 @@ class _LeadViewPageState extends State<LeadViewPage>
     return Container(
       color: Colors.white,
       child: TabBar(
-        controller:         _tabCtrl,
-        labelColor:         AppColors.primary,
+        controller:           _tabCtrl,
+        labelColor:           AppColors.primary,
         unselectedLabelColor: AppColors.textSecondary,
-        indicatorColor:     AppColors.primary,
-        indicatorWeight:    2.5,
+        indicatorColor:       AppColors.primary,
+        indicatorWeight:      2.5,
         labelStyle: const TextStyle(
             fontSize: 13.5, fontWeight: FontWeight.w700),
         unselectedLabelStyle: const TextStyle(
@@ -247,19 +246,12 @@ class _LeadViewPageState extends State<LeadViewPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Status badge skeleton
           _shimmer(width: 100, height: 28, radius: 8),
           const SizedBox(height: 20),
-
-          // Card 1 — Enquiry Information
           _skeletonCard(rows: 3),
           const SizedBox(height: 14),
-
-          // Card 2 — Customer
           _skeletonCard(rows: 2),
           const SizedBox(height: 14),
-
-          // Card 3 — Lead Details (taller)
           _skeletonCard(rows: 4, tall: true),
         ],
       ),
@@ -268,8 +260,8 @@ class _LeadViewPageState extends State<LeadViewPage>
 
   Widget _buildHistorySkeleton() {
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-      itemCount: 3,
+      padding:     const EdgeInsets.fromLTRB(16, 20, 16, 32),
+      itemCount:   3,
       itemBuilder: (_, i) => _skeletonHistoryItem(isLast: i == 2),
     );
   }
@@ -290,7 +282,6 @@ class _LeadViewPageState extends State<LeadViewPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Card header
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Row(
@@ -313,7 +304,7 @@ class _LeadViewPageState extends State<LeadViewPage>
                     _shimmer(width: 90, height: 12, radius: 4),
                     const SizedBox(width: 16),
                     _shimmer(
-                        width: tall ? 160 : 110,
+                        width:  tall ? 160 : 110,
                         height: 12,
                         radius: 4),
                   ],
@@ -337,7 +328,6 @@ class _LeadViewPageState extends State<LeadViewPage>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Timeline spine
           SizedBox(
             width: 36,
             child: Column(
@@ -345,10 +335,7 @@ class _LeadViewPageState extends State<LeadViewPage>
                 _shimmer(width: 32, height: 32, radius: 16),
                 if (!isLast)
                   Expanded(
-                    child: Container(
-                      width: 2,
-                      color: AppColors.borderLight,
-                    ),
+                    child: Container(width: 2, color: AppColors.borderLight),
                   ),
               ],
             ),
@@ -366,7 +353,6 @@ class _LeadViewPageState extends State<LeadViewPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Type badge + time
                   Row(
                     children: [
                       _shimmer(width: 80, height: 22, radius: 5),
@@ -383,7 +369,6 @@ class _LeadViewPageState extends State<LeadViewPage>
                   const SizedBox(height: 12),
                   const Divider(height: 1, color: AppColors.borderLight),
                   const SizedBox(height: 10),
-                  // Added by
                   Row(
                     children: [
                       _shimmer(width: 24, height: 24, radius: 6),
@@ -431,7 +416,8 @@ class _LeadViewPageState extends State<LeadViewPage>
                   size: 16, color: Colors.white),
               label: const Text('Retry',
                   style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w600)),
+                      color:      Colors.white,
+                      fontWeight: FontWeight.w600)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 elevation: 0,
@@ -446,7 +432,7 @@ class _LeadViewPageState extends State<LeadViewPage>
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // ── Tab 1 : Lead Details ───────────────────────────────────────────────────
+  // ── Tab 1 : Lead Details ──────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildLeadDetails(double hPad) {
     final customer   = _enquiry['customer']    as Map? ?? {};
@@ -458,21 +444,21 @@ class _LeadViewPageState extends State<LeadViewPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          // ── Card: enquiry info ────────────────────────────────────────
+          // ── Enquiry Information ───────────────────────────────────────
           _sectionCard(
             title: 'Enquiry Information',
             icon:  Icons.info_outline_rounded,
             children: [
               _detailRow(
-                icon:     Icons.tag_rounded,
-                label:    'Enquiry Number',
-                value:    _str(_enquiry['enquiry_number']),
+                icon:  Icons.tag_rounded,
+                label: 'Enquiry Number',
+                value: _str(_enquiry['enquiry_number']),
               ),
               _divider(),
               _detailRow(
-                icon:     Icons.calendar_today_outlined,
-                label:    'Added Date',
-                value:    _formatDate(_str(_enquiry['added_date'])),
+                icon:  Icons.calendar_today_outlined,
+                label: 'Added Date',
+                value: _formatDate(_str(_enquiry['added_date'])),
               ),
               _divider(),
               _detailRow(
@@ -485,7 +471,7 @@ class _LeadViewPageState extends State<LeadViewPage>
 
           const SizedBox(height: 14),
 
-          // ── Card: customer ────────────────────────────────────────────
+          // ── Customer ──────────────────────────────────────────────────
           _sectionCard(
             title: 'Customer',
             icon:  Icons.person_outline_rounded,
@@ -506,7 +492,7 @@ class _LeadViewPageState extends State<LeadViewPage>
 
           const SizedBox(height: 14),
 
-          // ── Card: lead details ────────────────────────────────────────
+          // ── Lead Details ──────────────────────────────────────────────
           _sectionCard(
             title: 'Lead Details',
             icon:  Icons.description_outlined,
@@ -518,63 +504,48 @@ class _LeadViewPageState extends State<LeadViewPage>
                       ? '—'
                       : _str(_enquiry['details']),
                   style: const TextStyle(
-                    color:    AppColors.textPrimary,
-                    fontSize: 13.5,
-                    height:   1.6,
-                  ),
+                      color:    AppColors.textPrimary,
+                      fontSize: 13.5,
+                      height:   1.6),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 14),
-
-          // ── Card: lead status (deal) — only shown if deal exists ──────
-          if (widget.dealName.isNotEmpty && widget.dealColor.isNotEmpty) ...[
+          // ── Lead Status — from enquiry status field ───────────────────
+          if (_str(_enquiry['status']).isNotEmpty) ...[
+            const SizedBox(height: 14),
             _sectionCard(
               title: 'Lead Status',
-              icon:  Icons.local_offer_outlined,
+              icon:  Icons.flag_outlined,
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-                  child: _buildDealChip(widget.dealName, widget.dealColor),
+                  child: Builder(builder: (ctx) {
+                    final status = _str(_enquiry['status']);
+                    final clr    = _statusColor(status);
+                    final bg     = _statusBg(status);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color:        bg,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: clr.withOpacity(0.3), width: 1),
+                      ),
+                      child: Text(status.capitalize(),
+                          style: TextStyle(
+                              color:      clr,
+                              fontSize:   13,
+                              fontWeight: FontWeight.w600)),
+                    );
+                  }),
                 ),
               ],
             ),
           ],
         ],
-      ),
-    );
-  }
-
-  // ── Deal color chip ────────────────────────────────────────────────────────
-  Widget _buildDealChip(String name, String colorHex) {
-    Color bg;
-    try {
-      final clean = colorHex.replaceAll('#', '').trim();
-      bg = clean.length == 6
-          ? Color(int.parse('FF$clean', radix: 16))
-          : Color(int.parse(clean, radix: 16));
-    } catch (_) {
-      bg = AppColors.primary;
-    }
-    final luminance = bg.computeLuminance();
-    final textColor =
-        luminance > 0.45 ? const Color(0xFF1A1A2E) : Colors.white;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-      decoration: BoxDecoration(
-        color:        bg,
-        borderRadius: BorderRadius.circular(9),
-      ),
-      child: Text(
-        name,
-        style: TextStyle(
-          color:      textColor,
-          fontSize:   13.5,
-          fontWeight: FontWeight.w600,
-        ),
       ),
     );
   }
@@ -616,35 +587,37 @@ class _LeadViewPageState extends State<LeadViewPage>
     }
 
     return ListView.separated(
-      padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 32),
-      itemCount: _history.length,
+      padding:          EdgeInsets.fromLTRB(hPad, 20, hPad, 32),
+      itemCount:        _history.length,
       separatorBuilder: (_, __) => const SizedBox(height: 0),
-      itemBuilder: (_, i) => _historyItem(_history[i], i),
+      itemBuilder:      (_, i)  => _historyItem(_history[i], i),
     );
   }
 
   Widget _historyItem(dynamic item, int index) {
-    final Map     h          = item as Map? ?? {};
-    final Map     addedBy    = h['added_by'] as Map? ?? {};
-    final String  type       = _str(h['type']);
-    final String  addedAt    = _str(h['added_at']);
-    final String  notes      = _str(h['notes']);
-    final String  deal       = _str(h['deal']);
-    final String  followUp   = _str(h['follow_up']);
-    final String  fStatus    = _str(h['followup_status']);
-    final String  byName     = _str(addedBy['name']);
-    final String  byType     = _str(addedBy['type']);
-    final bool    isLast     = index == _history.length - 1;
+    final Map    h            = item as Map? ?? {};
+    final Map    addedBy      = h['added_by']    as Map? ?? {};
+    final Map    assignedTo   = h['assigned_to'] as Map? ?? {};
+    final String type         = _str(h['type']);
+    final String addedAt      = _str(h['added_at']);
+    final String notes        = _str(h['notes']);
+    final String deal         = _str(h['deal']);
+    final String followUp     = _str(h['follow_up']);
+    final String fStatus      = _str(h['followup_status']);
+    final String byName       = _str(addedBy['name']);
+    final String byType       = _str(addedBy['type']);
+    final String assignedName = _str(assignedTo['name']);
+    final bool   isLast       = index == _history.length - 1;
 
-    final Color  typeColor = _typeColor(type);
-    final Color  typeBg    = _typeBg(type);
-    final IconData typeIcon = _typeIcon(type);
+    final Color    typeColor = _typeColor(type);
+    final Color    typeBg    = _typeBg(type);
+    final IconData typeIcon  = _typeIcon(type);
 
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Timeline spine ─────────────────────────────────────────
+          // ── Timeline spine ────────────────────────────────────────────
           SizedBox(
             width: 36,
             child: Column(
@@ -654,16 +627,14 @@ class _LeadViewPageState extends State<LeadViewPage>
                   decoration: BoxDecoration(
                     color:  typeBg,
                     shape:  BoxShape.circle,
-                    border: Border.all(color: typeColor.withOpacity(0.4), width: 1.5),
+                    border: Border.all(
+                        color: typeColor.withOpacity(0.4), width: 1.5),
                   ),
                   child: Icon(typeIcon, size: 15, color: typeColor),
                 ),
                 if (!isLast)
                   Expanded(
-                    child: Container(
-                      width: 2,
-                      color: AppColors.borderLight,
-                    ),
+                    child: Container(width: 2, color: AppColors.borderLight),
                   ),
               ],
             ),
@@ -671,7 +642,7 @@ class _LeadViewPageState extends State<LeadViewPage>
 
           const SizedBox(width: 12),
 
-          // ── Content card ──────────────────────────────────────────
+          // ── Content card ──────────────────────────────────────────────
           Expanded(
             child: Container(
               margin: EdgeInsets.only(bottom: isLast ? 0 : 16),
@@ -700,37 +671,31 @@ class _LeadViewPageState extends State<LeadViewPage>
                           color:        typeBg,
                           borderRadius: BorderRadius.circular(5),
                         ),
-                        child: Text(
-                          type.capitalize(),
-                          style: TextStyle(
-                              color:      typeColor,
-                              fontSize:   10.5,
-                              fontWeight: FontWeight.w700),
-                        ),
+                        child: Text(type.capitalize(),
+                            style: TextStyle(
+                                color:      typeColor,
+                                fontSize:   10.5,
+                                fontWeight: FontWeight.w700)),
                       ),
                       const Spacer(),
                       const Icon(Icons.access_time_rounded,
                           size: 11, color: AppColors.textMuted),
                       const SizedBox(width: 3),
-                      Text(
-                        _formatDateTime(addedAt),
-                        style: const TextStyle(
-                            color:    AppColors.textMuted,
-                            fontSize: 11),
-                      ),
+                      Text(_formatDateTime(addedAt),
+                          style: const TextStyle(
+                              color:    AppColors.textMuted,
+                              fontSize: 11)),
                     ],
                   ),
 
                   if (notes.isNotEmpty) ...[
                     const SizedBox(height: 10),
-                    _historyRow(
-                        Icons.notes_rounded, 'Notes', notes),
+                    _historyRow(Icons.notes_rounded, 'Notes', notes),
                   ],
 
                   if (deal.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    _historyRow(
-                        Icons.handshake_outlined, 'Deal', deal),
+                    _historyRow(Icons.handshake_outlined, 'Deal', deal),
                   ],
 
                   if (followUp.isNotEmpty) ...[
@@ -743,9 +708,32 @@ class _LeadViewPageState extends State<LeadViewPage>
                             : null),
                   ],
 
+                  // Assigned To — shown whenever name is provided
+                  if (assignedName.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.person_pin_outlined,
+                            size: 13, color: AppColors.textMuted),
+                        const SizedBox(width: 6),
+                        const Text('Assigned To  ',
+                            style: TextStyle(
+                                color:      AppColors.textMuted,
+                                fontSize:   12,
+                                fontWeight: FontWeight.w500)),
+                        Expanded(
+                          child: Text(assignedName.capitalize(),
+                              style: const TextStyle(
+                                  color:      AppColors.textPrimary,
+                                  fontSize:   12.5,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
+                  ],
+
                   const SizedBox(height: 10),
-                  const Divider(
-                      height: 1, color: AppColors.borderLight),
+                  const Divider(height: 1, color: AppColors.borderLight),
                   const SizedBox(height: 8),
 
                   // Added by
@@ -841,19 +829,19 @@ class _LeadViewPageState extends State<LeadViewPage>
         borderRadius: BorderRadius.circular(5),
         border: Border.all(color: clr.withOpacity(0.3)),
       ),
-      child: Text(
-        status.capitalize(),
-        style: TextStyle(
-            color: clr, fontSize: 10.5, fontWeight: FontWeight.w600),
-      ),
+      child: Text(status.capitalize(),
+          style: TextStyle(
+              color:      clr,
+              fontSize:   10.5,
+              fontWeight: FontWeight.w600)),
     );
   }
 
-  // ── Section card ──────────────────────────────────────────────────────────
+  // ── Section card ───────────────────────────────────────────────────────────
   Widget _sectionCard({
-    required String        title,
-    required IconData      icon,
-    required List<Widget>  children,
+    required String       title,
+    required IconData     icon,
+    required List<Widget> children,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -870,7 +858,6 @@ class _LeadViewPageState extends State<LeadViewPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Card header
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Row(
@@ -934,46 +921,47 @@ class _LeadViewPageState extends State<LeadViewPage>
     );
   }
 
-  Widget _divider() =>
-      const Divider(height: 1, indent: 16, endIndent: 16,
-          color: AppColors.borderLight);
+  Widget _divider() => const Divider(
+      height: 1, indent: 16, endIndent: 16,
+      color: AppColors.borderLight);
 
-  // ── Type helpers ──────────────────────────────────────────────────────────
+  // ── Type helpers ───────────────────────────────────────────────────────────
   Color _typeColor(String type) {
     switch (type.toLowerCase()) {
-      case 'communication': return const Color(0xFF1565C0);
-      case 'call':          return const Color(0xFF2E7D32);
-      case 'meeting':       return const Color(0xFF6A1B9A);
-      case 'email':         return const Color(0xFF00695C);
-      case 'note':          return const Color(0xFFE65100);
-      default:              return AppColors.primary;
+      case 'communication':  return const Color(0xFF1565C0);
+      case 'call':           return const Color(0xFF2E7D32);
+      case 'meeting':        return const Color(0xFF6A1B9A);
+      case 'email':          return const Color(0xFF00695C);
+      case 'note':           return const Color(0xFFE65100);
+      case 'status_change':  return const Color(0xFF0277BD);
+      default:               return AppColors.primary;
     }
   }
 
   Color _typeBg(String type) {
     switch (type.toLowerCase()) {
-      case 'communication': return const Color(0xFFE3F2FD);
-      case 'call':          return const Color(0xFFE8F5E9);
-      case 'meeting':       return const Color(0xFFF3E5F5);
-      case 'email':         return const Color(0xFFE0F2F1);
-      case 'note':          return const Color(0xFFFFF3E0);
-      default:              return AppColors.primaryLight;
+      case 'communication':  return const Color(0xFFE3F2FD);
+      case 'call':           return const Color(0xFFE8F5E9);
+      case 'meeting':        return const Color(0xFFF3E5F5);
+      case 'email':          return const Color(0xFFE0F2F1);
+      case 'note':           return const Color(0xFFFFF3E0);
+      case 'status_change':  return const Color(0xFFE1F5FE);
+      default:               return AppColors.primaryLight;
     }
   }
 
   IconData _typeIcon(String type) {
     switch (type.toLowerCase()) {
-      case 'communication': return Icons.chat_bubble_outline_rounded;
-      case 'call':          return Icons.phone_outlined;
-      case 'meeting':       return Icons.people_outline_rounded;
-      case 'email':         return Icons.email_outlined;
-      case 'note':          return Icons.sticky_note_2_outlined;
-      default:              return Icons.circle_outlined;
+      case 'communication':  return Icons.chat_bubble_outline_rounded;
+      case 'call':           return Icons.phone_outlined;
+      case 'meeting':        return Icons.people_outline_rounded;
+      case 'email':          return Icons.email_outlined;
+      case 'note':           return Icons.sticky_note_2_outlined;
+      case 'status_change':  return Icons.swap_horiz_rounded;
+      default:               return Icons.circle_outlined;
     }
   }
 
-
-  // Converts "YYYY-MM-DD" → "DD-MM-YYYY"
   String _formatDate(String raw) {
     try {
       final parts = raw.trim().split('-');
@@ -982,7 +970,6 @@ class _LeadViewPageState extends State<LeadViewPage>
     return raw;
   }
 
-  // Converts "YYYY-MM-DD HH:MM:SS" → "DD-MM-YYYY  HH:MM"
   String _formatDateTime(String raw) {
     try {
       final spaceIdx = raw.indexOf(' ');
@@ -1025,7 +1012,7 @@ class _ShimmerBoxState extends State<_ShimmerBox>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this,
+        vsync:    this,
         duration: const Duration(milliseconds: 1200))
       ..repeat(reverse: true);
     _anim = Tween<double>(begin: 0.4, end: 1.0).animate(

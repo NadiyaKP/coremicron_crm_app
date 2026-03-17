@@ -10,6 +10,7 @@ import '../../../common/pagination.dart';
 import '../../../common/string_extensions.dart';
 import '../my_assigned_leads/assigned_lead_view.dart';
 import '../my_assigned_leads/assign_lead_followups.dart';
+import 'reassign_lead.dart';
 
 // ── Assigned Lead Model ────────────────────────────────────────────────────
 class AssignedLead {
@@ -161,12 +162,15 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
   }
 
   // ── Action APIs ────────────────────────────────────────────────────────────
-  Future<void> _rejectLead(String enquiryId) async {
+  Future<void> _rejectLead(String enquiryId, String reason) async {
     try {
       final prefs     = await SharedPreferences.getInstance();
       final sessionId = prefs.getString(kSessionKey) ?? '';
       final url  = Uri.parse('${ApiService.baseUrl}/api/leads/reject.php');
-      final body = {'enquiry_id': enquiryId};
+      final body = {
+        'enquiry_id': enquiryId,
+        'reason':     reason,
+      };
 
       debugPrint('📤  [REJECT LEAD] $url  ${jsonEncode(body)}');
 
@@ -197,9 +201,9 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
       if (mounted)
         AppSnackBar.show(context, 'Unable to reach the server.',
             isError: true);
-    } catch (_) {
+    } catch (e) {
       if (mounted)
-        AppSnackBar.show(context, 'Something went wrong.', isError: true);
+        AppSnackBar.show(context, 'Error: $e', isError: true);
     }
   }
 
@@ -221,23 +225,26 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
 
   // ── Reject Dialog ──────────────────────────────────────────────────────────
   void _showRejectDialog(AssignedLead l) {
+    final reasonCtrl = TextEditingController();
     bool isRejecting = false;
     showDialog(
-      context: context,
+      context:            context,
       barrierDismissible: false,
       builder: (dialogCtx) => StatefulBuilder(
-        builder: (ctx, setS) => Dialog(
+        builder: (ctx, setS) => AlertDialog(
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.white,
+          contentPadding: EdgeInsets.zero,
           insetPadding:
               const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: Padding(
+          content: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header
                 Row(
                   children: [
                     Container(
@@ -259,25 +266,61 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
                 const Text(
-                  'Are you sure you want to reject this assigned lead?',
+                  'Are you sure you want to reject this lead?\nRejected leads will be removed from your assigned list.',
                   style: TextStyle(
                       color:    AppColors.textSecondary,
-                      fontSize: 13.5,
+                      fontSize: 13,
                       height:   1.5),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
                 const Divider(height: 1, color: AppColors.borderLight),
                 const SizedBox(height: 12),
                 _dialogRow(Icons.tag_rounded,
-                    'Lead No', l.enquiryNumber),
-                const SizedBox(height: 8),
+                    'Enquiry No', l.enquiryNumber),
+                const SizedBox(height: 7),
                 _dialogRow(Icons.person_outline_rounded,
                     'Customer', l.customerName.capitalize()),
-                const SizedBox(height: 8),
+                const SizedBox(height: 7),
+                _dialogRow(Icons.phone_outlined,
+                    'Phone', l.customerPhone),
+                const SizedBox(height: 7),
                 _dialogRow(Icons.title_rounded, 'Title',
                     l.title.isEmpty ? '(No title)' : l.title.capitalize()),
+                const SizedBox(height: 14),
+                const Text('Reason *',
+                    style: TextStyle(
+                        color:      AppColors.textLabel,
+                        fontSize:   12,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                Container(
+                  decoration: BoxDecoration(
+                    color:        Colors.white,
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(
+                        color: AppColors.border, width: 1.2),
+                  ),
+                  child: TextField(
+                    controller:  reasonCtrl,
+                    maxLines:    3,
+                    minLines:    2,
+                    cursorColor: AppColors.primary,
+                    style: const TextStyle(
+                        color:    AppColors.textPrimary,
+                        fontSize: 13.5),
+                    decoration: const InputDecoration(
+                      hintText:  'Enter reason for rejection…',
+                      hintStyle: TextStyle(
+                          color:    AppColors.textHint,
+                          fontSize: 13),
+                      border:         InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 20),
                 Row(
                   children: [
@@ -292,8 +335,8 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(11)),
                           backgroundColor: Colors.white,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 13),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 13),
                         ),
                         child: const Text('Cancel',
                             style: TextStyle(
@@ -308,17 +351,26 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
                         onPressed: isRejecting
                             ? null
                             : () async {
+                                if (reasonCtrl.text.trim().isEmpty) {
+                                  AppSnackBar.show(
+                                      context,
+                                      'Please enter a reason.',
+                                      isError: true);
+                                  return;
+                                }
                                 setS(() => isRejecting = true);
                                 Navigator.pop(dialogCtx);
-                                await _rejectLead(l.enquiryId);
+                                await _rejectLead(
+                                    l.enquiryId,
+                                    reasonCtrl.text.trim());
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.error,
                           disabledBackgroundColor:
                               AppColors.error.withOpacity(0.5),
                           elevation: 0,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 13),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 13),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(11)),
                         ),
@@ -691,15 +743,24 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
                 ),
               ),
               const SizedBox(width: 6),
-              // Assign
+              // Reassign (person_add icon)
               _actionIcon(
                 icon:    Icons.person_add_outlined,
                 color:   const Color(0xFF6A1B9A),
                 bgColor: const Color(0xFFF3E5F5),
-                onTap:   () {
-                  // TODO: navigate to assign page
-                  AppSnackBar.show(
-                      context, 'Assign feature coming soon.');
+                onTap:   () async {
+                  final result = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ReassignLeadPage(
+                        enquiryId:           l.enquiryId,
+                        enquiryNumber:       l.enquiryNumber,
+                        currentAssigneeName: l.employeeName,
+                        title:               l.title,
+                      ),
+                    ),
+                  );
+                  if (result == true) _fetchAssignedLeads();
                 },
               ),
               const SizedBox(width: 6),

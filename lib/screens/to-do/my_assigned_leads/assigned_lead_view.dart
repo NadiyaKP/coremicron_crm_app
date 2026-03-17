@@ -522,22 +522,40 @@ class _AssignLeadViewPageState extends State<AssignLeadViewPage>
 
           const SizedBox(height: 14),
 
-          // Deal status — only if present
-          if (widget.dealName.isNotEmpty &&
-              widget.dealColor.isNotEmpty) ...[
+          // Lead Status — from enquiry status field
+          if (_str(_enquiry['status']).isNotEmpty) ...[
+            const SizedBox(height: 14),
             _sectionCard(
               title: 'Lead Status',
-              icon:  Icons.local_offer_outlined,
+              icon:  Icons.flag_outlined,
               children: [
                 Padding(
-                  padding:
-                      const EdgeInsets.fromLTRB(16, 12, 16, 14),
-                  child:
-                      _buildDealChip(widget.dealName, widget.dealColor),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                  child: Builder(builder: (ctx) {
+                    final status = _str(_enquiry['status']);
+                    final clr    = _statusColor(status);
+                    final bg     = _statusBg(status);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color:        bg,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: clr.withOpacity(0.3), width: 1),
+                      ),
+                      child: Text(status.capitalize(),
+                          style: TextStyle(
+                              color:      clr,
+                              fontSize:   13,
+                              fontWeight: FontWeight.w600)),
+                    );
+                  }),
                 ),
               ],
             ),
           ],
+
         ],
       ),
     );
@@ -614,17 +632,19 @@ class _AssignLeadViewPageState extends State<AssignLeadViewPage>
   }
 
   Widget _historyItem(dynamic item, int index) {
-    final Map    h        = item as Map? ?? {};
-    final Map    addedBy  = h['added_by'] as Map? ?? {};
-    final String type     = _str(h['type']);
-    final String addedAt  = _str(h['added_at']);
-    final String notes    = _str(h['notes']);
-    final String deal     = _str(h['deal']);
-    final String followUp = _str(h['follow_up']);
-    final String fStatus  = _str(h['followup_status']);
-    final String byName   = _str(addedBy['name']);
-    final String byType   = _str(addedBy['type']);
-    final bool   isLast   = index == _history.length - 1;
+    final Map    h           = item as Map? ?? {};
+    final Map    addedBy     = h['added_by']   as Map? ?? {};
+    final Map    assignedTo  = h['assigned_to'] as Map? ?? {};
+    final String type        = _str(h['type']);
+    final String addedAt     = _str(h['added_at']);
+    final String notes       = _str(h['notes']);
+    final String deal        = _str(h['deal']);
+    final String followUp    = _str(h['follow_up']);
+    final String fStatus     = _str(h['followup_status']);
+    final String byName      = _str(addedBy['name']);
+    final String byType      = _str(addedBy['type']);
+    final String assignedName = _str(assignedTo['name']);
+    final bool   isLast      = index == _history.length - 1;
 
     final Color    typeColor = _typeColor(type);
     final Color    typeBg    = _typeBg(type);
@@ -725,6 +745,28 @@ class _AssignLeadViewPageState extends State<AssignLeadViewPage>
                         suffix: fStatus.isNotEmpty
                             ? _followUpChip(fStatus)
                             : null),
+                  ],
+                  if (assignedName.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.person_pin_outlined,
+                            size: 13, color: AppColors.textMuted),
+                        const SizedBox(width: 6),
+                        const Text('Assigned To  ',
+                            style: TextStyle(
+                                color:      AppColors.textMuted,
+                                fontSize:   12,
+                                fontWeight: FontWeight.w500)),
+                        Expanded(
+                          child: Text(assignedName.capitalize(),
+                              style: const TextStyle(
+                                  color:      AppColors.textPrimary,
+                                  fontSize:   12.5,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
                   ],
 
                   const SizedBox(height: 10),
@@ -921,34 +963,37 @@ class _AssignLeadViewPageState extends State<AssignLeadViewPage>
   // ── Type helpers ───────────────────────────────────────────────────────────
   Color _typeColor(String type) {
     switch (type.toLowerCase()) {
-      case 'communication': return const Color(0xFF1565C0);
-      case 'call':          return const Color(0xFF2E7D32);
-      case 'meeting':       return const Color(0xFF6A1B9A);
-      case 'email':         return const Color(0xFF00695C);
-      case 'note':          return const Color(0xFFE65100);
-      default:              return AppColors.primary;
+      case 'communication':  return const Color(0xFF1565C0);
+      case 'call':           return const Color(0xFF2E7D32);
+      case 'meeting':        return const Color(0xFF6A1B9A);
+      case 'email':          return const Color(0xFF00695C);
+      case 'note':           return const Color(0xFFE65100);
+      case 'status_change':  return const Color(0xFF0277BD);
+      default:               return AppColors.primary;
     }
   }
 
   Color _typeBg(String type) {
     switch (type.toLowerCase()) {
-      case 'communication': return const Color(0xFFE3F2FD);
-      case 'call':          return const Color(0xFFE8F5E9);
-      case 'meeting':       return const Color(0xFFF3E5F5);
-      case 'email':         return const Color(0xFFE0F2F1);
-      case 'note':          return const Color(0xFFFFF3E0);
-      default:              return AppColors.primaryLight;
+      case 'communication':  return const Color(0xFFE3F2FD);
+      case 'call':           return const Color(0xFFE8F5E9);
+      case 'meeting':        return const Color(0xFFF3E5F5);
+      case 'email':          return const Color(0xFFE0F2F1);
+      case 'note':           return const Color(0xFFFFF3E0);
+      case 'status_change':  return const Color(0xFFE1F5FE);
+      default:               return AppColors.primaryLight;
     }
   }
 
   IconData _typeIcon(String type) {
     switch (type.toLowerCase()) {
-      case 'communication': return Icons.chat_bubble_outline_rounded;
-      case 'call':          return Icons.phone_outlined;
-      case 'meeting':       return Icons.people_outline_rounded;
-      case 'email':         return Icons.email_outlined;
-      case 'note':          return Icons.sticky_note_2_outlined;
-      default:              return Icons.circle_outlined;
+      case 'communication':  return Icons.chat_bubble_outline_rounded;
+      case 'call':           return Icons.phone_outlined;
+      case 'meeting':        return Icons.people_outline_rounded;
+      case 'email':          return Icons.email_outlined;
+      case 'note':           return Icons.sticky_note_2_outlined;
+      case 'status_change':  return Icons.swap_horiz_rounded;
+      default:               return Icons.circle_outlined;
     }
   }
 
