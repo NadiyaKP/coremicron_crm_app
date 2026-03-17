@@ -1519,6 +1519,7 @@ class _AssignLeadFollowUpPageState extends State<AssignLeadFollowUpPage>
                 ),
                 const SizedBox(width: 10),
               ],
+              const Spacer(),
               const Icon(Icons.event_outlined,
                   size: 12, color: AppColors.textMuted),
               const SizedBox(width: 4),

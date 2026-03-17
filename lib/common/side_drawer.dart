@@ -11,6 +11,7 @@ import '../screens/to-do/my_assigned_leads/my_assigned_leads.dart';
 import '../screens/ticket/tickets.dart';
 import '../screens/to-do/my_task/my_tasks.dart';
 import '../screens/Follow_Up/follow_ups.dart';
+import '../screens/employee_response/employee_responses.dart';
 
 class AppSideDrawer extends StatefulWidget {
   final String username;
@@ -47,6 +48,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
     _DrawerMenuItem(icon: Icons.task_alt_rounded,       label: 'My Task'),
     _DrawerMenuItem(icon: Icons.assignment_outlined,    label: 'My Assigned Leads'),
     _DrawerMenuItem(icon: Icons.event_note_outlined,    label: 'Follow Up'),
+    _DrawerMenuItem(icon: Icons.forum_outlined,         label: 'Employee Response'),
   ];
 
   @override
@@ -314,6 +316,13 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                 MaterialPageRoute(
                     builder: (_) =>
                         FollowUpsPage(username: widget.username)));
+            break;
+          case 'Employee Response':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        EmployeeResponsesPage(username: widget.username)));
             break;
           default:
             break;
