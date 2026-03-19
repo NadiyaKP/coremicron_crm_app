@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../common/api_service.dart';
-import '../../../common/theme.dart';
-import '../../login.dart' show kSessionKey;
-import 'deals.dart' show Deal;
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/Registation/deals/deals.dart' show Deal;
 
 // ── Hex helpers (duplicated here — Dart private functions cannot be imported)
 Color _hexToColor(String hex) {
@@ -75,10 +74,7 @@ class _AddDealPageState extends State<AddDealPage> {
     setState(() => _isSaving = true);
 
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final colorHex  = _colorToHex(_selectedColor);
-
       final Uri    url;
       final Map<String, dynamic> body;
 
@@ -97,22 +93,8 @@ class _AddDealPageState extends State<AddDealPage> {
         };
       }
 
-      debugPrint('─────────────────────────────────────────');
-      debugPrint('📤  [${_isEdit ? 'UPDATE' : 'CREATE'} DEAL] Request');
-      debugPrint('   🌐  URL  : $url');
-      debugPrint('   📦  Body : ${jsonEncode(body)}');
-      debugPrint('─────────────────────────────────────────');
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept':       'application/json',
-          'X-Session-ID': sessionId,
-          'Cookie':       'PHPSESSID=$sessionId',
-        },
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 15));
+      final response = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
 

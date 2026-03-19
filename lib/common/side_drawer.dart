@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'theme.dart';
-import '../screens/Registation/customer/customers.dart';
-import '../screens/Registation/department/departments.dart';
-import '../screens/Registation/team/teams.dart';
-import '../screens/Registation/attendance_machine/attendance_machines.dart';
-import '../screens/Registation/deals/deals.dart';
-import '../screens/Registation/employee/employee.dart';
-import '../screens/leads/leads.dart';
-import '../screens/to-do/my_assigned_leads/my_assigned_leads.dart';
-import '../screens/ticket/tickets.dart';
-import '../screens/to-do/my_task/my_tasks.dart';
-import '../screens/Follow_Up/follow_ups.dart';
-import '../screens/employee_response/employee_responses.dart';
-import '../screens/leave_application/leave_applications.dart';
-import '../screens/update_attendance/update_attendance_list.dart';
-import '../screens/my_project/my_projects.dart';
+import 'package:coremicron_crm_app/screens/Registation/customer/customers.dart';
+import 'package:coremicron_crm_app/screens/Registation/department/departments.dart';
+import 'package:coremicron_crm_app/screens/Registation/team/teams.dart';
+import 'package:coremicron_crm_app/screens/Registation/attendance_machine/attendance_machines.dart';
+import 'package:coremicron_crm_app/screens/Registation/deals/deals.dart';
+import 'package:coremicron_crm_app/screens/Registation/employee/employee.dart';
+import 'package:coremicron_crm_app/screens/leads/leads.dart';
+import 'package:coremicron_crm_app/screens/to-do/my_assigned_leads/my_assigned_leads.dart';
+import 'package:coremicron_crm_app/screens/ticket/tickets.dart';
+import 'package:coremicron_crm_app/screens/to-do/my_task/my_tasks.dart';
+import 'package:coremicron_crm_app/screens/Follow_Up/follow_ups.dart';
+import 'package:coremicron_crm_app/screens/employee_response/employee_responses.dart';
+import 'package:coremicron_crm_app/screens/leave_application/leave_applications.dart';
+import 'package:coremicron_crm_app/screens/update_attendance/update_attendance_list.dart';
+import 'package:coremicron_crm_app/screens/my_project/my_projects.dart';
+import 'package:coremicron_crm_app/screens/my_profile/my_attendance/my_attendance.dart';
+import 'package:coremicron_crm_app/screens/my_profile/leave_application/my_leave_application.dart';
 
 class AppSideDrawer extends StatefulWidget {
   final String username;
@@ -31,6 +33,7 @@ class AppSideDrawer extends StatefulWidget {
 class _AppSideDrawerState extends State<AppSideDrawer> {
   bool _registrationExpanded = false;
   bool _todoExpanded         = false;
+  bool _profileExpanded      = false;
 
   @override
   void initState() {
@@ -55,6 +58,11 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
     _DrawerMenuItem(icon: Icons.beach_access_outlined,   label: 'Leave Application'),
     _DrawerMenuItem(icon: Icons.fingerprint_rounded,     label: 'Update Attendance'),
     _DrawerMenuItem(icon: Icons.work_outline_rounded,    label: 'My Projects'),
+  ];
+
+  final List<_DrawerMenuItem> _profileItems = [
+    _DrawerMenuItem(icon: Icons.calendar_month_outlined,  label: 'My Attendance'),
+    _DrawerMenuItem(icon: Icons.beach_access_outlined,    label: 'My Leave Application'),
   ];
 
   @override
@@ -95,6 +103,15 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                     items:    _todoItems,
                     onTap:    () =>
                         setState(() => _todoExpanded = !_todoExpanded),
+                  ),
+                  const SizedBox(height: 4),
+                  _buildExpandableSection(
+                    icon:     Icons.person_outline_rounded,
+                    label:    'My Profile',
+                    expanded: _profileExpanded,
+                    items:    _profileItems,
+                    onTap:    () =>
+                        setState(() => _profileExpanded = !_profileExpanded),
                   ),
                   const SizedBox(height: 8),
                   Padding(
@@ -350,6 +367,20 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                 MaterialPageRoute(
                     builder: (_) =>
                         MyProjectsPage(username: widget.username)));
+            break;
+          case 'My Attendance':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        MyAttendancePage(username: widget.username)));
+            break;
+          case 'My Leave Application':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        MyLeaveApplicationPage(username: widget.username)));
             break;
           default:
             break;

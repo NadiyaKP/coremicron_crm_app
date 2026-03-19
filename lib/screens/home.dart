@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'login.dart';
-import '../common/theme.dart';
-import '../common/side_drawer.dart';
+import 'package:coremicron_crm_app/screens/login.dart' show LoginPage, kUsernameKey;
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/common/side_drawer.dart';
 
 class HomePage extends StatefulWidget {
   final String username;
@@ -59,7 +60,7 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _loadSession() async {
     final prefs = await SharedPreferences.getInstance();
-    final id = prefs.getString(kSessionKey);
+    final id = prefs.getString(kTokenKey);
     if (mounted) setState(() => _sessionId = id);
   }
 
@@ -70,9 +71,39 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _handleLogout() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textLabel)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Logout', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    // Show loading or just proceed
+    try {
+      final url = Uri.parse('${ApiService.baseUrl}/auth/logout.php');
+      // Best effort API call
+      await ApiService.post(url).timeout(const Duration(seconds: 5));
+    } catch (e) {
+      debugPrint('Logout API Error: $e');
+    }
+
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(kSessionKey);
-    await prefs.remove(kUsernameKey);
+    await prefs.clear(); // Removing all stored data
+
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginPage()),

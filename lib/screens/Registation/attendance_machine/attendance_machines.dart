@@ -2,12 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../common/api_service.dart';
-import '../../../common/theme.dart';
-import '../../login.dart' show kSessionKey;
-import '../../home.dart';
-import '../../../common/pagination.dart';
-import '../../../common/string_extensions.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/home.dart';
+import 'package:coremicron_crm_app/common/pagination.dart';
+import 'package:coremicron_crm_app/common/string_extensions.dart';
 
 // ── Attendance Machine Model ───────────────────────────────────────────────
 class AttendanceMachine {
@@ -95,16 +94,8 @@ class _AttendanceMachinePageState extends State<AttendanceMachinePage> {
   Future<void> _fetchMachines() async {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url       = Uri.parse('${ApiService.baseUrl}/api/machine/list.php');
-      debugPrint('📤  [MACHINE LIST] $url');
-      final response  = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final url = Uri.parse('${ApiService.baseUrl}/api/machine/list.php');
+      final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
       final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint('📥  [MACHINE LIST] ${response.statusCode} ${response.body}');
       if (response.statusCode == 200 && data['success'] == true) {
@@ -125,19 +116,11 @@ class _AttendanceMachinePageState extends State<AttendanceMachinePage> {
   // ── Create ─────────────────────────────────────────────────────────────────
   Future<void> _createMachine(String machineName, String serialNumber) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url       = Uri.parse('${ApiService.baseUrl}/api/machine/create.php');
-      final body      = {'machine_name': machineName, 'serial_number': serialNumber};
-      debugPrint('📤  [CREATE MACHINE] $url  ${jsonEncode(body)}');
-      final response  = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final url  = Uri.parse('${ApiService.baseUrl}/api/machine/create.php');
+      final body = {'machine_name': machineName, 'serial_number': serialNumber};
+
+      final response = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
       if (!mounted) return;
       final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint('📥  [CREATE MACHINE] ${response.statusCode} ${response.body}');
@@ -157,19 +140,11 @@ class _AttendanceMachinePageState extends State<AttendanceMachinePage> {
   // ── Update ─────────────────────────────────────────────────────────────────
   Future<void> _updateMachine(String id, String machineName, String serialNumber) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url       = Uri.parse('${ApiService.baseUrl}/api/machine/update.php');
-      final body      = {'id': id, 'machine_name': machineName, 'serial_number': serialNumber};
-      debugPrint('📤  [UPDATE MACHINE] $url  ${jsonEncode(body)}');
-      final response  = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final url  = Uri.parse('${ApiService.baseUrl}/api/machine/update.php');
+      final body = {'id': id, 'machine_name': machineName, 'serial_number': serialNumber};
+
+      final response = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
       if (!mounted) return;
       final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint('📥  [UPDATE MACHINE] ${response.statusCode} ${response.body}');
@@ -189,19 +164,11 @@ class _AttendanceMachinePageState extends State<AttendanceMachinePage> {
   // ── Delete ─────────────────────────────────────────────────────────────────
   Future<void> _deleteMachine(String id, String reason) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url       = Uri.parse('${ApiService.baseUrl}/api/machine/delete.php');
-      final body      = {'id': id, 'reason': reason};
-      debugPrint('📤  [DELETE MACHINE] $url  ${jsonEncode(body)}');
-      final response  = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final url  = Uri.parse('${ApiService.baseUrl}/api/machine/delete.php');
+      final body = {'id': id, 'reason': reason};
+
+      final response = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
       if (!mounted) return;
       final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint('📥  [DELETE MACHINE] ${response.statusCode} ${response.body}');

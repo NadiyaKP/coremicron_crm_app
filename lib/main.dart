@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import './screens/splash_screen.dart';
-import '../common/theme.dart';
+import 'package:coremicron_crm_app/screens/splash_screen.dart';
+import 'package:coremicron_crm_app/common/theme.dart';
 
 void main() {
+  HttpOverrides.global = MyHttpOverrides();
   runApp(const MyApp());
 }
 
@@ -20,5 +22,13 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.themeData,
       home: const SplashScreen(),
     );
+  }
+}
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
   }
 }

@@ -2,13 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../common/api_service.dart';
-import '../../../common/theme.dart';
-import '../login.dart' show kSessionKey;
-import '../home.dart';
-import '../../../common/pagination.dart';
-import '../../../common/string_extensions.dart';
-import '../../screens/leave_application/pending_tasks_view.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/common/pagination.dart';
+import 'package:coremicron_crm_app/screens/home.dart';
+import 'package:coremicron_crm_app/common/string_extensions.dart';
+import 'package:coremicron_crm_app/screens/leave_application/pending_tasks_view.dart';
 
 // ── Leave Application Model ────────────────────────────────────────────────
 class _LeaveApplication {
@@ -111,18 +110,9 @@ class _LeaveApplicationsPageState extends State<LeaveApplicationsPage> {
   Future<void> _fetchLeaves() async {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url = Uri.parse(
           '${ApiService.baseUrl}/api/attendance/leave_list.php?mode=all');
-
-      debugPrint('📤  [LEAVE LIST] $url');
-      final res = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       debugPrint('📥  [LEAVE LIST] ${res.statusCode}  ${res.body}');
@@ -146,21 +136,11 @@ class _LeaveApplicationsPageState extends State<LeaveApplicationsPage> {
   // ── Action APIs ────────────────────────────────────────────────────────────
   Future<void> _leaveAction(String leaveId, String action) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url  = Uri.parse(
           '${ApiService.baseUrl}/api/attendance/leave_action.php');
       final body = {'leave_id': leaveId, 'action': action};
-
-      debugPrint('📤  [LEAVE ACTION] $url  ${jsonEncode(body)}');
-      final res = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -188,21 +168,11 @@ class _LeaveApplicationsPageState extends State<LeaveApplicationsPage> {
 
   Future<void> _deleteLeave(String leaveId) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url  = Uri.parse(
           '${ApiService.baseUrl}/api/attendance/leave_delete.php');
       final body = {'leave_id': leaveId};
-
-      debugPrint('📤  [LEAVE DELETE] $url  ${jsonEncode(body)}');
-      final res = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -230,8 +200,6 @@ class _LeaveApplicationsPageState extends State<LeaveApplicationsPage> {
   Future<void> _updateLeave(
       String leaveId, String absenceFrom, String absenceThrough) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url  = Uri.parse(
           '${ApiService.baseUrl}/api/attendance/leave_update.php');
       final body = {
@@ -239,16 +207,8 @@ class _LeaveApplicationsPageState extends State<LeaveApplicationsPage> {
         'absence_from':    absenceFrom,
         'absence_through': absenceThrough,
       };
-
-      debugPrint('📤  [LEAVE UPDATE] $url  ${jsonEncode(body)}');
-      final res = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final data = jsonDecode(res.body) as Map<String, dynamic>;

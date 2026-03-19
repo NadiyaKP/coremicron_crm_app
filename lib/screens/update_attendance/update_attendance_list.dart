@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../common/api_service.dart';
-import '../../../common/theme.dart';
-import '../login.dart' show kSessionKey;
-import '../home.dart';
-import '../../../common/pagination.dart';
-import '../../../common/string_extensions.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/login.dart' show kTokenKey;
+import 'package:coremicron_crm_app/screens/home.dart';
+import 'package:coremicron_crm_app/common/pagination.dart';
+import 'package:coremicron_crm_app/common/string_extensions.dart';
 
 // ── Attendance Request Model ───────────────────────────────────────────────
 class _AttendanceRequest {
@@ -116,18 +116,10 @@ class _UpdateAttendancePageState extends State<UpdateAttendancePage> {
   Future<void> _fetchRequests() async {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url = Uri.parse(
           '${ApiService.baseUrl}/api/attendance/request_list.php');
 
-      debugPrint('📤  [ATTENDANCE REQUESTS] $url');
-      final res = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       debugPrint('📥  [ATTENDANCE REQUESTS] ${res.statusCode}  ${res.body}');
@@ -152,8 +144,6 @@ class _UpdateAttendancePageState extends State<UpdateAttendancePage> {
   Future<void> _requestAction(
       String requestId, String action, String reason) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url  = Uri.parse(
           '${ApiService.baseUrl}/api/attendance/request_action.php');
       final body = {
@@ -162,15 +152,8 @@ class _UpdateAttendancePageState extends State<UpdateAttendancePage> {
         'action':     action,
       };
 
-      debugPrint('📤  [ATTENDANCE ACTION] $url  ${jsonEncode(body)}');
-      final res = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -197,8 +180,6 @@ class _UpdateAttendancePageState extends State<UpdateAttendancePage> {
   Future<void> _updateRequest(
       String requestId, String approvedDate, String approvedTime) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url  = Uri.parse(
           '${ApiService.baseUrl}/api/attendance/request_update.php');
       final body = {
@@ -207,15 +188,8 @@ class _UpdateAttendancePageState extends State<UpdateAttendancePage> {
         'approved_time': approvedTime,
       };
 
-      debugPrint('📤  [ATTENDANCE UPDATE] $url  ${jsonEncode(body)}');
-      final res = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -297,7 +271,7 @@ class _UpdateAttendancePageState extends State<UpdateAttendancePage> {
         request:       r,
         fmtDate:       _fmtDate,
         fmtTime:       _fmtTime,
-        sessionKey:    kSessionKey,
+        sessionKey:    kTokenKey,
         onClose:       () { Navigator.pop(dCtx); _fetchRequests(); },
       ),
     );
@@ -1517,20 +1491,12 @@ class _PunchTableDialogState extends State<_PunchTableDialog> {
   Future<void> _fetchPunches() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(widget.sessionKey) ?? '';
       final url = Uri.parse(
           '${ApiService.baseUrl}/api/attendance/request_view.php'
           '?date=${widget.request.originalDate}'
           '&employee_id=${widget.request.employeeId}');
 
-      debugPrint('📤  [ATTENDANCE VIEW] $url');
-      final res = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       debugPrint('📥  [ATTENDANCE VIEW] ${res.statusCode}  ${res.body}');

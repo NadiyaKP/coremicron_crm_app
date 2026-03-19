@@ -2,11 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../common/api_service.dart';
-import '../../common/theme.dart';
-import '../login.dart' show kSessionKey;
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
 import 'tickets.dart' show Ticket;
-import '../../common/string_extensions.dart';
+import 'package:coremicron_crm_app/common/string_extensions.dart';
 
 // ── Ticket View Page ───────────────────────────────────────────────────────
 class TicketViewPage extends StatefulWidget {
@@ -43,23 +42,10 @@ class _TicketViewPageState extends State<TicketViewPage>
   Future<void> _fetchJobs() async {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url       = Uri.parse(
+      final url = Uri.parse(
           '${ApiService.baseUrl}/api/ticket/job_list.php'
           '?ticket_id=${widget.ticket.ticketId}');
-
-      debugPrint('─────────────────────────────────────────');
-      debugPrint('📤  [JOB LIST] Request');
-      debugPrint('   🌐  URL : $url');
-      debugPrint('─────────────────────────────────────────');
-
-      final response = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint(

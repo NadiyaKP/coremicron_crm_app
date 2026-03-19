@@ -2,21 +2,21 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../common/api_service.dart';
-import '../../../common/theme.dart';
-import '../login.dart' show kSessionKey;
-import '../../../common/string_extensions.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/common/string_extensions.dart';
 
 // ── Job Model ──────────────────────────────────────────────────────────────
 class _Job {
-  final String jobId;
-  final String assignId;
-  final String assignName;
-  final String toDo;
-  final String fixbyDate;
-  final String completedDate;
-  final String verifiedDate;
-  final String status;
+  final String  jobId;
+  final String  assignId;
+  final String  assignName;
+  final String  toDo;
+  final String  fixbyDate;
+  final String  completedDate;
+  final String  verifiedDate;
+  final String? image;
+  final String  status;
 
   const _Job({
     required this.jobId,
@@ -26,6 +26,7 @@ class _Job {
     required this.fixbyDate,
     required this.completedDate,
     required this.verifiedDate,
+    this.image,
     required this.status,
   });
 
@@ -37,6 +38,7 @@ class _Job {
         fixbyDate:     j['fixby_date']       ?? '',
         completedDate: j['completed_date']   ?? '',
         verifiedDate:  j['verified_date']    ?? '',
+        image:         j['image'] as String?,
         status:        j['status']           ?? '',
       );
 }
@@ -59,8 +61,8 @@ class MyProjectViewPage extends StatefulWidget {
 }
 
 class _MyProjectViewPageState extends State<MyProjectViewPage> {
-  List<_Job> _jobs       = [];
-  bool       _isLoading  = true;
+  List<_Job> _jobs        = [];
+  bool       _isLoading   = true;
   String?    _errorMessage;
 
   @override
@@ -73,19 +75,11 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
   Future<void> _fetchJobs() async {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url = Uri.parse(
           '${ApiService.baseUrl}/api/ticket/job_list.php'
           '?ticket_id=${widget.ticketId}');
 
-      debugPrint('📤  [PROJECT VIEW] $url');
-      final res = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       debugPrint('📥  [PROJECT VIEW] ${res.statusCode}  ${res.body}');
@@ -99,43 +93,34 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
       }
     } on http.ClientException {
       _errorMessage = 'Unable to reach the server. Check your connection.';
-    } catch (_) {
+    } catch (e) {
+      debugPrint('❌  [_fetchJobs] Error: $e');
       _errorMessage = 'Something went wrong. Please try again.';
     }
     if (mounted) setState(() => _isLoading = false);
   }
 
-  // ── Job Action APIs ────────────────────────────────────────────────────────
-  Future<void> _jobAction(String jobId, String action) async {
+  // ── Verify API ─────────────────────────────────────────────────────────────
+  Future<void> _verifyJob(String jobId) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url  = Uri.parse(
-          '${ApiService.baseUrl}/api/ticket/job_action.php');
-      final body = {'job_id': jobId, 'action': action};
+          '${ApiService.baseUrl}/api/ticket/job_verify.php');
+      final body = {'job_id': jobId, 'action': 'verify'};
 
-      debugPrint('📤  [JOB ACTION] $url  ${jsonEncode(body)}');
-      final res = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
-      debugPrint('📥  [JOB ACTION] ${res.statusCode}  ${res.body}');
+      debugPrint('📥  [JOB VERIFY] ${res.statusCode}  ${res.body}');
 
       if (res.statusCode == 200 && data['success'] == true) {
-        AppSnackBar.show(context,
-            'Task ${action == 'verify' ? 'verified' : action == 'reject' ? 'rejected' : 'extended'} successfully.');
+        AppSnackBar.show(context, 'Task verified successfully.');
         _fetchJobs();
       } else {
         AppSnackBar.show(
             context,
-            data['error'] ?? data['message'] ?? 'Operation failed.',
+            data['error'] ?? data['message'] ?? 'Failed to verify.',
             isError: true);
       }
     } on http.ClientException {
@@ -144,6 +129,609 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
     } catch (e) {
       if (mounted) AppSnackBar.show(context, 'Error: $e', isError: true);
     }
+  }
+
+  // ── Reject API ─────────────────────────────────────────────────────────────
+  Future<void> _rejectJob(String jobId, String reason) async {
+    try {
+      final url  = Uri.parse(
+          '${ApiService.baseUrl}/api/ticket/job_verify.php');
+      final body = {'job_id': jobId, 'action': 'reject', 'reason': reason};
+
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
+
+      if (!mounted) return;
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      debugPrint('📥  [JOB REJECT] ${res.statusCode}  ${res.body}');
+
+      if (res.statusCode == 200 && data['success'] == true) {
+        AppSnackBar.show(context, 'Task rejected.');
+        _fetchJobs();
+      } else {
+        AppSnackBar.show(
+            context,
+            data['error'] ?? data['message'] ?? 'Failed to reject.',
+            isError: true);
+      }
+    } on http.ClientException {
+      if (mounted)
+        AppSnackBar.show(context, 'Unable to reach the server.', isError: true);
+    } catch (e) {
+      if (mounted) AppSnackBar.show(context, 'Error: $e', isError: true);
+    }
+  }
+
+  // ── Extend API ─────────────────────────────────────────────────────────────
+  Future<void> _extendJob(String jobId, String newFixbyDate) async {
+    try {
+      final url  = Uri.parse(
+          '${ApiService.baseUrl}/api/ticket/job_extend.php');
+      final body = {'job_id': jobId, 'new_fixby_date': newFixbyDate};
+
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
+
+      if (!mounted) return;
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      debugPrint('📥  [JOB EXTEND] ${res.statusCode}  ${res.body}');
+
+      if (res.statusCode == 200 && data['success'] == true) {
+        AppSnackBar.show(context, 'Fix-by date extended successfully.');
+        _fetchJobs();
+      } else {
+        AppSnackBar.show(
+            context,
+            data['error'] ?? data['message'] ?? 'Failed to extend.',
+            isError: true);
+      }
+    } on http.ClientException {
+      if (mounted)
+        AppSnackBar.show(context, 'Unable to reach the server.', isError: true);
+    } catch (e) {
+      if (mounted) AppSnackBar.show(context, 'Error: $e', isError: true);
+    }
+  }
+
+  // ── Verify Dialog ──────────────────────────────────────────────────────────
+  void _showVerifyDialog(_Job job) {
+    bool isLoading = false;
+    showDialog(
+      context:            context,
+      barrierDismissible: false,
+      builder: (dCtx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          contentPadding: EdgeInsets.zero,
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 28, vertical: 50),
+          content: Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color:        const Color(0xFFE8F5E9),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: const Icon(Icons.verified_outlined,
+                          color: Color(0xFF2E7D32), size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text('Verify Task',
+                          style: TextStyle(
+                              color:      AppColors.textPrimary,
+                              fontSize:   15,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Before verifying, please make sure the work has been completed and notes are given. Do you want to proceed with verification?',
+                  style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13, height: 1.5),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: isLoading
+                            ? null : () => Navigator.pop(dCtx),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                              color: AppColors.border, width: 1.3),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11)),
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 13),
+                        ),
+                        child: const Text('Cancel',
+                            style: TextStyle(
+                                color:      AppColors.textLabel,
+                                fontWeight: FontWeight.w600,
+                                fontSize:   14)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                setS(() => isLoading = true);
+                                Navigator.pop(dCtx);
+                                await _verifyJob(job.jobId);
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E7D32),
+                          disabledBackgroundColor:
+                              const Color(0xFF2E7D32).withOpacity(0.5),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 13),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11)),
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: isLoading
+                              ? const SizedBox(
+                                  key: ValueKey('v-loader'),
+                                  width: 18, height: 18,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.3))
+                              : const Text('Verify',
+                                  key: ValueKey('v-label'),
+                                  style: TextStyle(
+                                      color:      Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize:   14)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Reject Dialog ──────────────────────────────────────────────────────────
+  void _showRejectDialog(_Job job) {
+    final reasonCtrl = TextEditingController();
+    bool isLoading   = false;
+    showDialog(
+      context:            context,
+      barrierDismissible: false,
+      builder: (dCtx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          contentPadding: EdgeInsets.zero,
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 28, vertical: 50),
+          content: SingleChildScrollView(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color:        const Color(0xFFFFF1F1),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: const Icon(Icons.close_rounded,
+                          color: AppColors.error, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text('Reject Task',
+                          style: TextStyle(
+                              color:      AppColors.textPrimary,
+                              fontSize:   15,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Are you sure you want to reject?',
+                  style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13, height: 1.5),
+                ),
+                const SizedBox(height: 12),
+                const Divider(height: 1, color: AppColors.borderLight),
+                const SizedBox(height: 12),
+                // Ticket number
+                Row(
+                  children: [
+                    const Icon(Icons.tag_rounded,
+                        size: 13, color: AppColors.textMuted),
+                    const SizedBox(width: 6),
+                    const Text('Ticket No  ',
+                        style: TextStyle(
+                            color:      AppColors.textMuted,
+                            fontSize:   12,
+                            fontWeight: FontWeight.w500)),
+                    Text(
+                      '#${widget.ticketNumber}',
+                      style: const TextStyle(
+                          color:      AppColors.primary,
+                          fontSize:   12.5,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                // Reason field
+                const Text('Reason *',
+                    style: TextStyle(
+                        color:      AppColors.textLabel,
+                        fontSize:   12,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                Container(
+                  decoration: BoxDecoration(
+                    color:        Colors.white,
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(
+                        color: AppColors.border, width: 1.2),
+                  ),
+                  child: TextField(
+                    controller:  reasonCtrl,
+                    maxLines:    3,
+                    minLines:    2,
+                    cursorColor: AppColors.primary,
+                    style: const TextStyle(
+                        color:    AppColors.textPrimary,
+                        fontSize: 13.5),
+                    decoration: const InputDecoration(
+                      hintText:  'Enter reason for rejection…',
+                      hintStyle: TextStyle(
+                          color:    AppColors.textHint,
+                          fontSize: 13),
+                      border:         InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: isLoading
+                            ? null : () => Navigator.pop(dCtx),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                              color: AppColors.border, width: 1.3),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11)),
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 13),
+                        ),
+                        child: const Text('Cancel',
+                            style: TextStyle(
+                                color:      AppColors.textLabel,
+                                fontWeight: FontWeight.w600,
+                                fontSize:   14)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                if (reasonCtrl.text.trim().isEmpty) {
+                                  AppSnackBar.show(context,
+                                      'Please enter a reason.',
+                                      isError: true);
+                                  return;
+                                }
+                                setS(() => isLoading = true);
+                                Navigator.pop(dCtx);
+                                await _rejectJob(
+                                    job.jobId,
+                                    reasonCtrl.text.trim());
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          disabledBackgroundColor:
+                              AppColors.error.withOpacity(0.5),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 13),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11)),
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: isLoading
+                              ? const SizedBox(
+                                  key: ValueKey('r-loader'),
+                                  width: 18, height: 18,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.3))
+                              : const Text('Reject',
+                                  key: ValueKey('r-label'),
+                                  style: TextStyle(
+                                      color:      Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize:   14)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Extend Dialog ──────────────────────────────────────────────────────────
+  void _showExtendDialog(_Job job) {
+    DateTime? _newDate;
+    final dateCtrl = TextEditingController();
+    bool isLoading = false;
+
+    String _toApiDate(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+    showDialog(
+      context:            context,
+      barrierDismissible: false,
+      builder: (dCtx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          contentPadding: EdgeInsets.zero,
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 28, vertical: 50),
+          content: SingleChildScrollView(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color:        AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: const Icon(Icons.update_rounded,
+                          color: AppColors.primary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text('Extend Deadline',
+                          style: TextStyle(
+                              color:      AppColors.textPrimary,
+                              fontSize:   15,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Divider(height: 1, color: AppColors.borderLight),
+                const SizedBox(height: 12),
+                // Ticket number
+                Row(
+                  children: [
+                    const Icon(Icons.tag_rounded,
+                        size: 13, color: AppColors.textMuted),
+                    const SizedBox(width: 6),
+                    const Text('Ticket No  ',
+                        style: TextStyle(
+                            color:      AppColors.textMuted,
+                            fontSize:   12,
+                            fontWeight: FontWeight.w500)),
+                    Text('#${widget.ticketNumber}',
+                        style: const TextStyle(
+                            color:      AppColors.primary,
+                            fontSize:   12.5,
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Current fix by date
+                Row(
+                  children: [
+                    const Icon(Icons.event_outlined,
+                        size: 13, color: AppColors.textMuted),
+                    const SizedBox(width: 6),
+                    const Text('Current Fix By  ',
+                        style: TextStyle(
+                            color:      AppColors.textMuted,
+                            fontSize:   12,
+                            fontWeight: FontWeight.w500)),
+                    Text(_fmtDate(job.fixbyDate),
+                        style: const TextStyle(
+                            color:      Color(0xFFE65100),
+                            fontSize:   12.5,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // New fix by date picker
+                const Text('New Fix By Date *',
+                    style: TextStyle(
+                        color:      AppColors.textLabel,
+                        fontSize:   12,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 7),
+                GestureDetector(
+                  onTap: () async {
+                    final now    = DateTime.now();
+                    final picked = await showDatePicker(
+                      context:     ctx,
+                      initialDate: _newDate ?? now,
+                      firstDate:   now,
+                      lastDate:    DateTime(now.year + 5),
+                      builder: (c, child) => Theme(
+                        data: Theme.of(c).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary:   AppColors.primary,
+                            onPrimary: Colors.white,
+                            surface:   Colors.white,
+                          ),
+                        ),
+                        child: child!,
+                      ),
+                    );
+                    if (picked != null) {
+                      setS(() {
+                        _newDate      = picked;
+                        dateCtrl.text = _fmtDate(_toApiDate(picked));
+                      });
+                    }
+                  },
+                  child: AbsorbPointer(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color:        Colors.white,
+                        borderRadius: BorderRadius.circular(11),
+                        border: Border.all(
+                            color: _newDate != null
+                                ? AppColors.primary
+                                : AppColors.border,
+                            width: 1.2),
+                      ),
+                      child: TextField(
+                        controller: dateCtrl,
+                        style: const TextStyle(
+                            color:      AppColors.textPrimary,
+                            fontSize:   14,
+                            fontWeight: FontWeight.w500),
+                        decoration: const InputDecoration(
+                          hintText:  'DD-MM-YYYY',
+                          hintStyle: TextStyle(
+                              color:    AppColors.textHint,
+                              fontSize: 13.5),
+                          prefixIcon: Icon(
+                              Icons.calendar_today_outlined,
+                              size: 17,
+                              color: AppColors.iconDefault),
+                          border:         InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: isLoading
+                            ? null : () => Navigator.pop(dCtx),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                              color: AppColors.border, width: 1.3),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11)),
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 13),
+                        ),
+                        child: const Text('Cancel',
+                            style: TextStyle(
+                                color:      AppColors.textLabel,
+                                fontWeight: FontWeight.w600,
+                                fontSize:   14)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                if (_newDate == null) {
+                                  AppSnackBar.show(context,
+                                      'Please select a new date.',
+                                      isError: true);
+                                  return;
+                                }
+                                setS(() => isLoading = true);
+                                Navigator.pop(dCtx);
+                                await _extendJob(
+                                    job.jobId,
+                                    _toApiDate(_newDate!));
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          disabledBackgroundColor:
+                              AppColors.primary.withOpacity(0.5),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 13),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11)),
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: isLoading
+                              ? const SizedBox(
+                                  key: ValueKey('e-loader'),
+                                  width: 18, height: 18,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.3))
+                              : const Text('Extend',
+                                  key: ValueKey('e-label'),
+                                  style: TextStyle(
+                                      color:      Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize:   14)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -174,187 +762,6 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
       case 'rejected':  return const Color(0xFFFFF1F1);
       default:          return const Color(0xFFF5F5F5);
     }
-  }
-
-  // ── Confirm dialogs ────────────────────────────────────────────────────────
-  void _confirmAction(_Job job, String action) {
-    final isVerify = action == 'verify';
-    final isReject = action == 'reject';
-    final isExtend = action == 'extend';
-
-    final Color  confirmColor = isVerify
-        ? const Color(0xFF2E7D32)
-        : isReject
-            ? AppColors.error
-            : AppColors.primary;
-    final String confirmLabel =
-        isVerify ? 'Verify' : isReject ? 'Reject' : 'Extend';
-    final String title =
-        isVerify ? 'Verify Task' : isReject ? 'Reject Task' : 'Extend Task';
-    final String subtitle = isVerify
-        ? 'Are you sure you want to verify this task as completed?'
-        : isReject
-            ? 'Are you sure you want to reject this task?'
-            : 'Are you sure you want to extend the deadline for this task?';
-
-    bool isLoading = false;
-
-    showDialog(
-      context:            context,
-      barrierDismissible: false,
-      builder: (dCtx) => StatefulBuilder(
-        builder: (ctx, setS) => AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20)),
-          backgroundColor: Colors.white,
-          contentPadding: EdgeInsets.zero,
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 28, vertical: 50),
-          content: Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(
-                        color:        confirmColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(11),
-                      ),
-                      child: Icon(
-                        isVerify
-                            ? Icons.check_circle_outline_rounded
-                            : isReject
-                                ? Icons.cancel_outlined
-                                : Icons.update_rounded,
-                        color: confirmColor, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(title,
-                          style: const TextStyle(
-                              color:      AppColors.textPrimary,
-                              fontSize:   15,
-                              fontWeight: FontWeight.w700)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(subtitle,
-                    style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 13, height: 1.5)),
-                const SizedBox(height: 12),
-                const Divider(height: 1, color: AppColors.borderLight),
-                const SizedBox(height: 12),
-                _detailRow(Icons.person_outline_rounded,
-                    'Assign To', job.assignName.capitalize()),
-                const SizedBox(height: 7),
-                _detailRow(Icons.task_alt_rounded,
-                    'Task',
-                    job.toDo.trim().isEmpty ? '—' : job.toDo.trim().capitalize()),
-                const SizedBox(height: 7),
-                _detailRow(Icons.event_outlined,
-                    'Fix By', _fmtDate(job.fixbyDate)),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: isLoading
-                            ? null
-                            : () => Navigator.pop(dCtx),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                              color: AppColors.border, width: 1.3),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(11)),
-                          backgroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 13),
-                        ),
-                        child: const Text('Cancel',
-                            style: TextStyle(
-                                color:      AppColors.textLabel,
-                                fontWeight: FontWeight.w600,
-                                fontSize:   14)),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: isLoading
-                            ? null
-                            : () async {
-                                setS(() => isLoading = true);
-                                Navigator.pop(dCtx);
-                                await _jobAction(job.jobId, action);
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: confirmColor,
-                          disabledBackgroundColor:
-                              confirmColor.withOpacity(0.5),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 13),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(11)),
-                        ),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child: isLoading
-                              ? const SizedBox(
-                                  key: ValueKey('loader'),
-                                  width: 18, height: 18,
-                                  child: CircularProgressIndicator(
-                                      color:       Colors.white,
-                                      strokeWidth: 2.3))
-                              : Text(confirmLabel,
-                                  key: const ValueKey('label'),
-                                  style: const TextStyle(
-                                      color:      Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize:   14)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _detailRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 14, color: AppColors.textMuted),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 66,
-          child: Text(label,
-              style: const TextStyle(
-                  color:      AppColors.textMuted,
-                  fontSize:   12.5,
-                  fontWeight: FontWeight.w500)),
-        ),
-        Expanded(
-          child: Text(value.isEmpty ? '—' : value,
-              style: const TextStyle(
-                  color:      AppColors.textPrimary,
-                  fontSize:   13,
-                  fontWeight: FontWeight.w600)),
-        ),
-      ],
-    );
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -464,8 +871,11 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
 
   // ── Job Card ───────────────────────────────────────────────────────────────
   Widget _jobCard(_Job job) {
-    final stClr = _statusColor(job.status);
-    final stBg  = _statusBg(job.status);
+    final stClr       = _statusColor(job.status);
+    final stBg        = _statusBg(job.status);
+    final isVerified  = job.status.toLowerCase() == 'verified';
+    final isRejected  = job.status.toLowerCase() == 'rejected';
+    final hasImage    = job.image != null && job.image!.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -483,10 +893,19 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Top row: status badge ──────────────────────────────────────
+          // ── Top row: fix-by (left) + status badge (right) ─────────────
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              const Icon(Icons.event_outlined,
+                  size: 13, color: AppColors.textMuted),
+              const SizedBox(width: 4),
+              Text('Fix by: ${_fmtDate(job.fixbyDate)}',
+                  style: const TextStyle(
+                      color:      Color(0xFFE65100),
+                      fontSize:   12,
+                      fontWeight: FontWeight.w600)),
+              const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 8, vertical: 3),
@@ -511,13 +930,6 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
           _infoRow(Icons.person_pin_outlined,
               'Assign To', job.assignName.capitalize()),
 
-          const SizedBox(height: 6),
-
-          // ── Fix By ────────────────────────────────────────────────────
-          _infoRow(Icons.event_outlined,
-              'Fix By', _fmtDate(job.fixbyDate),
-              valueColor: const Color(0xFFE65100)),
-
           // ── Completed Date ────────────────────────────────────────────
           if (job.completedDate.isNotEmpty && job.completedDate != 'null') ...[
             const SizedBox(height: 6),
@@ -539,21 +951,48 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
                 border: Border.all(
                     color: AppColors.borderLight, width: 1),
               ),
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.task_alt_rounded,
-                      size: 13, color: AppColors.textMuted),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      job.toDo.trim().capitalize(),
-                      style: const TextStyle(
-                          color:    AppColors.textSecondary,
-                          fontSize: 12.5,
-                          height:   1.5),
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.task_alt_rounded,
+                          size: 13, color: AppColors.textMuted),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          job.toDo.trim().capitalize(),
+                          style: const TextStyle(
+                              color:    AppColors.textSecondary,
+                              fontSize: 12.5,
+                              height:   1.5),
+                        ),
+                      ),
+                    ],
                   ),
+                  // Attachment link if image present
+                  if (hasImage) ...[
+                    const SizedBox(height: 6),
+                    GestureDetector(
+                      onTap: () => _showImageDialog(job.image!),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.attach_file_rounded,
+                              size: 13,
+                              color: AppColors.primary),
+                          SizedBox(width: 4),
+                          Text('attachment',
+                              style: TextStyle(
+                                  color:      AppColors.primary,
+                                  fontSize:   12,
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.underline)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -567,32 +1006,103 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              _textActionBtn(
-                label:   'Verify',
-                color:   const Color(0xFF2E7D32),
-                bgColor: const Color(0xFFE8F5E9),
-                icon:    Icons.verified_outlined,
-                onTap:   () => _confirmAction(job, 'verify'),
-              ),
-              const SizedBox(width: 6),
-              _textActionBtn(
-                label:   'Reject',
-                color:   AppColors.error,
-                bgColor: const Color(0xFFFFF1F1),
-                icon:    Icons.close_rounded,
-                onTap:   () => _confirmAction(job, 'reject'),
-              ),
-              const SizedBox(width: 6),
+              // Verify — hidden when already verified
+              if (!isVerified)
+                _textActionBtn(
+                  label:   'Verify',
+                  color:   const Color(0xFF2E7D32),
+                  bgColor: const Color(0xFFE8F5E9),
+                  icon:    Icons.verified_outlined,
+                  onTap:   () => _showVerifyDialog(job),
+                ),
+              if (!isVerified) const SizedBox(width: 6),
+              // Reject — hidden when already rejected
+              if (!isRejected)
+                _textActionBtn(
+                  label:   'Reject',
+                  color:   AppColors.error,
+                  bgColor: const Color(0xFFFFF1F1),
+                  icon:    Icons.close_rounded,
+                  onTap:   () => _showRejectDialog(job),
+                ),
+              if (!isRejected) const SizedBox(width: 6),
+              // Extend — always shown
               _textActionBtn(
                 label:   'Extend',
                 color:   AppColors.primary,
                 bgColor: AppColors.primaryLight,
                 icon:    Icons.update_rounded,
-                onTap:   () => _confirmAction(job, 'extend'),
+                onTap:   () => _showExtendDialog(job),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Image Dialog ───────────────────────────────────────────────────────────
+  void _showImageDialog(String imageUrl) {
+    final fullUrl = imageUrl.startsWith('http')
+        ? imageUrl
+        : '${ApiService.baseUrl}/$imageUrl';
+
+    showDialog(
+      context: context,
+      builder: (dCtx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 60),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Image.network(
+                  fullUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                        color:        Colors.white,
+                        borderRadius: BorderRadius.circular(14)),
+                    child: const Text('Unable to load image.',
+                        style: TextStyle(color: AppColors.textSecondary)),
+                  ),
+                  loadingBuilder: (_, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      height: 200,
+                      decoration: BoxDecoration(
+                          color:        Colors.white,
+                          borderRadius: BorderRadius.circular(14)),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                            color: AppColors.primary, strokeWidth: 2.5),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dCtx),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.primary,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 28, vertical: 10),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Close',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -680,17 +1190,15 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
         children: [
           Row(
             children: [
-              _shimmer(width: 26, height: 26, radius: 7),
+              _shimmer(width: 90, height: 14, radius: 4),
               const Spacer(),
               _shimmer(width: 60, height: 20, radius: 5),
             ],
           ),
           const SizedBox(height: 10),
           _shimmer(width: 140, height: 12, radius: 4),
-          const SizedBox(height: 7),
-          _shimmer(width: 110, height: 12, radius: 4),
           const SizedBox(height: 10),
-          _shimmer(width: double.infinity, height: 44, radius: 8),
+          _shimmer(width: double.infinity, height: 50, radius: 8),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,

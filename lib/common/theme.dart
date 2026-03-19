@@ -1,4 +1,4 @@
-import '../main.dart' show scaffoldMessengerKey;
+import 'package:coremicron_crm_app/main.dart' show scaffoldMessengerKey;
 import 'package:flutter/material.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────

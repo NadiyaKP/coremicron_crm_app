@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../common/api_service.dart';
-import '../../common/theme.dart';
-import '../login.dart' show kSessionKey;
-import 'leads.dart' show Lead;
-import '../../common/string_extensions.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/login.dart' show kTokenKey;
+import 'package:coremicron_crm_app/screens/leads/leads.dart' show Lead;
+import 'package:coremicron_crm_app/common/string_extensions.dart';
 
 // ── Simple models ──────────────────────────────────────────────────────────
 class _Customer {
@@ -150,15 +150,8 @@ class _NewLeadPageState extends State<NewLeadPage> {
   Future<void> _loadCustomers() async {
     if (_customersLoaded) return;
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url = Uri.parse('${ApiService.baseUrl}/api/customer/list.php?view=dropdown');
-      final res = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       if (data['success'] == true) {
         final list = data['data'] as List? ?? [];
@@ -176,15 +169,8 @@ class _NewLeadPageState extends State<NewLeadPage> {
   Future<void> _loadEmployees() async {
     if (_employeesLoaded) return;
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url = Uri.parse('${ApiService.baseUrl}/api/employee/list.php?view=dropdown');
-      final res = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       if (data['success'] == true) {
         final list = data['data'] as List? ?? [];
@@ -470,9 +456,6 @@ class _NewLeadPageState extends State<NewLeadPage> {
     setState(() => _isSaving = true);
 
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-
       final Uri url;
       final Map<String, dynamic> body;
 
@@ -495,20 +478,8 @@ class _NewLeadPageState extends State<NewLeadPage> {
         };
       }
 
-      debugPrint('─────────────────────────────────────────');
-      debugPrint('📤  [${_isEdit ? 'UPDATE' : 'CREATE'} LEAD] Request');
-      debugPrint('   🌐  URL  : $url');
-      debugPrint('   📦  Body : ${jsonEncode(body)}');
-      debugPrint('─────────────────────────────────────────');
-
-      final response = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final response = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final data = jsonDecode(response.body) as Map<String, dynamic>;

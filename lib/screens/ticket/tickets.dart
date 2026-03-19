@@ -2,15 +2,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../common/api_service.dart';
-import '../../common/theme.dart';
-import '../login.dart' show kSessionKey;
-import '../home.dart';
-import '../../common/pagination.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/common/pagination.dart';
+import 'package:coremicron_crm_app/common/string_extensions.dart';
+import 'package:coremicron_crm_app/screens/home.dart';
 import 'ticket_view.dart';
 import 'new_ticket.dart';
 import 'assign_ticket.dart';
-import '../../common/string_extensions.dart';
 
 // ── Ticket Model ───────────────────────────────────────────────────────────
 class Ticket {
@@ -131,20 +130,8 @@ class _TicketsPageState extends State<TicketsPage> {
   Future<void> _fetchTickets() async {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url       = Uri.parse('${ApiService.baseUrl}/api/ticket/list.php');
-
-      debugPrint('─────────────────────────────────────────');
-      debugPrint('📤  [TICKETS LIST] Request  URL : $url');
-      debugPrint('─────────────────────────────────────────');
-
-      final response = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final url = Uri.parse('${ApiService.baseUrl}/api/ticket/list.php');
+      final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint(
@@ -169,25 +156,13 @@ class _TicketsPageState extends State<TicketsPage> {
   // ── Delete ─────────────────────────────────────────────────────────────────
   Future<void> _deleteTicket(String ticketId, String reason) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url  = Uri.parse('${ApiService.baseUrl}/api/ticket/delete.php');
       final body = {
         'ticket_id': ticketId,
         'reason':    reason,
       };
-
-      debugPrint('📤  [DELETE TICKET] $url  ${jsonEncode(body)}');
-
-
-      final response = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final response = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final Map<String, dynamic> data = jsonDecode(response.body);

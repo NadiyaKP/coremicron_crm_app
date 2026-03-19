@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import '../../../common/api_service.dart';
-import '../../../common/theme.dart';
-import '../../login.dart' show kSessionKey;
-import '../../../common/string_extensions.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/login.dart' show kTokenKey;
+import 'package:coremicron_crm_app/common/string_extensions.dart';
 
 // ── Deal model ─────────────────────────────────────────────────────────────
 class _Deal {
@@ -206,16 +206,8 @@ class _AssignLeadFollowUpPageState extends State<AssignLeadFollowUpPage>
     if (_deals.isNotEmpty) return;
     setState(() => _dealsLoading = true);
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final res = await http.get(
+      final res = await ApiService.get(
         Uri.parse('${ApiService.baseUrl}/api/deals/list.php'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept':       'application/json',
-          'X-Session-ID': sessionId,
-          'Cookie':       'PHPSESSID=$sessionId',
-        },
       ).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -237,18 +229,10 @@ class _AssignLeadFollowUpPageState extends State<AssignLeadFollowUpPage>
   Future<void> _fetchFollowUps() async {
     setState(() { _fuLoading = true; _fuError = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url = Uri.parse(
           '${ApiService.baseUrl}/api/leads/followup_list.php');
 
-      debugPrint('📤  [FOLLOWUP LIST] $url');
-      final res = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       debugPrint('📥  [FOLLOWUP LIST] ${res.statusCode}  ${res.body}');
@@ -319,8 +303,6 @@ class _AssignLeadFollowUpPageState extends State<AssignLeadFollowUpPage>
 
     setState(() => _isSaving = true);
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final isUpdate  = _editingFollowUp != null;
       final url       = Uri.parse(isUpdate
           ? '${ApiService.baseUrl}/api/leads/followup_update.php'
@@ -346,16 +328,8 @@ class _AssignLeadFollowUpPageState extends State<AssignLeadFollowUpPage>
               'notes': _notesCtrl.text.trim(),
             };
 
-      debugPrint('📤  [FOLLOWUP ${isUpdate ? 'UPDATE' : 'ADD'}] $url  ${jsonEncode(body)}');
-
-      final res = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -615,21 +589,12 @@ class _AssignLeadFollowUpPageState extends State<AssignLeadFollowUpPage>
 
   Future<void> _deleteFollowUp(String comId, String reason) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url  = Uri.parse(
           '${ApiService.baseUrl}/api/leads/followup_delete.php');
       final body = {'comid': comId, 'reason': reason};
 
-      debugPrint('📤  [FOLLOWUP DELETE] $url  ${jsonEncode(body)}');
-      final res = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final data = jsonDecode(res.body) as Map<String, dynamic>;

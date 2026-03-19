@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'login.dart' show kSessionKey, kUsernameKey;
-import 'login.dart';
-import 'home.dart';
-import '../common/theme.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show kTokenKey;
+import 'package:coremicron_crm_app/screens/login.dart';
+import 'package:coremicron_crm_app/screens/home.dart';
+import 'package:coremicron_crm_app/common/theme.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -83,7 +83,7 @@ class _SplashScreenState extends State<SplashScreen>
   /// Returns true if a valid session exists.
   Future<bool> _checkAndPrintSession() async {
     final prefs = await SharedPreferences.getInstance();
-    final sessionId = prefs.getString(kSessionKey);
+    final sessionId = prefs.getString(kTokenKey);
     final username  = prefs.getString(kUsernameKey);
 
     // ── Debug print ────────────────────────────────────────────────────────

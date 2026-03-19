@@ -7,11 +7,11 @@ import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import '../../common/api_service.dart';
-import '../../common/theme.dart';
-import '../login.dart' show kSessionKey;
-import 'tickets.dart' show Ticket;
-import '../../common/string_extensions.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/login.dart' show kTokenKey;
+import 'package:coremicron_crm_app/screens/ticket/tickets.dart' show Ticket;
+import 'package:coremicron_crm_app/common/string_extensions.dart';
 
 // ── Employee model ─────────────────────────────────────────────────────────
 class _Employee {
@@ -254,17 +254,8 @@ class _AssignTicketPageState extends State<AssignTicketPage>
   Future<void> _loadEmployees() async {
     if (_employeesLoaded) return;
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final res = await http.get(
-        Uri.parse('${ApiService.baseUrl}/api/employee/list.php?view=dropdown'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept':       'application/json',
-          'X-Session-ID': sessionId,
-          'Cookie':       'PHPSESSID=$sessionId',
-        },
-      ).timeout(const Duration(seconds: 15));
+      final url = Uri.parse('${ApiService.baseUrl}/api/employee/list.php?view=dropdown');
+      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       if (data['success'] == true) {
         final list = data['data'] as List? ?? [];
@@ -425,19 +416,11 @@ class _AssignTicketPageState extends State<AssignTicketPage>
   Future<void> _fetchJobs() async {
     setState(() { _jobsLoading = true; _jobsError = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url = Uri.parse(
           '${ApiService.baseUrl}/api/ticket/job_list.php'
           '?ticket_id=${widget.ticket.ticketId}');
 
-      debugPrint('📤  [JOB LIST] $url');
-      final res = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       debugPrint('📥  [JOB LIST] ${res.statusCode}  ${res.body}');
@@ -509,21 +492,12 @@ class _AssignTicketPageState extends State<AssignTicketPage>
     setState(() => _isSaving = true);
 
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-
       final isUpdate = _editingJob != null;
-      final url      = Uri.parse(isUpdate
+      final url = Uri.parse(isUpdate
           ? '${ApiService.baseUrl}/api/ticket/job_update.php'
           : '${ApiService.baseUrl}/api/ticket/assign.php');
 
-      // Multipart request to support optional image
-      final req = http.MultipartRequest('POST', url)
-        ..headers.addAll({
-          'Accept':       'application/json',
-          'X-Session-ID': sessionId,
-          'Cookie':       'PHPSESSID=$sessionId',
-        });
+      final req = http.MultipartRequest('POST', url);
 
       if (isUpdate) req.fields['job_id'] = _editingJob!.jobId;
       req.fields['ticket_id']  = widget.ticket.ticketId;
@@ -545,15 +519,8 @@ class _AssignTicketPageState extends State<AssignTicketPage>
         ));
       }
 
-      debugPrint('─────────────────────────────────────────');
-      debugPrint(
-          '📤  [${isUpdate ? 'UPDATE JOB' : 'ASSIGN TICKET'}] $url');
-      debugPrint('   fields: ${req.fields}');
-      debugPrint('─────────────────────────────────────────');
-
-      final streamed = await req.send().timeout(
+      final res = await ApiService.sendMultipart(req).timeout(
           const Duration(seconds: 30));
-      final res = await http.Response.fromStream(streamed);
 
       if (!mounted) return;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -782,21 +749,12 @@ class _AssignTicketPageState extends State<AssignTicketPage>
 
   Future<void> _deleteJob(String jobId) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url =
           Uri.parse('${ApiService.baseUrl}/api/ticket/job_delete.php');
       final body = {'job_id': jobId};
 
-      debugPrint('📤  [DELETE JOB] $url  ${jsonEncode(body)}');
-      final res = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final data = jsonDecode(res.body) as Map<String, dynamic>;

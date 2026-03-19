@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../common/api_service.dart';
-import '../../../common/theme.dart';
-import '../../login.dart' show kSessionKey;
-import '../../../common/string_extensions.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/login.dart' show kTokenKey;
+import 'package:coremicron_crm_app/common/string_extensions.dart';
+import 'package:http_parser/http_parser.dart';
 
 // ── Tasks Reply Page ───────────────────────────────────────────────────────
 class TasksReplyPage extends StatefulWidget {
@@ -90,17 +91,10 @@ class _TasksReplyPageState extends State<TasksReplyPage>
   Future<void> _fetchEmployees() async {
     setState(() => _loadingEmployees = true);
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url = Uri.parse(
           '${ApiService.baseUrl}/api/employee/list.php?view=dropdown');
 
-      final response = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       if (response.statusCode == 200 && data['success'] == true) {
@@ -147,20 +141,11 @@ class _TasksReplyPageState extends State<TasksReplyPage>
   Future<void> _fetchCommunications() async {
     setState(() { _loadingChats = true; _chatError = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url = Uri.parse(
           '${ApiService.baseUrl}/api/ticket/communication_list.php'
           '?job_id=${widget.jobId}');
 
-      debugPrint('📤  [COMM LIST] $url');
-
-      final response = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       debugPrint(
@@ -310,30 +295,28 @@ class _TasksReplyPageState extends State<TasksReplyPage>
     setState(() => _isSubmitting = true);
 
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url = Uri.parse(
           '${ApiService.baseUrl}/api/ticket/communication_create.php');
 
-      final request = http.MultipartRequest('POST', url)
-        ..headers.addAll({
-          'X-Session-ID': sessionId,
-          'Cookie':       'PHPSESSID=$sessionId',
-        })
-        ..fields['job_id']    = widget.jobId
-        ..fields['assign_id'] =
-            _selectedEmployee!['id']?.toString() ?? ''
-        ..fields['message']   = _replyCtrl.text.trim();
+      final fields = {
+        'job_id':    widget.jobId,
+        'assign_id': _selectedEmployee!['id']?.toString() ?? '',
+        'message':   _replyCtrl.text.trim(),
+      };
+
+      final request = http.MultipartRequest('POST', url);
+      request.fields.addAll(fields);
 
       if (_attachedImage != null) {
         request.files.add(await http.MultipartFile.fromPath(
-            'image', _attachedImage!.path));
+          'image',
+          _attachedImage!.path,
+          contentType: MediaType('image', 'jpeg'),
+        ));
       }
 
-      debugPrint('📤  [COMM CREATE] $url');
-      final streamed =
-          await request.send().timeout(const Duration(seconds: 20));
-      final response = await http.Response.fromStream(streamed);
+      final response = await ApiService.sendMultipart(request)
+          .timeout(const Duration(seconds: 20));
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       debugPrint(
           '📥  [COMM CREATE] ${response.statusCode}  ${response.body}');

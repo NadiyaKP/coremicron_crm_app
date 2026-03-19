@@ -2,10 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../common/api_service.dart';
-import '../../../common/theme.dart';
-import '../../login.dart' show kSessionKey;
-import 'employee.dart' show Employee;
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/Registation/employee/employee.dart' show Employee;
 
 // ── Simple models for dropdowns ────────────────────────────────────────────
 class _Department {
@@ -119,19 +118,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
   Future<void> _fetchDepartments() async {
     setState(() { _deptLoading = true; _deptError = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url       = Uri.parse(
-          '${ApiService.baseUrl}/api/department/list.php');
-
-      debugPrint('📤  [DEPT LIST] $url');
-
-      final response = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final url = Uri.parse('${ApiService.baseUrl}/api/department/list.php');
+      final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint('📥  [DEPT LIST] ${response.statusCode}  ${response.body}');
@@ -158,19 +146,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
   Future<void> _fetchMachines() async {
     setState(() { _machineLoading = true; _machineError = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url       = Uri.parse(
-          '${ApiService.baseUrl}/api/machine/list.php');
-
-      debugPrint('📤  [MACHINE LIST] $url');
-
-      final response = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final url = Uri.parse('${ApiService.baseUrl}/api/machine/list.php');
+      final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint(
@@ -233,9 +210,6 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
     setState(() => _isSaving = true);
 
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-
       final Uri url;
       final Map<String, dynamic> body;
 
@@ -266,21 +240,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
         };
       }
 
-      debugPrint('─────────────────────────────────────────');
-      debugPrint(
-          '📤  [${_isEdit ? 'UPDATE' : 'CREATE'} EMPLOYEE] Request');
-      debugPrint('   🌐  URL  : $url');
-      debugPrint('   📦  Body : ${jsonEncode(body)}');
-      debugPrint('─────────────────────────────────────────');
-
-      final response = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final response = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final Map<String, dynamic> data = jsonDecode(response.body);

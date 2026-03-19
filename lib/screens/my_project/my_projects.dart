@@ -2,59 +2,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../common/api_service.dart';
-import '../../../common/theme.dart';
-import '../login.dart' show kSessionKey;
-import '../home.dart';
-import '../../../common/pagination.dart';
-import '../../../common/string_extensions.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/login.dart' show kUsernameKey;
+import 'package:coremicron_crm_app/screens/home.dart';
+import 'package:coremicron_crm_app/common/pagination.dart';
+import 'package:coremicron_crm_app/common/string_extensions.dart';
+import 'package:coremicron_crm_app/screens/ticket/tickets.dart' show Ticket;
+import 'package:coremicron_crm_app/screens/ticket/assign_ticket.dart';
 import 'my_project_view.dart';
 
 // ── Ticket Model ───────────────────────────────────────────────────────────
-class _Ticket {
-  final String ticketId;
-  final String ticketNumber;
-  final String typeOfTickets;
-  final String title;
-  final String notes;
-  final String priority;
-  final String status;
-  final String addedDate;
-  final String addedBy;
-  final String customerName;
-  final String phoneNumber;
-  final String taskHandlerName;
-
-  const _Ticket({
-    required this.ticketId,
-    required this.ticketNumber,
-    required this.typeOfTickets,
-    required this.title,
-    required this.notes,
-    required this.priority,
-    required this.status,
-    required this.addedDate,
-    required this.addedBy,
-    required this.customerName,
-    required this.phoneNumber,
-    required this.taskHandlerName,
-  });
-
-  factory _Ticket.fromJson(Map<String, dynamic> j) => _Ticket(
-        ticketId:        j['ticket_id']         ?? '',
-        ticketNumber:    j['ticket_number']      ?? '',
-        typeOfTickets:   j['type_of_tickets']    ?? '',
-        title:           j['title']              ?? '',
-        notes:           j['notes']              ?? '',
-        priority:        j['priority']           ?? '',
-        status:          j['status']             ?? '',
-        addedDate:       j['added_date']         ?? '',
-        addedBy:         j['added_by']           ?? '',
-        customerName:    j['customer_name']      ?? '',
-        phoneNumber:     j['phone_number']       ?? '',
-        taskHandlerName: j['task_handler_name']  ?? '',
-      );
-}
 
 // ── My Projects Page ───────────────────────────────────────────────────────
 class MyProjectsPage extends StatefulWidget {
@@ -68,8 +26,8 @@ class MyProjectsPage extends StatefulWidget {
 class _MyProjectsPageState extends State<MyProjectsPage> {
   static const int _pageSize = 50;
 
-  List<_Ticket> _all      = [];
-  List<_Ticket> _filtered = [];
+  List<Ticket> _all      = [];
+  List<Ticket> _filtered = [];
   bool          _isLoading = true;
   String?       _errorMessage;
 
@@ -117,25 +75,17 @@ class _MyProjectsPageState extends State<MyProjectsPage> {
   Future<void> _fetchTickets() async {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url = Uri.parse(
           '${ApiService.baseUrl}/api/ticket/list.php?mode=my_assigned');
 
-      debugPrint('📤  [MY PROJECTS] $url');
-      final res = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       debugPrint('📥  [MY PROJECTS] ${res.statusCode}  ${res.body}');
 
       if (res.statusCode == 200 && data['success'] == true) {
         final list = data['tickets'] as List? ?? [];
-        _all = list.map((e) => _Ticket.fromJson(e)).toList();
+        _all = list.map((e) => Ticket.fromJson(e)).toList();
         _applyFilter();
       } else {
         _errorMessage =
@@ -152,7 +102,7 @@ class _MyProjectsPageState extends State<MyProjectsPage> {
   // ── Pagination ─────────────────────────────────────────────────────────────
   int get _totalPages =>
       paginationTotalPages(_filtered.length, _pageSize);
-  List<_Ticket> get _pageItems =>
+  List<Ticket> get _pageItems =>
       paginationPageItems(_filtered, _currentPage, _pageSize);
 
   void _goBackToHome() {
@@ -376,7 +326,7 @@ class _MyProjectsPageState extends State<MyProjectsPage> {
   }
 
   // ── Card ───────────────────────────────────────────────────────────────────
-  Widget _ticketCard(_Ticket t) {
+  Widget _ticketCard(Ticket t) {
     final prClr = _priorityColor(t.priority);
     final prBg  = _priorityBg(t.priority);
 
@@ -522,8 +472,15 @@ class _MyProjectsPageState extends State<MyProjectsPage> {
                 icon:    Icons.person_add_outlined,
                 color:   const Color(0xFF6A1B9A),
                 bgColor: const Color(0xFFF3E5F5),
-                onTap:   () => AppSnackBar.show(
-                    context, 'Assign task coming soon.'),
+                onTap:   () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AssignTicketPage(ticket: t),
+                    ),
+                  );
+                  _fetchTickets();
+                },
               ),
             ],
           ),

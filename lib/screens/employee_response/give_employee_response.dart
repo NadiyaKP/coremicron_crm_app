@@ -4,10 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../common/api_service.dart';
-import '../../common/theme.dart';
-import '../login.dart' show kSessionKey;
-import 'employee_responses.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/login.dart' show kTokenKey;
+import 'package:coremicron_crm_app/screens/employee_response/employee_responses.dart';
 
 class GiveEmployeeResponsePage extends StatefulWidget {
   final EmployeeResponse response;
@@ -56,16 +56,8 @@ class _GiveEmployeeResponsePageState extends State<GiveEmployeeResponsePage> {
     setState(() => _isSubmitting = true);
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      
       final url = Uri.parse('${ApiService.baseUrl}/api/ticket/communication_reply.php');
       final request = http.MultipartRequest('POST', url);
-      
-      request.headers.addAll({
-        'X-Session-ID': sessionId,
-        'Cookie': 'PHPSESSID=$sessionId',
-      });
 
       request.fields['communication_id'] = widget.response.communicationId;
       request.fields['response_text'] = _responseCtrl.text.trim();

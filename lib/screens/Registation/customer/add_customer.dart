@@ -2,9 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../common/api_service.dart';
-import '../../../common/theme.dart';
-import '../../login.dart' show kSessionKey;
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
 
 // ── Add / Edit Customer Page ───────────────────────────────────────────────
 class AddCustomerPage extends StatefulWidget {
@@ -67,10 +66,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
     setState(() => _isSaving = true);
 
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url       = Uri.parse('${ApiService.baseUrl}/api/customer/create.php');
-
+      final url  = Uri.parse('${ApiService.baseUrl}/api/customer/create.php');
       final requestBody = {
         'customer_name': _nameCtrl.text.trim(),
         'phone_number':  _phoneCtrl.text.trim(),
@@ -78,22 +74,8 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         'address':       _addressCtrl.text.trim(),
       };
 
-      debugPrint('─────────────────────────────────────────');
-      debugPrint('📤  [CREATE CUSTOMER] Request');
-      debugPrint('   🌐  URL    : $url');
-      debugPrint('   📦  Body   : ${jsonEncode(requestBody)}');
-      debugPrint('─────────────────────────────────────────');
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept':       'application/json',
-          'X-Session-ID': sessionId,
-          'Cookie':       'PHPSESSID=$sessionId',
-        },
-        body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 15));
+      final response = await ApiService.post(url, body: jsonEncode(requestBody))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final Map<String, dynamic> data = jsonDecode(response.body);
@@ -130,10 +112,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
     setState(() => _isSaving = true);
 
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url       = Uri.parse('${ApiService.baseUrl}/api/customer/update.php');
-
+      final url  = Uri.parse('${ApiService.baseUrl}/api/customer/update.php');
       final requestBody = {
         'id':            widget.customer!['id'],
         'customer_name': _nameCtrl.text.trim(),
@@ -142,22 +121,8 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         'address':       _addressCtrl.text.trim(),
       };
 
-      debugPrint('─────────────────────────────────────────');
-      debugPrint('📤  [UPDATE CUSTOMER] Request');
-      debugPrint('   🌐  URL    : $url');
-      debugPrint('   📦  Body   : ${jsonEncode(requestBody)}');
-      debugPrint('─────────────────────────────────────────');
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept':       'application/json',
-          'X-Session-ID': sessionId,
-          'Cookie':       'PHPSESSID=$sessionId',
-        },
-        body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 15));
+      final response = await ApiService.post(url, body: jsonEncode(requestBody))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final Map<String, dynamic> data = jsonDecode(response.body);

@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../common/api_service.dart';
-import '../../../common/theme.dart';
-import '../../login.dart' show kSessionKey;
-import '../../../common/string_extensions.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/login.dart' show kTokenKey;
+import 'package:coremicron_crm_app/common/string_extensions.dart';
 
 // ── Employee model ─────────────────────────────────────────────────────────
 class _Employee {
@@ -92,16 +92,8 @@ class _ReassignLeadPageState extends State<ReassignLeadPage> {
   Future<void> _fetchEmployees() async {
     setState(() => _loadingEmployees = true);
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final res = await http.get(
+      final res = await ApiService.get(
         Uri.parse('${ApiService.baseUrl}/api/employee/list.php?view=dropdown'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept':       'application/json',
-          'X-Session-ID': sessionId,
-          'Cookie':       'PHPSESSID=$sessionId',
-        },
       ).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -157,8 +149,6 @@ class _ReassignLeadPageState extends State<ReassignLeadPage> {
 
     setState(() => _isSubmitting = true);
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
       final url  = Uri.parse('${ApiService.baseUrl}/api/leads/reassign.php');
       final body = {
         'lead_id':   widget.enquiryId,
@@ -166,16 +156,8 @@ class _ReassignLeadPageState extends State<ReassignLeadPage> {
         'reason':    _reasonCtrl.text.trim(),
       };
 
-      debugPrint('📤  [REASSIGN LEAD] $url  ${jsonEncode(body)}');
-
-      final res = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final data = jsonDecode(res.body) as Map<String, dynamic>;

@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../common/api_service.dart';
-import '../../common/theme.dart';
-import '../login.dart' show kSessionKey;
-import '../../common/pagination.dart';
-import '../../common/string_extensions.dart';
-import '../ticket/ticket_view.dart';
-import '../ticket/tickets.dart' show Ticket;
-import 'give_employee_response.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/login.dart' show kTokenKey;
+import 'package:coremicron_crm_app/common/pagination.dart';
+import 'package:coremicron_crm_app/common/string_extensions.dart';
+import 'package:coremicron_crm_app/screens/ticket/ticket_view.dart';
+import 'package:coremicron_crm_app/screens/ticket/tickets.dart' show Ticket;
+import 'package:coremicron_crm_app/screens/employee_response/give_employee_response.dart';
 
 // ── Employee Response Model ────────────────────────────────────────────────
 class EmployeeResponse {
@@ -129,16 +129,11 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
       final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
+      final sessionId = prefs.getString(kTokenKey) ?? '';
       
       // 1. Fetch tickets first for lookup
       final ticketUrl = Uri.parse('${ApiService.baseUrl}/api/ticket/list.php');
-      final tRes = await ApiService.get(ticketUrl, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      });
+      final tRes = await ApiService.get(ticketUrl);
       if (tRes.statusCode == 200) {
         final tData = jsonDecode(tRes.body);
         if (tData['success'] == true) {
@@ -149,14 +144,7 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
 
       // 2. Fetch communications
       final url = Uri.parse('${ApiService.baseUrl}/api/ticket/communication_list.php?mode=inbox');
-      debugPrint('📤  [EMPLOYEE RESPONSE] Request URL : $url');
-
-      final response = await ApiService.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      });
+      final response = await ApiService.get(url);
 
       final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint('📥  [EMPLOYEE RESPONSE] ${response.statusCode}  ${response.body}');

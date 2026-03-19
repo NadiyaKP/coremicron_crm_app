@@ -2,13 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../common/api_service.dart';
-import '../../../common/theme.dart';
-import '../../login.dart' show kSessionKey;
-import '../../home.dart';
-import '../../../common/pagination.dart';
-import '../../../common/string_extensions.dart';
-import 'add_deal.dart';
+import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
+import 'package:coremicron_crm_app/common/theme.dart';
+import 'package:coremicron_crm_app/screens/home.dart';
+import 'package:coremicron_crm_app/common/pagination.dart';
+import 'package:coremicron_crm_app/common/string_extensions.dart';
+import 'package:coremicron_crm_app/screens/Registation/deals/add_deal.dart';
 
 // ── Hex helpers (also imported by add_deal.dart) ───────────────────────────
 Color _hexToColor(String hex) {
@@ -105,20 +104,8 @@ class _DealsPageState extends State<DealsPage> {
   Future<void> _fetchDeals() async {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url       = Uri.parse('${ApiService.baseUrl}/api/deals/list.php');
-
-      debugPrint('─────────────────────────────────────────');
-      debugPrint('📤  [DEALS LIST] Request  URL : $url');
-      debugPrint('─────────────────────────────────────────');
-
-      final response = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        'X-Session-ID': sessionId,
-        'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      final url = Uri.parse('${ApiService.baseUrl}/api/deals/list.php');
+      final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint('📥  [DEALS LIST] ${response.statusCode}  ${response.body}');
@@ -141,21 +128,11 @@ class _DealsPageState extends State<DealsPage> {
   // ── Delete ─────────────────────────────────────────────────────────────────
   Future<void> _deleteDeal(String id) async {
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kSessionKey) ?? '';
-      final url       = Uri.parse('${ApiService.baseUrl}/api/deals/delete.php');
-      final body      = {'id': id};
+      final url  = Uri.parse('${ApiService.baseUrl}/api/deals/delete.php');
+      final body = {'id': id};
 
-      debugPrint('📤  [DELETE DEAL] $url  ${jsonEncode(body)}');
-
-      final response = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/json',
-            'X-Session-ID': sessionId,
-            'Cookie':       'PHPSESSID=$sessionId',
-          },
-          body: jsonEncode(body)).timeout(const Duration(seconds: 15));
+      final response = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
       final Map<String, dynamic> data = jsonDecode(response.body);

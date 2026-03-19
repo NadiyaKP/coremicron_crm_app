@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../common/api_service.dart';
-import 'home.dart';
-import '../common/theme.dart';
+import 'package:coremicron_crm_app/common/api_service.dart';
+import 'package:coremicron_crm_app/screens/home.dart';
+import 'package:coremicron_crm_app/common/theme.dart';
 
 // ── Session keys (shared across the app) ────────────────────────────────────
-const String kSessionKey  = 'session_id';
+// kTokenKey and kWsIdKey are now imported from common/api_service.dart
 const String kUsernameKey = 'username';
 
 class LoginPage extends StatefulWidget {
@@ -98,47 +98,38 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     try {
       // ── POST to /auth/login.php ────────────────────────────────────────
       final url = Uri.parse('${ApiService.baseUrl}/auth/login.php');
+      final body = jsonEncode({
+        'username': username,
+        'password': password,
+      });
 
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode({
-              'username': username,
-              'password': password,
-            }),
-          )
-          .timeout(const Duration(seconds: 15));
+      debugPrint('─────────────────────────────────────────');
+      debugPrint('📤  [LOGIN] Request');
+      debugPrint('   🌐  URL : $url');
+      debugPrint('   📦  Body: $body');
+      debugPrint('─────────────────────────────────────────');
+
+      final response = await ApiService.post(
+        url,
+        body: body,
+      ).timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
+
+      debugPrint('📥  [LOGIN] Status: ${response.statusCode}');
+      debugPrint('📥  [LOGIN] Body  : ${response.body}');
 
       final Map<String, dynamic> data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
-        // ── Extract PHPSESSID from Set-Cookie header ───────────────────
-        String? sessionId;
-        final rawCookie = response.headers['set-cookie'];
-
-        debugPrint('🍪  Raw Set-Cookie header: $rawCookie');
-
-        if (rawCookie != null) {
-          for (final part in rawCookie.split(';')) {
-            final trimmed = part.trim();
-            if (trimmed.toLowerCase().startsWith('phpsessid=')) {
-              sessionId = trimmed.substring('PHPSESSID='.length);
-              break;
-            }
-          }
-        }
-
-        debugPrint('🔑  Extracted PHPSESSID: ${sessionId ?? 'NOT FOUND in headers'}');
-
-        // ── Save to SharedPreferences ──────────────────────────────────
+        // ── Save Auth Data to SharedPreferences ──────────────────────────
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(kSessionKey, sessionId ?? '');
+        final token = data['token']?.toString()      ?? '';
+        final user  = data['user'] as Map?           ?? {};
+        final wsId  = user['ws_id']?.toString()     ?? '';
+
+        await prefs.setString(kTokenKey,    token);
+        await prefs.setString(kWsIdKey,     wsId);
         await prefs.setString(kUsernameKey, username);
 
         if (!mounted) return;
@@ -150,8 +141,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         );
       } else {
         setState(() => _isLoading = false);
+        final String errorMsg = data['error'] ?? data['message'] ?? 'Invalid credentials.';
         _showSnack(
-          data['message'] ?? 'Invalid credentials. Please try again.',
+          'Login Failed: $errorMsg',
           isError: true,
         );
       }
@@ -159,9 +151,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       setState(() => _isLoading = false);
       _showSnack('Unable to reach the server. Check your connection.',
           isError: true);
-    } catch (_) {
+    } catch (e) {
       setState(() => _isLoading = false);
-      _showSnack('Something went wrong. Please try again.', isError: true);
+      debugPrint('❌  [LOGIN] Error: $e');
+      _showSnack('Something went wrong: $e', isError: true);
     }
   }
 
