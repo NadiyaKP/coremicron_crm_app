@@ -1,3 +1,4 @@
+import '../main.dart' show scaffoldMessengerKey;
 import 'package:flutter/material.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -297,18 +298,22 @@ class AppSnackBar {
   AppSnackBar._();
 
   static void show(
-    BuildContext context,
+    BuildContext? context,
     String message, {
     bool isError = false,
   }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? AppColors.error : AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
+    final snackBar = SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? AppColors.error : AppColors.success,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.all(16),
     );
+
+    if (context != null) {
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    } else {
+      scaffoldMessengerKey.currentState?.showSnackBar(snackBar);
+    }
   }
 }

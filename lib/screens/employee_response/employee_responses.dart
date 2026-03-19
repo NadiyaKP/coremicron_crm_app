@@ -9,6 +9,7 @@ import '../../common/pagination.dart';
 import '../../common/string_extensions.dart';
 import '../ticket/ticket_view.dart';
 import '../ticket/tickets.dart' show Ticket;
+import 'give_employee_response.dart';
 
 // ── Employee Response Model ────────────────────────────────────────────────
 class EmployeeResponse {
@@ -132,7 +133,7 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
       
       // 1. Fetch tickets first for lookup
       final ticketUrl = Uri.parse('${ApiService.baseUrl}/api/ticket/list.php');
-      final tRes = await http.get(ticketUrl, headers: {
+      final tRes = await ApiService.get(ticketUrl, headers: {
         'Content-Type': 'application/json',
         'Accept':       'application/json',
         'X-Session-ID': sessionId,
@@ -150,12 +151,12 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
       final url = Uri.parse('${ApiService.baseUrl}/api/ticket/communication_list.php?mode=inbox');
       debugPrint('📤  [EMPLOYEE RESPONSE] Request URL : $url');
 
-      final response = await http.get(url, headers: {
+      final response = await ApiService.get(url, headers: {
         'Content-Type': 'application/json',
         'Accept':       'application/json',
         'X-Session-ID': sessionId,
         'Cookie':       'PHPSESSID=$sessionId',
-      }).timeout(const Duration(seconds: 15));
+      });
 
       final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint('📥  [EMPLOYEE RESPONSE] ${response.statusCode}  ${response.body}');
@@ -392,6 +393,29 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
               ),
               const Spacer(),
               GestureDetector(
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GiveEmployeeResponsePage(response: r),
+                    ),
+                  );
+                  if (result == true) {
+                    _fetchResponses();
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color:        AppColors.background,
+                    borderRadius: BorderRadius.circular(8),
+                    border:       Border.all(color: AppColors.border),
+                  ),
+                  child: const Icon(Icons.reply_rounded, size: 18, color: AppColors.primary),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
                 onTap: () => _showDetailDialog(r),
                 child: Container(
                   padding: const EdgeInsets.all(8),
@@ -403,11 +427,6 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
                   child: const Icon(Icons.mark_chat_read_outlined, size: 18, color: AppColors.primary),
                 ),
               ),
-              if (r.responseStatus.toLowerCase() == 'yes')
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: const Icon(Icons.reply_rounded, size: 18, color: Color(0xFF2E7D32)),
-                ),
             ],
           ),
         ],

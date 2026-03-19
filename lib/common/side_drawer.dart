@@ -12,6 +12,9 @@ import '../screens/ticket/tickets.dart';
 import '../screens/to-do/my_task/my_tasks.dart';
 import '../screens/Follow_Up/follow_ups.dart';
 import '../screens/employee_response/employee_responses.dart';
+import '../screens/leave_application/leave_applications.dart';
+import '../screens/update_attendance/update_attendance_list.dart';
+import '../screens/my_project/my_projects.dart';
 
 class AppSideDrawer extends StatefulWidget {
   final String username;
@@ -45,10 +48,13 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
   ];
 
   final List<_DrawerMenuItem> _todoItems = [
-    _DrawerMenuItem(icon: Icons.task_alt_rounded,       label: 'My Task'),
-    _DrawerMenuItem(icon: Icons.assignment_outlined,    label: 'My Assigned Leads'),
-    _DrawerMenuItem(icon: Icons.event_note_outlined,    label: 'Follow Up'),
-    _DrawerMenuItem(icon: Icons.forum_outlined,         label: 'Employee Response'),
+    _DrawerMenuItem(icon: Icons.task_alt_rounded,        label: 'My Task'),
+    _DrawerMenuItem(icon: Icons.assignment_outlined,     label: 'My Assigned Leads'),
+    _DrawerMenuItem(icon: Icons.event_note_outlined,     label: 'Follow Up'),
+    _DrawerMenuItem(icon: Icons.forum_outlined,          label: 'Employee Response'),
+    _DrawerMenuItem(icon: Icons.beach_access_outlined,   label: 'Leave Application'),
+    _DrawerMenuItem(icon: Icons.fingerprint_rounded,     label: 'Update Attendance'),
+    _DrawerMenuItem(icon: Icons.work_outline_rounded,    label: 'My Projects'),
   ];
 
   @override
@@ -108,11 +114,11 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
   }
 
   Widget _buildExpandableSection({
-    required IconData             icon,
-    required String               label,
-    required bool                 expanded,
+    required IconData              icon,
+    required String                label,
+    required bool                  expanded,
     required List<_DrawerMenuItem> items,
-    required VoidCallback         onTap,
+    required VoidCallback          onTap,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,6 +330,27 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                     builder: (_) =>
                         EmployeeResponsesPage(username: widget.username)));
             break;
+          case 'Leave Application':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        LeaveApplicationsPage(username: widget.username)));
+            break;
+          case 'Update Attendance':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        UpdateAttendancePage(username: widget.username)));
+            break;
+          case 'My Projects':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        MyProjectsPage(username: widget.username)));
+            break;
           default:
             break;
         }
@@ -478,8 +505,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       decoration: BoxDecoration(
         border: Border(
-            top: BorderSide(
-                color: AppColors.borderLight, width: 1)),
+            top: BorderSide(color: AppColors.borderLight, width: 1)),
       ),
       child: Text(
         '© ${DateTime.now().year} Coremicron CRM',
