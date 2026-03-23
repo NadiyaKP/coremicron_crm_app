@@ -9,6 +9,7 @@ import 'package:coremicron_crm_app/screens/home.dart';
 import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/screens/leads/lead_view.dart';
 import 'package:coremicron_crm_app/screens/leads/new_lead.dart';
+import 'package:coremicron_crm_app/screens/leads/bulk_add.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
 
 // ── Lead Model ─────────────────────────────────────────────────────────────
@@ -148,8 +149,8 @@ class _LeadsPageState extends State<LeadsPage> {
   // ── Delete ─────────────────────────────────────────────────────────────────
   Future<void> _deleteLead(String enquiryId) async {
     try {
-      final url       = Uri.parse('${ApiService.baseUrl}/api/leads/delete.php');
-      final body      = {'enquiry_id': enquiryId};
+      final url  = Uri.parse('${ApiService.baseUrl}/api/leads/delete.php');
+      final body = {'enquiry_id': enquiryId};
 
       final response = await ApiService.post(url, body: jsonEncode(body))
           .timeout(const Duration(seconds: 15));
@@ -191,7 +192,6 @@ class _LeadsPageState extends State<LeadsPage> {
     );
   }
 
-
   // ── Delete Dialog ──────────────────────────────────────────────────────────
   void _showDeleteDialog(Lead l) {
     bool isDeleting = false;
@@ -211,7 +211,6 @@ class _LeadsPageState extends State<LeadsPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
                 Row(
                   children: [
                     Container(
@@ -233,10 +232,7 @@ class _LeadsPageState extends State<LeadsPage> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 14),
-
-                // Confirmation text
                 const Text(
                   'Are you sure you want to delete this lead?',
                   style: TextStyle(
@@ -244,12 +240,9 @@ class _LeadsPageState extends State<LeadsPage> {
                       fontSize: 13.5,
                       height:   1.5),
                 ),
-
                 const SizedBox(height: 14),
                 const Divider(height: 1, color: AppColors.borderLight),
                 const SizedBox(height: 12),
-
-                // Lead details
                 _deleteDialogRow(Icons.tag_rounded,
                     'Lead No', l.enquiryNumber),
                 const SizedBox(height: 8),
@@ -262,10 +255,7 @@ class _LeadsPageState extends State<LeadsPage> {
                 _deleteDialogRow(Icons.title_rounded,
                     'Title',
                     l.title.isEmpty ? '(No title)' : l.title.capitalize()),
-
                 const SizedBox(height: 20),
-
-                // Buttons
                 Row(
                   children: [
                     Expanded(
@@ -398,7 +388,39 @@ class _LeadsPageState extends State<LeadsPage> {
                           fontWeight: FontWeight.w500),
                     ),
                   const Spacer(),
-                  _newLeadButton(),
+                  // ── New Lead button ──────────────────────────────────
+                  _actionButton(
+                    icon:    Icons.add_rounded,
+                    label:   'New Lead',
+                    color:   AppColors.primary,
+                    onTap: () async {
+                      final result = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              NewLeadPage(username: widget.username),
+                        ),
+                      );
+                      if (result == true) _fetchLeads();
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  // ── Bulk Add button ──────────────────────────────────
+                  _actionButton(
+                    icon:    Icons.upload_file_rounded,
+                    label:   'Bulk Add',
+                    color:   const Color(0xFF2E7D32),
+                    onTap: () async {
+                      final result = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              BulkAddPage(username: widget.username),
+                        ),
+                      );
+                      if (result == true) _fetchLeads();
+                    },
+                  ),
                 ],
               ),
             ),
@@ -515,29 +537,25 @@ class _LeadsPageState extends State<LeadsPage> {
     );
   }
 
-  // ── New Lead button ────────────────────────────────────────────────────────
-  Widget _newLeadButton() {
+  // ── Shared small action button ─────────────────────────────────────────────
+  Widget _actionButton({
+    required IconData     icon,
+    required String       label,
+    required Color        color,
+    required VoidCallback onTap,
+  }) {
     return ElevatedButton.icon(
-      onPressed: () async {
-        final result = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => NewLeadPage(username: widget.username),
-          ),
-        );
-        if (result == true) _fetchLeads();
-      },
-      icon: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
-      label: const Text('New Lead',
-          style: TextStyle(
+      onPressed: onTap,
+      icon:  Icon(icon, size: 15, color: Colors.white),
+      label: Text(label,
+          style: const TextStyle(
               color:      Colors.white,
               fontWeight: FontWeight.w600,
               fontSize:   12.5)),
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
+        backgroundColor: color,
         elevation: 0,
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(9)),
       ),
@@ -573,26 +591,21 @@ class _LeadsPageState extends State<LeadsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Top row: date (left) + enquiry number badge (right) ─────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Date top-left
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.calendar_today_outlined,
                       size: 11, color: AppColors.textMuted),
                   const SizedBox(width: 3),
-                  Text(
-                    l.addedDate,
-                    style: const TextStyle(
-                        color:    AppColors.textMuted,
-                        fontSize: 11),
-                  ),
+                  Text(l.addedDate,
+                      style: const TextStyle(
+                          color:    AppColors.textMuted,
+                          fontSize: 11)),
                 ],
               ),
-              // Enquiry number badge (no #)
               Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 8, vertical: 3),
@@ -600,21 +613,15 @@ class _LeadsPageState extends State<LeadsPage> {
                   color:        AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(
-                  l.enquiryNumber,
-                  style: const TextStyle(
-                    color:      AppColors.primary,
-                    fontSize:   11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: Text(l.enquiryNumber,
+                    style: const TextStyle(
+                        color:      AppColors.primary,
+                        fontSize:   11,
+                        fontWeight: FontWeight.w700)),
               ),
             ],
           ),
-
           const SizedBox(height: 6),
-
-          // ── Title ────────────────────────────────────────────────────
           Text(
             l.title.isEmpty ? '(No title)' : l.title.capitalize(),
             maxLines: 1,
@@ -630,43 +637,33 @@ class _LeadsPageState extends State<LeadsPage> {
                   : FontStyle.normal,
             ),
           ),
-
           const SizedBox(height: 5),
-
-          // ── Customer name + phone ─────────────────────────────────────
           Row(
             children: [
               const Icon(Icons.person_outline_rounded,
                   size: 11, color: AppColors.textMuted),
               const SizedBox(width: 3),
               Expanded(
-                child: Text(
-                  l.customerName.capitalize(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color:    AppColors.textSecondary,
-                      fontSize: 12),
-                ),
+                child: Text(l.customerName.capitalize(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color:    AppColors.textSecondary,
+                        fontSize: 12)),
               ),
               const SizedBox(width: 10),
               const Icon(Icons.phone_outlined,
                   size: 11, color: AppColors.textMuted),
               const SizedBox(width: 3),
-              Text(
-                l.customerPhone,
-                style: const TextStyle(
-                    color:    AppColors.textSecondary,
-                    fontSize: 12),
-              ),
+              Text(l.customerPhone,
+                  style: const TextStyle(
+                      color:    AppColors.textSecondary,
+                      fontSize: 12)),
             ],
           ),
-
           const SizedBox(height: 8),
           const Divider(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 7),
-
-          // ── Action buttons row ────────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -695,8 +692,8 @@ class _LeadsPageState extends State<LeadsPage> {
                   final result = await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => NewLeadPage(
-                          username: widget.username, lead: l),
+                      builder: (_) =>
+                          NewLeadPage(username: widget.username, lead: l),
                     ),
                   );
                   if (result == true) _fetchLeads();

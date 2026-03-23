@@ -8,6 +8,7 @@ import 'package:coremicron_crm_app/screens/home.dart';
 import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
 import 'add_employee.dart';
+import 'employee_permission.dart';
 
 // ── Employee Model ─────────────────────────────────────────────────────────
 class Employee {
@@ -398,7 +399,6 @@ class _EmployeePageState extends State<EmployeePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Name
                 Text(
                   e.employeeName.capitalize(),
                   maxLines: 1,
@@ -411,7 +411,6 @@ class _EmployeePageState extends State<EmployeePage> {
                   ),
                 ),
                 const SizedBox(height: 3),
-                // ID + Phone
                 Row(
                   children: [
                     _infoChip(Icons.badge_outlined, 'ID: ${e.employeeId}'),
@@ -424,8 +423,8 @@ class _EmployeePageState extends State<EmployeePage> {
                   ],
                 ),
                 const SizedBox(height: 3),
-                // Department
-                _infoChip(Icons.apartment_rounded, e.departmentName.capitalize(),
+                _infoChip(Icons.apartment_rounded,
+                    e.departmentName.capitalize(),
                     ellipsis: true),
               ],
             ),
@@ -457,12 +456,20 @@ class _EmployeePageState extends State<EmployeePage> {
               // Active / Inactive toggle
               _statusButton(e),
               const SizedBox(height: 6),
-              // Settings
+              // Settings → Permissions page
               _actionIcon(
                 icon:    Icons.settings_outlined,
                 color:   AppColors.textLabel,
                 bgColor: const Color(0xFFF0F0F0),
-                onTap:   () {},
+                onTap:   () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EmployeePermissionPage(
+                      employeeId:   e.id,
+                      employeeName: e.employeeName,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -566,7 +573,6 @@ class _EmployeePageState extends State<EmployeePage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
                 Row(
                   children: [
                     Container(
@@ -606,7 +612,6 @@ class _EmployeePageState extends State<EmployeePage> {
                 const Divider(height: 1, color: AppColors.borderLight),
                 const SizedBox(height: 16),
 
-                // Employee details
                 _dialogDetailRow('Employee Name', e.employeeName.capitalize()),
                 const SizedBox(height: 8),
                 _dialogDetailRow('Employee ID', e.employeeId),
@@ -622,7 +627,6 @@ class _EmployeePageState extends State<EmployeePage> {
 
                 const SizedBox(height: 18),
 
-                // Confirmation text
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
@@ -652,7 +656,6 @@ class _EmployeePageState extends State<EmployeePage> {
 
                 const SizedBox(height: 20),
 
-                // Buttons
                 Row(
                   children: [
                     Expanded(
@@ -756,7 +759,8 @@ class _EmployeePageState extends State<EmployeePage> {
   // ── Toggle Status API ──────────────────────────────────────────────────────
   Future<void> _toggleStatus(Employee e, String newStatus) async {
     try {
-      final url = Uri.parse('${ApiService.baseUrl}/api/employee/toggle_status.php');
+      final url = Uri.parse(
+          '${ApiService.baseUrl}/api/employee/toggle_status.php');
       final body = {'id': e.id, 'status': newStatus};
 
       final response = await ApiService.post(url, body: jsonEncode(body))

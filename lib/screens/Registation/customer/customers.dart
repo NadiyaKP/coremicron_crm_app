@@ -6,6 +6,7 @@ import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTo
 import 'package:coremicron_crm_app/common/theme.dart';
 import 'package:coremicron_crm_app/screens/home.dart';
 import 'package:coremicron_crm_app/screens/Registation/customer/add_customer.dart';
+import 'package:coremicron_crm_app/screens/Registation/customer/customer_view.dart';
 import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
 
@@ -142,7 +143,7 @@ class _CustomersPageState extends State<CustomersPage> {
 
       if (response.statusCode == 200 && data['success'] == true) {
         AppSnackBar.show(context, 'Customer deleted successfully.');
-        _fetchCustomers(); // refresh list
+        _fetchCustomers();
       } else {
         AppSnackBar.show(
             context, data['message'] ?? 'Failed to delete.', isError: true);
@@ -192,6 +193,19 @@ class _CustomersPageState extends State<CustomersPage> {
     if (result == true) _fetchCustomers();
   }
 
+  // ── Navigate: View Customer ────────────────────────────────────────────────
+  void _openViewCustomer(Customer c) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CustomerViewPage(
+          customerId:   c.id,
+          customerName: c.name,
+        ),
+      ),
+    );
+  }
+
   // ── Back to Home with drawer open ──────────────────────────────────────────
   void _goBackToHome() {
     Navigator.of(context).pushAndRemoveUntil(
@@ -205,141 +219,11 @@ class _CustomersPageState extends State<CustomersPage> {
     );
   }
 
-  // ── View popup ─────────────────────────────────────────────────────────────
-  void _showViewDialog(Customer c) {
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: const BoxDecoration(
-                        color: AppColors.primaryLight,
-                        shape: BoxShape.circle),
-                    child: Center(
-                      child: Text(
-                        c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
-                        style: const TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(c.name.capitalize(),
-                            style: const TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 4),
-                        _statusBadge(c.status),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded,
-                        color: AppColors.textLabel, size: 20),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Divider(color: AppColors.borderLight),
-              const SizedBox(height: 14),
-              _detailRow(Icons.phone_outlined,
-                  'Phone',   c.phone.isNotEmpty   ? c.phone   : '—'),
-              _detailRow(Icons.email_outlined,
-                  'Email',   c.email.isNotEmpty   ? c.email   : '—'),
-              _detailRow(Icons.location_on_outlined,
-                  'Address', c.address.isNotEmpty ? c.address.capitalize() : '—'),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: AppButtonStyles.primary,
-                  child: const Text('Close',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _detailRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 16, color: AppColors.primary),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 68,
-            child: Text(label,
-                style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500)),
-          ),
-          Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statusBadge(String status) {
-    final isActive = status.toLowerCase() == 'active';
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: isActive ? AppColors.successBg : const Color(0xFFFFF3CD),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        status.isNotEmpty ? status : '—',
-        style: TextStyle(
-          color: isActive ? AppColors.success : const Color(0xFF856404),
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
   // ── Delete dialog with reason textbox ─────────────────────────────────────
   void _showDeleteDialog(Customer c) {
-    final reasonCtrl = TextEditingController();
+    final reasonCtrl  = TextEditingController();
     final reasonFocus = FocusNode();
-    bool isDeleting = false;
+    bool isDeleting   = false;
 
     showDialog(
       context: context,
@@ -433,12 +317,12 @@ class _CustomersPageState extends State<CustomersPage> {
                             cursorColor: AppColors.primary,
                             style: const TextStyle(
                                 color: AppColors.textPrimary, fontSize: 14),
-                            decoration: InputDecoration(
+                            decoration: const InputDecoration(
                               hintText: 'Enter reason for deleting this customer…',
-                              hintStyle: const TextStyle(
+                              hintStyle: TextStyle(
                                   color: AppColors.textHint, fontSize: 13),
                               border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
+                              contentPadding: EdgeInsets.symmetric(
                                   horizontal: 14, vertical: 12),
                             ),
                           ),
@@ -478,8 +362,7 @@ class _CustomersPageState extends State<CustomersPage> {
                             onPressed: isDeleting
                                 ? null
                                 : () async {
-                                    final reason =
-                                        reasonCtrl.text.trim();
+                                    final reason = reasonCtrl.text.trim();
                                     if (reason.isEmpty) {
                                       AppSnackBar.show(
                                         context,
@@ -491,8 +374,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                     setDialogState(
                                         () => isDeleting = true);
                                     Navigator.pop(dialogCtx);
-                                    await _deleteCustomer(
-                                        c.id, reason);
+                                    await _deleteCustomer(c.id, reason);
                                   },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.error,
@@ -759,12 +641,10 @@ class _CustomersPageState extends State<CustomersPage> {
 
           const SizedBox(width: 12),
 
-          // Name + contact + action buttons stacked
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Full name — no ellipsis
                 Text(
                   c.name.capitalize(),
                   style: const TextStyle(
@@ -777,7 +657,6 @@ class _CustomersPageState extends State<CustomersPage> {
 
                 const SizedBox(height: 5),
 
-                // Phone & email — wraps naturally
                 Wrap(
                   spacing: 10,
                   runSpacing: 3,
@@ -815,7 +694,6 @@ class _CustomersPageState extends State<CustomersPage> {
 
                 const SizedBox(height: 10),
 
-                // Action buttons — right aligned, below name
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -823,7 +701,7 @@ class _CustomersPageState extends State<CustomersPage> {
                       icon:    Icons.remove_red_eye_outlined,
                       color:   AppColors.success,
                       bgColor: AppColors.successBg,
-                      onTap:   () => _showViewDialog(c),
+                      onTap:   () => _openViewCustomer(c),   // ← navigates
                     ),
                     const SizedBox(width: 7),
                     _actionIcon(

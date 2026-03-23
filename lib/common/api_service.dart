@@ -9,7 +9,7 @@ const String kWsIdKey    = 'workspace_id';
 class ApiService {
   /// Base URL for the entire app.
   /// Import this file and use [ApiService.baseUrl] + your endpoint.
-  static const String baseUrl = 'https://192.168.1.123/website/crm_backend';
+  static const String baseUrl = 'https://192.168.1.123';
 
   /// Standard response handler for global errors (e.g., 403 Forbidden)
   /// and extracting session cookies.

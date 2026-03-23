@@ -17,6 +17,9 @@ import 'package:coremicron_crm_app/screens/update_attendance/update_attendance_l
 import 'package:coremicron_crm_app/screens/my_project/my_projects.dart';
 import 'package:coremicron_crm_app/screens/my_profile/my_attendance/my_attendance.dart';
 import 'package:coremicron_crm_app/screens/my_profile/leave_application/my_leave_application.dart';
+import 'package:coremicron_crm_app/screens/my_profile/pending_works/my_pending_works.dart';
+import 'package:coremicron_crm_app/screens/my_profile/completed_tasks/my_completed_tasks.dart';
+import 'package:coremicron_crm_app/screens/settings/change_password.dart';
 
 class AppSideDrawer extends StatefulWidget {
   final String username;
@@ -34,6 +37,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
   bool _registrationExpanded = false;
   bool _todoExpanded         = false;
   bool _profileExpanded      = false;
+  bool _settingsExpanded     = false;
 
   @override
   void initState() {
@@ -61,8 +65,14 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
   ];
 
   final List<_DrawerMenuItem> _profileItems = [
-    _DrawerMenuItem(icon: Icons.calendar_month_outlined,  label: 'My Attendance'),
-    _DrawerMenuItem(icon: Icons.beach_access_outlined,    label: 'My Leave Application'),
+    _DrawerMenuItem(icon: Icons.calendar_month_outlined,        label: 'My Attendance'),
+    _DrawerMenuItem(icon: Icons.beach_access_outlined,          label: 'My Leave Application'),
+    _DrawerMenuItem(icon: Icons.pending_actions_rounded,        label: 'Pending Works'),
+    _DrawerMenuItem(icon: Icons.check_circle_outline_rounded,   label: 'Completed Tasks'),
+  ];
+
+  final List<_DrawerMenuItem> _settingsItems = [
+    _DrawerMenuItem(icon: Icons.lock_outline_rounded, label: 'Change Password'),
   ];
 
   @override
@@ -112,6 +122,15 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                     items:    _profileItems,
                     onTap:    () =>
                         setState(() => _profileExpanded = !_profileExpanded),
+                  ),
+                  const SizedBox(height: 4),
+                  _buildExpandableSection(
+                    icon:     Icons.settings_outlined,
+                    label:    'Settings',
+                    expanded: _settingsExpanded,
+                    items:    _settingsItems,
+                    onTap:    () =>
+                        setState(() => _settingsExpanded = !_settingsExpanded),
                   ),
                   const SizedBox(height: 8),
                   Padding(
@@ -381,6 +400,26 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                 MaterialPageRoute(
                     builder: (_) =>
                         MyLeaveApplicationPage(username: widget.username)));
+            break;
+          case 'Pending Works':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        PendingWorksPage(username: widget.username)));
+            break;
+          case 'Completed Tasks':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        MyCompletedTasksPage(username: widget.username)));
+            break;
+          case 'Change Password':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ChangePasswordPage()));
             break;
           default:
             break;
