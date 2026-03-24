@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'theme.dart';
+import 'package:coremicron_crm_app/common/theme.dart';
 import 'package:coremicron_crm_app/screens/Registation/customer/customers.dart';
 import 'package:coremicron_crm_app/screens/Registation/department/departments.dart';
 import 'package:coremicron_crm_app/screens/Registation/team/teams.dart';
@@ -19,7 +19,11 @@ import 'package:coremicron_crm_app/screens/my_profile/my_attendance/my_attendanc
 import 'package:coremicron_crm_app/screens/my_profile/leave_application/my_leave_application.dart';
 import 'package:coremicron_crm_app/screens/my_profile/pending_works/my_pending_works.dart';
 import 'package:coremicron_crm_app/screens/my_profile/completed_tasks/my_completed_tasks.dart';
+import 'package:coremicron_crm_app/screens/reports/lead_wise_report.dart';
 import 'package:coremicron_crm_app/screens/settings/change_password.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:coremicron_crm_app/screens/login.dart';
+import 'package:coremicron_crm_app/common/api_service.dart';
 
 class AppSideDrawer extends StatefulWidget {
   final String username;
@@ -37,6 +41,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
   bool _registrationExpanded = false;
   bool _todoExpanded         = false;
   bool _profileExpanded      = false;
+  bool _reportsExpanded      = false;
   bool _settingsExpanded     = false;
 
   @override
@@ -55,24 +60,34 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
   ];
 
   final List<_DrawerMenuItem> _todoItems = [
-    _DrawerMenuItem(icon: Icons.task_alt_rounded,        label: 'My Task'),
-    _DrawerMenuItem(icon: Icons.assignment_outlined,     label: 'My Assigned Leads'),
-    _DrawerMenuItem(icon: Icons.event_note_outlined,     label: 'Follow Up'),
-    _DrawerMenuItem(icon: Icons.forum_outlined,          label: 'Employee Response'),
-    _DrawerMenuItem(icon: Icons.beach_access_outlined,   label: 'Leave Application'),
-    _DrawerMenuItem(icon: Icons.fingerprint_rounded,     label: 'Update Attendance'),
-    _DrawerMenuItem(icon: Icons.work_outline_rounded,    label: 'My Projects'),
+    _DrawerMenuItem(icon: Icons.task_alt_rounded,       label: 'My Task'),
+    _DrawerMenuItem(icon: Icons.assignment_outlined,    label: 'My Assigned Leads'),
+    _DrawerMenuItem(icon: Icons.event_note_outlined,    label: 'Follow Up'),
+    _DrawerMenuItem(icon: Icons.forum_outlined,         label: 'Employee Response'),
+    _DrawerMenuItem(icon: Icons.beach_access_outlined,  label: 'Leave Application'),
+    _DrawerMenuItem(icon: Icons.fingerprint_rounded,    label: 'Update Attendance'),
+    _DrawerMenuItem(icon: Icons.work_outline_rounded,   label: 'My Projects'),
   ];
 
   final List<_DrawerMenuItem> _profileItems = [
-    _DrawerMenuItem(icon: Icons.calendar_month_outlined,        label: 'My Attendance'),
-    _DrawerMenuItem(icon: Icons.beach_access_outlined,          label: 'My Leave Application'),
-    _DrawerMenuItem(icon: Icons.pending_actions_rounded,        label: 'Pending Works'),
-    _DrawerMenuItem(icon: Icons.check_circle_outline_rounded,   label: 'Completed Tasks'),
+    _DrawerMenuItem(icon: Icons.calendar_month_outlined,      label: 'My Attendance'),
+    _DrawerMenuItem(icon: Icons.beach_access_outlined,        label: 'My Leave Application'),
+    _DrawerMenuItem(icon: Icons.pending_actions_rounded,      label: 'Pending Works'),
+    _DrawerMenuItem(icon: Icons.check_circle_outline_rounded, label: 'Completed Tasks'),
+  ];
+
+  final List<_DrawerMenuItem> _reportsItems = [
+    _DrawerMenuItem(icon: Icons.format_list_bulleted_rounded, label: 'Leads Wise'),
+    _DrawerMenuItem(icon: Icons.handshake_outlined,           label: 'Deal Wise'),
+    _DrawerMenuItem(icon: Icons.badge_outlined,               label: 'Employee Wise'),
+    _DrawerMenuItem(icon: Icons.pending_actions_rounded,      label: 'Pending Works'),
+    _DrawerMenuItem(icon: Icons.fingerprint_rounded,          label: 'Attendance'),
+    _DrawerMenuItem(icon: Icons.beach_access_outlined,        label: 'Leave Application'),
   ];
 
   final List<_DrawerMenuItem> _settingsItems = [
     _DrawerMenuItem(icon: Icons.lock_outline_rounded, label: 'Change Password'),
+    _DrawerMenuItem(icon: Icons.logout_rounded,       label: 'Logout'),
   ];
 
   @override
@@ -125,6 +140,15 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                   ),
                   const SizedBox(height: 4),
                   _buildExpandableSection(
+                    icon:     Icons.bar_chart_rounded,
+                    label:    'Reports',
+                    expanded: _reportsExpanded,
+                    items:    _reportsItems,
+                    onTap:    () =>
+                        setState(() => _reportsExpanded = !_reportsExpanded),
+                  ),
+                  const SizedBox(height: 4),
+                  _buildExpandableSection(
                     icon:     Icons.settings_outlined,
                     label:    'Settings',
                     expanded: _settingsExpanded,
@@ -134,8 +158,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                   ),
                   const SizedBox(height: 8),
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Divider(
                         color: AppColors.borderLight, thickness: 1),
                   ),
@@ -149,6 +172,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
     );
   }
 
+  // ── Expandable section ─────────────────────────────────────────────────────
   Widget _buildExpandableSection({
     required IconData              icon,
     required String                label,
@@ -220,8 +244,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
           curve:    Curves.easeInOut,
           child: expanded
               ? Padding(
-                  padding:
-                      const EdgeInsets.only(left: 28, right: 16),
+                  padding: const EdgeInsets.only(left: 28, right: 16),
                   child: Column(
                       children: items
                           .map((item) => _buildSubItem(item))
@@ -233,6 +256,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
     );
   }
 
+  // ── Standalone item ────────────────────────────────────────────────────────
   Widget _buildStandaloneItem(
       {required IconData icon, required String label}) {
     return Padding(
@@ -261,8 +285,8 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
         child: Container(
           padding: const EdgeInsets.symmetric(
               horizontal: 14, vertical: 11),
-          decoration:
-              BoxDecoration(borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10)),
           child: Row(
             children: [
               Container(
@@ -289,11 +313,16 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
     );
   }
 
+  // ── Sub-item tile ──────────────────────────────────────────────────────────
   Widget _buildSubItem(_DrawerMenuItem item) {
     return InkWell(
       onTap: () {
-        Navigator.pop(context);
+        if (item.label != 'Logout') {
+          Navigator.pop(context);
+        }
         switch (item.label) {
+
+          // ── Registration ─────────────────────────────────────────────
           case 'Department':
             Navigator.push(
                 context,
@@ -337,6 +366,8 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                         AttendanceMachinePage(
                             username: widget.username)));
             break;
+
+          // ── To Do ────────────────────────────────────────────────────
           case 'My Task':
             Navigator.push(
                 context,
@@ -364,21 +395,24 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                 context,
                 MaterialPageRoute(
                     builder: (_) =>
-                        EmployeeResponsesPage(username: widget.username)));
+                        EmployeeResponsesPage(
+                            username: widget.username)));
             break;
           case 'Leave Application':
             Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (_) =>
-                        LeaveApplicationsPage(username: widget.username)));
+                        LeaveApplicationsPage(
+                            username: widget.username)));
             break;
           case 'Update Attendance':
             Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (_) =>
-                        UpdateAttendancePage(username: widget.username)));
+                        UpdateAttendancePage(
+                            username: widget.username)));
             break;
           case 'My Projects':
             Navigator.push(
@@ -387,6 +421,8 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                     builder: (_) =>
                         MyProjectsPage(username: widget.username)));
             break;
+
+          // ── My Profile ───────────────────────────────────────────────
           case 'My Attendance':
             Navigator.push(
                 context,
@@ -399,7 +435,8 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                 context,
                 MaterialPageRoute(
                     builder: (_) =>
-                        MyLeaveApplicationPage(username: widget.username)));
+                        MyLeaveApplicationPage(
+                            username: widget.username)));
             break;
           case 'Pending Works':
             Navigator.push(
@@ -413,28 +450,51 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                 context,
                 MaterialPageRoute(
                     builder: (_) =>
-                        MyCompletedTasksPage(username: widget.username)));
+                        MyCompletedTasksPage(
+                            username: widget.username)));
             break;
+
+          // ── Reports ──────────────────────────────────────────────────
+          case 'Leads Wise':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        LeadWiseReportPage(username: widget.username)));
+            break;
+          case 'Deal Wise':
+          case 'Employee Wise':
+          case 'Attendance':
+            AppSnackBar.show(context,
+                '${item.label} report coming soon.');
+            break;
+
+          // ── Settings ─────────────────────────────────────────────────
           case 'Change Password':
             Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (_) => const ChangePasswordPage()));
             break;
+          case 'Logout':
+            _handleLogout();
+            break;
+
           default:
             break;
         }
       },
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding: const EdgeInsets.symmetric(
+            horizontal: 12, vertical: 7),
         child: Row(
           children: [
             Column(
               children: [
                 Container(
-                    width: 1.5, height: 10, color: AppColors.border),
+                    width: 1.5, height: 10,
+                    color: AppColors.border),
                 Container(
                   width: 6, height: 6,
                   decoration: BoxDecoration(
@@ -443,7 +503,8 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                   ),
                 ),
                 Container(
-                    width: 1.5, height: 10, color: AppColors.border),
+                    width: 1.5, height: 10,
+                    color: AppColors.border),
               ],
             ),
             const SizedBox(width: 14),
@@ -460,6 +521,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
     );
   }
 
+  // ── Header ─────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
@@ -570,6 +632,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
     );
   }
 
+  // ── Footer ─────────────────────────────────────────────────────────────────
   Widget _buildFooter() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
@@ -586,8 +649,54 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
       ),
     );
   }
+
+  // ── Logout ─────────────────────────────────────────────────────────────────
+  Future<void> _handleLogout() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textLabel)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Logout',
+                style: TextStyle(
+                    color:      AppColors.error,
+                    fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final url = Uri.parse('${ApiService.baseUrl}/auth/logout.php');
+      await ApiService.post(url).timeout(const Duration(seconds: 5));
+    } catch (e) {
+      debugPrint('Logout API Error: $e');
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
+  }
 }
 
+// ── Menu item model ────────────────────────────────────────────────────────
 class _DrawerMenuItem {
   final IconData icon;
   final String   label;

@@ -70,46 +70,6 @@ class _HomePageState extends State<HomePage>
     super.dispose();
   }
 
-  Future<void> _handleLogout() async {
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textLabel)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Logout', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    // Show loading or just proceed
-    try {
-      final url = Uri.parse('${ApiService.baseUrl}/auth/logout.php');
-      // Best effort API call
-      await ApiService.post(url).timeout(const Duration(seconds: 5));
-    } catch (e) {
-      debugPrint('Logout API Error: $e');
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Removing all stored data
-
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (route) => false,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -189,46 +149,6 @@ class _HomePageState extends State<HomePage>
                           ],
                         ),
 
-                        // Logout button
-                        GestureDetector(
-                          onTap: _handleLogout,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                  color: AppColors.border, width: 1.2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.logout_rounded,
-                                  size: 16,
-                                  color: AppColors.textLabel,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Logout',
-                                  style: TextStyle(
-                                    color: AppColors.textLabel,
-                                    fontSize: isTablet ? 13.5 : 12.5,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                       ],
                     ),
 
