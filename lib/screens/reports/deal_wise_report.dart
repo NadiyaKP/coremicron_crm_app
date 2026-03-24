@@ -17,70 +17,88 @@ import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-// ── Enquiry Model ──────────────────────────────────────────────────────────
-class _Enquiry {
+// ── Deal Enquiry Model ──────────────────────────────────────────────────────────
+class _DealEnquiry {
   final String enquiryId;
   final String enquiryNumber;
   final String title;
-  final String enquiry;
+  final String city;
+  final String assignId;
+  final String addedDate;
   final String customerName;
   final String phoneNumber;
   final String employeeName;
-  final String addedDate;
-  final String addedTime;
-  final String status;
 
-  const _Enquiry({
+  const _DealEnquiry({
     required this.enquiryId,
     required this.enquiryNumber,
     required this.title,
-    required this.enquiry,
+    required this.city,
+    required this.assignId,
+    required this.addedDate,
     required this.customerName,
     required this.phoneNumber,
     required this.employeeName,
-    required this.addedDate,
-    required this.addedTime,
-    required this.status,
   });
 
-  factory _Enquiry.fromJson(Map<String, dynamic> j) => _Enquiry(
+  factory _DealEnquiry.fromJson(Map<String, dynamic> j) => _DealEnquiry(
         enquiryId:     j['enquiry_id']     ?? '',
         enquiryNumber: j['enquiry_number'] ?? '',
         title:         j['title']          ?? '',
-        enquiry:       j['enquiry']        ?? '',
+        city:          j['city']           ?? '',
+        assignId:      j['assign_id']      ?? '',
+        addedDate:     j['added_date']     ?? '',
         customerName:  j['customer_name']  ?? '',
         phoneNumber:   j['phone_number']   ?? '',
         employeeName:  j['employee_name']  ?? '',
-        addedDate:     j['added_date']     ?? '',
-        addedTime:     j['added_time']     ?? '',
-        status:        j['status']         ?? '',
       );
 }
 
-// ── Lead Wise Report Page ──────────────────────────────────────────────────
-class LeadWiseReportPage extends StatefulWidget {
-  final String username;
-  const LeadWiseReportPage({super.key, required this.username});
+// ── Deal Model for dropdown ──────────────────────────────────────────────────────────
+class _Deal {
+  final String id;
+  final String name;
 
-  @override
-  State<LeadWiseReportPage> createState() => _LeadWiseReportPageState();
+  const _Deal({
+    required this.id,
+    required this.name,
+  });
+
+  factory _Deal.fromJson(Map<String, dynamic> j) => _Deal(
+        id:   j['id']   ?? '',
+        name: j['deals_name'] ?? '',
+      );
 }
 
-class _LeadWiseReportPageState extends State<LeadWiseReportPage> {
+// ── Deal Wise Report Page ──────────────────────────────────────────────────
+class DealWiseReportPage extends StatefulWidget {
+  final String username;
+  const DealWiseReportPage({super.key, required this.username});
+
+  @override
+  State<DealWiseReportPage> createState() => _DealWiseReportPageState();
+}
+
+class _DealWiseReportPageState extends State<DealWiseReportPage> {
   static const int _pageSize = 50;
 
   // ── Filter state ───────────────────────────────────────────────────────────
-  String   _selectedMode = 'all';
+  String   _selectedDealId = '';
   DateTime _fromDate     = DateTime.now();
   DateTime _toDate       = DateTime.now();
   int?     _totalCount;
+  String?  _selectedDealName;
 
   // ── Data state ─────────────────────────────────────────────────────────────
-  List<_Enquiry> _all        = [];
-  List<_Enquiry> _filtered   = [];
+  List<_DealEnquiry> _all        = [];
+  List<_DealEnquiry> _filtered   = [];
   bool           _isLoading  = false;
   bool           _hasFetched = false;
   String?        _errorMessage;
+  
+  // ── Deals dropdown state ────────────────────────────────────────────────────
+  List<_Deal>    _dealsList  = [];
+  bool           _isLoadingDeals = false;
 
   // ── Search / pagination ────────────────────────────────────────────────────
   final _searchCtrl = TextEditingController();
@@ -90,16 +108,11 @@ class _LeadWiseReportPageState extends State<LeadWiseReportPage> {
   // ── Export state ───────────────────────────────────────────────────────────
   bool _isExporting = false;
 
-  static const List<Map<String, String>> _modeOptions = [
-    {'label': 'All',      'value': 'all'},
-    {'label': 'Rejected', 'value': 'rejected'},
-    {'label': 'Deleted',  'value': 'deleted'},
-  ];
-
   @override
   void initState() {
     super.initState();
     _searchCtrl.addListener(_onSearch);
+    _fetchDealsList();
   }
 
   @override
@@ -127,7 +140,6 @@ class _LeadWiseReportPageState extends State<LeadWiseReportPage> {
           e.phoneNumber.contains(_searchQuery) ||
           e.employeeName.toLowerCase().contains(_searchQuery) ||
           e.title.toLowerCase().contains(_searchQuery) ||
-          e.status.toLowerCase().contains(_searchQuery) ||
           e.addedDate.contains(_searchQuery)).toList();
     }
   }
@@ -179,8 +191,49 @@ class _LeadWiseReportPageState extends State<LeadWiseReportPage> {
     });
   }
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
+  // ── Fetch Deals List for Dropdown ──────────────────────────────────────────────────
+  Future<void> _fetchDealsList() async {
+    setState(() => _isLoadingDeals = true);
+
+    try {
+      final url = Uri.parse('${ApiService.baseUrl}/api/deals/list.php?view=dropdown');
+      
+      debugPrint('─────────────────────────────────────────');
+      debugPrint('📤  [DEALS DROPDOWN] Request');
+      debugPrint('   🌐  URL : $url');
+      debugPrint('─────────────────────────────────────────');
+
+      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+
+      debugPrint('─────────────────────────────────────────');
+      debugPrint('📥  [DEALS DROPDOWN] Response');
+      debugPrint('   🔢  Status : ${res.statusCode}');
+      debugPrint('   📄  Body   : ${res.body}');
+      debugPrint('─────────────────────────────────────────');
+
+      if (res.statusCode == 200 && data['success'] == true) {
+        final list = data['data'] as List? ?? [];
+        _dealsList = list.map((e) => _Deal.fromJson(e)).toList();
+        
+        // Removed auto-selection of the first deal to allow the 'Select Deal' hint to show.
+      } else {
+        debugPrint('Failed to load deals list: ${data['message']}');
+      }
+    } catch (e) {
+      debugPrint('Error fetching deals list: $e');
+    }
+
+    if (mounted) setState(() => _isLoadingDeals = false);
+  }
+
+  // ── Fetch Report ──────────────────────────────────────────────────────────────────
   Future<void> _fetchReport() async {
+    if (_selectedDealId.isEmpty) {
+      AppSnackBar.show(context, 'Please select a deal first.', isError: true);
+      return;
+    }
+
     setState(() {
       _isLoading    = true;
       _errorMessage = null;
@@ -192,14 +245,14 @@ class _LeadWiseReportPageState extends State<LeadWiseReportPage> {
 
     try {
       final url = Uri.parse(
-        '${ApiService.baseUrl}/api/leads/report.php'
+        '${ApiService.baseUrl}/api/deals/report.php'
         '?from_date=${_apiDate(_fromDate)}'
         '&to_date=${_apiDate(_toDate)}'
-        '&mode=$_selectedMode',
+        '&deal_id=$_selectedDealId',
       );
 
       debugPrint('─────────────────────────────────────────');
-      debugPrint('📤  [LEAD WISE REPORT] Request');
+      debugPrint('📤  [DEAL WISE REPORT] Request');
       debugPrint('   🌐  URL : $url');
       debugPrint('─────────────────────────────────────────');
 
@@ -207,15 +260,16 @@ class _LeadWiseReportPageState extends State<LeadWiseReportPage> {
       final data = jsonDecode(res.body) as Map<String, dynamic>;
 
       debugPrint('─────────────────────────────────────────');
-      debugPrint('📥  [LEAD WISE REPORT] Response');
+      debugPrint('📥  [DEAL WISE REPORT] Response');
       debugPrint('   🔢  Status : ${res.statusCode}');
       debugPrint('   📄  Body   : ${res.body}');
       debugPrint('─────────────────────────────────────────');
 
       if (res.statusCode == 200 && data['success'] == true) {
         final list = data['enquiries'] as List? ?? [];
-        _all        = list.map((e) => _Enquiry.fromJson(e)).toList();
+        _all        = list.map((e) => _DealEnquiry.fromJson(e)).toList();
         _totalCount = data['total'] as int? ?? _all.length;
+        _selectedDealName = data['deal_name'] as String? ?? _selectedDealName;
         _applyFilter();
       } else {
         _errorMessage =
@@ -233,7 +287,7 @@ class _LeadWiseReportPageState extends State<LeadWiseReportPage> {
   // ── Pagination ─────────────────────────────────────────────────────────────
   int get _totalPages =>
       paginationTotalPages(_filtered.length, _pageSize);
-  List<_Enquiry> get _pageItems =>
+  List<_DealEnquiry> get _pageItems =>
       paginationPageItems(_filtered, _currentPage, _pageSize);
 
   void _goBackToHome() {
@@ -246,198 +300,172 @@ class _LeadWiseReportPageState extends State<LeadWiseReportPage> {
     );
   }
 
-  // ── Status styling ─────────────────────────────────────────────────────────
-  Color _statusColor(String s) {
-    switch (s.toLowerCase()) {
-      case 'active':   return AppColors.success;
-      case 'rejected': return AppColors.error;
-      case 'deleted':  return const Color(0xFF6B7280);
-      case 'pending':  return const Color(0xFFD97706);
-      default:         return AppColors.textMuted;
+  // ── Print Report ───────────────────────────────────────────────────────────
+  Future<void> _printReport() async {
+    if (_filtered.isEmpty) {
+      AppSnackBar.show(context, 'No data to print.', isError: true);
+      return;
     }
-  }
 
-  Color _statusBg(String s) {
-    switch (s.toLowerCase()) {
-      case 'active':   return AppColors.successBg;
-      case 'rejected': return const Color(0xFFFFF1F1);
-      case 'deleted':  return const Color(0xFFF3F4F6);
-      case 'pending':  return const Color(0xFFFEF3C7);
-      default:         return const Color(0xFFF5F5F5);
-    }
-  }
-
-Future<void> _printReport() async {
-  if (_filtered.isEmpty) {
-    AppSnackBar.show(context, 'No data to print.', isError: true);
-    return;
-  }
-
-  try {
-    final pdf = pw.Document();
-    
-    // Create table data
-    final List<List<String>> tableData = [
-      ['S.No', 'Date', 'Enq.No', 'Customer', 'Phone', 'Title', 'Assign', 'Status'], // Header
-    ];
-    
-    // Add data rows - truncate long customer names if needed
-    for (int i = 0; i < _filtered.length; i++) {
-      final e = _filtered[i];
-      String customerName = e.customerName.toUpperCase();
-      String title = e.title.toUpperCase();
-      String employeeName = e.employeeName.toUpperCase();
+    try {
+      final pdf = pw.Document();
       
-      // Truncate long customer names to prevent wrapping (optional)
-      if (customerName.length > 30) {
-        customerName = customerName.substring(0, 27) + '...';
-      }
-      if (title.length > 25) {
-        title = title.substring(0, 22) + '...';
-      }
-      if (employeeName.length > 20) {
-        employeeName = employeeName.substring(0, 17) + '...';
-      }
+      // Create table data
+      final List<List<String>> tableData = [
+        ['S.No', 'Date', 'Enq.No', 'Customer', 'Phone', 'Title', 'Assign'], // Header
+      ];
       
-      tableData.add([
-        (i + 1).toString(),
-        _fmtDate(e.addedDate),
-        e.enquiryNumber,
-        customerName,
-        e.phoneNumber,
-        title,
-        employeeName,
-        e.status.toUpperCase(),
-      ]);
-    }
+      // Add data rows - truncate long customer names if needed
+      for (int i = 0; i < _filtered.length; i++) {
+        final e = _filtered[i];
+        String customerName = e.customerName.toUpperCase();
+        String title = e.title.toUpperCase();
+        String employeeName = e.employeeName.toUpperCase();
+        
+        // Truncate long customer names to prevent wrapping (optional)
+        if (customerName.length > 30) {
+          customerName = customerName.substring(0, 27) + '...';
+        }
+        if (title.length > 25) {
+          title = title.substring(0, 22) + '...';
+        }
+        if (employeeName.length > 20) {
+          employeeName = employeeName.substring(0, 17) + '...';
+        }
+        
+        tableData.add([
+          (i + 1).toString(),
+          _fmtDate(e.addedDate),
+          e.enquiryNumber,
+          customerName,
+          e.phoneNumber,
+          title,
+          employeeName,
+        ]);
+      }
 
-    final modeLabel = _modeOptions
-        .firstWhere((m) => m['value'] == _selectedMode,
-            orElse: () => {'label': 'All'})['label']!;
-
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(20),
-        build: (pw.Context context) {
-          return [
-            // Title
-            pw.Center(
-              child: pw.Column(
-                children: [
-                  pw.Text(
-                    'Leads Wise Report',
-                    style: pw.TextStyle(
-                      fontSize: 24,
-                      fontWeight: pw.FontWeight.bold,
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(20),
+          build: (pw.Context context) {
+            return [
+              // Title
+              pw.Center(
+                child: pw.Column(
+                  children: [
+                    pw.Text(
+                      'Deal Wise Report',
+                      style: pw.TextStyle(
+                        fontSize: 24,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
                     ),
-                  ),
                   ],
                 ),
               ),
 
-            pw.SizedBox(height: 16),
+              pw.SizedBox(height: 16),
 
-            // Date range and status
-            pw.Container(
-              padding: const pw.EdgeInsets.all(8),
-              decoration: pw.BoxDecoration(
-                border: pw.Border.all(color: PdfColors.grey300),
-                borderRadius: pw.BorderRadius.circular(4),
-              ),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'Period: ${_displayDate(_fromDate)} to ${_displayDate(_toDate)}',
-                        style: const pw.TextStyle(fontSize: 10),
-                      ),
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                        'Status: $modeLabel',
-                        style: const pw.TextStyle(fontSize: 10),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text(
-                        'Generated: ${DateTime.now().toString().substring(0, 19)}',
-                        style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
-                      ),
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                        'Total Leads: ${_filtered.length}',
-                        style: pw.TextStyle(
-                          fontSize: 10,
-                          fontWeight: pw.FontWeight.bold,
+              // Date range and deal info
+              pw.Container(
+                padding: const pw.EdgeInsets.all(8),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300),
+                  borderRadius: pw.BorderRadius.circular(4),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          'Period: ${_displayDate(_fromDate)} to ${_displayDate(_toDate)}',
+                          style: const pw.TextStyle(fontSize: 10),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          'Deal: $_selectedDealName',
+                          style: const pw.TextStyle(fontSize: 10),
+                        ),
+                      ],
+                    ),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.Text(
+                          'Generated: ${DateTime.now().toString().substring(0, 19)}',
+                          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          'Total Enquiries: ${_filtered.length}',
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            pw.SizedBox(height: 16),
+              pw.SizedBox(height: 16),
 
-            // Table with improved column widths and text handling
-            pw.Table.fromTextArray(
-              context: context,
-              data: tableData,
-              headerStyle: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                fontSize: 10,
+              // Table with improved column widths and text handling
+              pw.Table.fromTextArray(
+                context: context,
+                data: tableData,
+                headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 10,
+                ),
+                cellStyle: const pw.TextStyle(fontSize: 8),
+                headerDecoration: const pw.BoxDecoration(
+                  color: PdfColors.grey300,
+                ),
+                cellAlignment: pw.Alignment.centerLeft,
+                cellAlignments: {
+                  0: pw.Alignment.center,      // S.No
+                  1: pw.Alignment.center,      // Date
+                  2: pw.Alignment.centerLeft,  // Enq.No
+                  3: pw.Alignment.centerLeft,  // Customer
+                  4: pw.Alignment.centerLeft,  // Phone
+                  5: pw.Alignment.centerLeft,  // Title
+                  6: pw.Alignment.centerLeft,  // Assign
+                },
+                columnWidths: {
+                  0: const pw.FixedColumnWidth(35),   // S.No
+                  1: const pw.FixedColumnWidth(65),   // Date
+                  2: const pw.FixedColumnWidth(75),   // Enq.No
+                  3: const pw.FlexColumnWidth(),      // Customer - flex to take available space
+                  4: const pw.FixedColumnWidth(85),   // Phone
+                  5: const pw.FlexColumnWidth(),      // Title - flex to take available space
+                  6: const pw.FixedColumnWidth(85),   // Assign
+                },
+                tableWidth: pw.TableWidth.max,
+                cellPadding: const pw.EdgeInsets.all(5),
               ),
-              cellStyle: const pw.TextStyle(fontSize: 8),
-              headerDecoration: const pw.BoxDecoration(
-                color: PdfColors.grey300,
-              ),
-              cellAlignment: pw.Alignment.centerLeft,
-              cellAlignments: {
-                0: pw.Alignment.center,      // S.No
-                1: pw.Alignment.center,      // Date
-                2: pw.Alignment.centerLeft,  // Enq.No
-                3: pw.Alignment.centerLeft,  // Customer
-                4: pw.Alignment.centerLeft,  // Phone
-                5: pw.Alignment.centerLeft,  // Title
-                6: pw.Alignment.centerLeft,  // Assign
-                7: pw.Alignment.center,      // Status
-              },
-              columnWidths: {
-                0: const pw.FixedColumnWidth(35),   // S.No
-                1: const pw.FixedColumnWidth(65),   // Date
-                2: const pw.FixedColumnWidth(75),   // Enq.No
-                3: const pw.FlexColumnWidth(),      // Customer - flex to take available space
-                4: const pw.FixedColumnWidth(85),   // Phone
-                5: const pw.FlexColumnWidth(),      // Title - flex to take available space
-                6: const pw.FixedColumnWidth(85),   // Assign
-                7: const pw.FixedColumnWidth(65),   // Status
-              },
-              tableWidth: pw.TableWidth.max,
-              cellPadding: const pw.EdgeInsets.all(5),
-            ),
 
-            // Footer line
-            pw.SizedBox(height: 20),
-            pw.Divider(),
-          ];
-        },
-      ),
-    );
+              // Footer line
+              pw.SizedBox(height: 20),
+              pw.Divider(),
+            ];
+          },
+        ),
+      );
 
-    // Print the document (this opens the native print dialog on mobile)
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
-  } catch (e) {
-    AppSnackBar.show(context, 'Failed to print: $e', isError: true);
+      // Print the document (this opens the native print dialog on mobile)
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+      );
+    } catch (e) {
+      AppSnackBar.show(context, 'Failed to print: $e', isError: true);
+    }
   }
-}
+  
   // ── Export Excel ───────────────────────────────────────────────────────────
   Future<void> _exportExcel() async {
     if (_filtered.isEmpty) {
@@ -449,12 +477,12 @@ Future<void> _printReport() async {
 
     try {
       final excel = Excel.createExcel();
-      final sheet = excel['Leads Wise Report'];
+      final sheet = excel['Deal Wise Report'];
 
       // ── Header row ──────────────────────────────────────────────────
       final headers = [
         'S.NO', 'Date', 'Enquiry No', 'Customer',
-        'Phone', 'Title', 'Assigned To', 'Status',
+        'Phone', 'Title', 'Assigned To',
       ];
 
       final headerStyle = CellStyle(
@@ -479,7 +507,6 @@ Future<void> _printReport() async {
       sheet.setColumnWidth(4, 14);  // Phone
       sheet.setColumnWidth(5, 14);  // Title
       sheet.setColumnWidth(6, 18);  // Assigned To
-      sheet.setColumnWidth(7, 12);  // Status
 
       // ── Data rows ───────────────────────────────────────────────────
       for (int i = 0; i < _filtered.length; i++) {
@@ -494,7 +521,6 @@ Future<void> _printReport() async {
           e.phoneNumber,
           e.title.toUpperCase(),
           e.employeeName.toUpperCase(),
-          e.status.toUpperCase(),
         ];
 
         final evenBg = ExcelColor.fromHexString('#F0F4FF');
@@ -518,7 +544,7 @@ Future<void> _printReport() async {
 
       final dir      = await getApplicationDocumentsDirectory();
       final now      = DateTime.now();
-      final fileName = 'leads_wise_report_'
+      final fileName = 'deal_wise_report_'
           '${now.year}${now.month.toString().padLeft(2, '0')}'
           '${now.day.toString().padLeft(2, '0')}.xlsx';
       final file = File('${dir.path}/$fileName');
@@ -559,7 +585,7 @@ Future<void> _printReport() async {
 
                   // ── Header text ───────────────────────────────────────
                   const Text(
-                    'Leads Wise Report',
+                    'Deal Wise Report',
                     style: TextStyle(
                       color:         AppColors.textPrimary,
                       fontSize:      17,
@@ -569,7 +595,7 @@ Future<void> _printReport() async {
                   ),
                   const SizedBox(height: 3),
                   const Text(
-                    'Filter and analyze lead records by date & status',
+                    'Filter and analyze enquiries by deal & date',
                     style: TextStyle(
                       color:    AppColors.textSecondary,
                       fontSize: 12.5,
@@ -595,7 +621,7 @@ Future<void> _printReport() async {
                     Row(
                       children: [
                         Text(
-                          '${_filtered.length} lead${_filtered.length == 1 ? '' : 's'}',
+                          '${_filtered.length} enquiry${_filtered.length == 1 ? '' : 's'}',
                           style: const TextStyle(
                               color:      AppColors.textSecondary,
                               fontSize:   12.5,
@@ -675,7 +701,7 @@ Future<void> _printReport() async {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Leads Wise',
+              Text('Deal Wise',
                   style: TextStyle(
                       color:         AppColors.textPrimary,
                       fontSize:      isTablet ? 20 : 17,
@@ -789,16 +815,16 @@ Future<void> _printReport() async {
           const Divider(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 12),
 
-          // ── Status + From + To ────────────────────────────────────────
+          // ── Deal + From + To ────────────────────────────────────────
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Status — fixed width so label never wraps
+              // Deal dropdown — fixed width so label never wraps
               SizedBox(
                 width: 100,
                 child: _filterLabel(
-                  label: 'Status',
-                  child: _statusDropdown(),
+                  label: 'Deal',
+                  child: _dealDropdown(),
                 ),
               ),
               const SizedBox(width: 8),
@@ -827,23 +853,16 @@ Future<void> _printReport() async {
             alignment: Alignment.centerRight,
             child: SizedBox(
               width: 125,
-              height: 36,
+              height: 34,
               child: ElevatedButton.icon(
                 onPressed: _isLoading ? null : _fetchReport,
                 icon: _isLoading
                     ? const SizedBox(
                         width: 14, height: 14,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : const Icon(Icons.search_rounded,
-                        size: 15, color: Colors.white),
-                label: Text(
-                  _isLoading ? 'Searching…' : 'Search',
-                  style: const TextStyle(
-                      color:      Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize:   13.5),
-                ),
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.search_rounded, size: 14, color: Colors.white),
+                label: Text(_isLoading ? 'Searching…' : 'Search',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   disabledBackgroundColor:
@@ -876,8 +895,30 @@ Future<void> _printReport() async {
     );
   }
 
-  // ── Status dropdown — fixed width + overflow ellipsis ──────────────────────
-  Widget _statusDropdown() {
+  // ── Deal dropdown ──────────────────────────────────────────────────────────
+  Widget _dealDropdown() {
+    if (_isLoadingDeals && _dealsList.isEmpty) {
+      return Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(9),
+          border: Border.all(color: AppColors.border, width: 1.2),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -888,8 +929,10 @@ Future<void> _printReport() async {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value:      _selectedMode,
+          value: _selectedDealId.isEmpty ? null : _selectedDealId,
+          hint: const Text('Select Deal', style: TextStyle(fontSize: 13)),
           isExpanded: true,
+          menuMaxHeight: 300,
           icon: const Icon(Icons.keyboard_arrow_down_rounded,
               size: 16, color: AppColors.textLabel),
           style: const TextStyle(
@@ -897,13 +940,19 @@ Future<void> _printReport() async {
               fontSize:   12.5,
               fontWeight: FontWeight.w500),
           onChanged: (v) {
-            if (v != null) setState(() => _selectedMode = v);
+            if (v != null) {
+              final selectedDeal = _dealsList.firstWhere((deal) => deal.id == v);
+              setState(() {
+                _selectedDealId = v;
+                _selectedDealName = selectedDeal.name;
+              });
+            }
           },
-          selectedItemBuilder: (ctx) => _modeOptions.map((opt) {
+          selectedItemBuilder: (ctx) => _dealsList.map((deal) {
             return Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                opt['label']!,
+                deal.name,
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
                 style: const TextStyle(
@@ -913,9 +962,9 @@ Future<void> _printReport() async {
               ),
             );
           }).toList(),
-          items: _modeOptions.map((opt) => DropdownMenuItem(
-            value: opt['value'],
-            child: Text(opt['label']!,
+          items: _dealsList.map((deal) => DropdownMenuItem(
+            value: deal.id,
+            child: Text(deal.name,
                 style: const TextStyle(fontSize: 13)),
           )).toList(),
         ),
@@ -970,7 +1019,7 @@ Future<void> _printReport() async {
         cursorColor: AppColors.primary,
         style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
         decoration: const InputDecoration(
-          hintText:  'Search by name, phone, employee, status…',
+          hintText:  'Search by name, phone, employee, enquiry no…',
           hintStyle: TextStyle(color: AppColors.textHint, fontSize: 12.5),
           prefixIcon: Icon(Icons.search_rounded,
               color: AppColors.iconDefault, size: 19),
@@ -983,10 +1032,7 @@ Future<void> _printReport() async {
   }
 
   // ── Enquiry card ───────────────────────────────────────────────────────────
-  Widget _enquiryCard(_Enquiry e) {
-    final stClr = _statusColor(e.status);
-    final stBg  = _statusBg(e.status);
-
+  Widget _enquiryCard(_DealEnquiry e) {
     return Container(
       padding: const EdgeInsets.fromLTRB(13, 11, 13, 12),
       decoration: BoxDecoration(
@@ -1003,7 +1049,7 @@ Future<void> _printReport() async {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Top row: enquiry# + date + status ─────────────────────
+          // ── Top row: enquiry# + date ─────────────────────
           Row(
             children: [
               GestureDetector(
@@ -1031,24 +1077,6 @@ Future<void> _printReport() async {
                   style: const TextStyle(
                       color:    AppColors.textMuted,
                       fontSize: 11)),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color:        stBg,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: stClr.withOpacity(0.3), width: 1),
-                ),
-                child: Text(
-                  e.status.capitalize(),
-                  style: TextStyle(
-                      color:      stClr,
-                      fontSize:   10.5,
-                      fontWeight: FontWeight.w700),
-                ),
-              ),
             ],
           ),
 
@@ -1110,12 +1138,12 @@ Future<void> _printReport() async {
           const Divider(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 9),
 
-          // ── Bottom info: title (no icon) + employee ────────────────
+          // ── Bottom info: title + employee ────────────────
           Wrap(
             spacing:    14,
             runSpacing: 6,
             children: [
-              // Title — no icon, just label text
+              // Title
               Text(
                 e.title.capitalize(),
                 style: const TextStyle(
@@ -1145,38 +1173,37 @@ Future<void> _printReport() async {
   }
 
   // ── Idle state ─────────────────────────────────────────────────────────────
-  Widget _buildIdleState() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 40),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 70, height: 70,
-              decoration: BoxDecoration(
-                color:        AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(Icons.bar_chart_rounded,
-                  size: 36, color: AppColors.primary),
+Widget _buildIdleState() {
+  return Padding(
+    padding: const EdgeInsets.only(top: 40),
+    child: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 70, height: 70,
+            decoration: BoxDecoration(
+              color:        AppColors.primaryLight,
+              borderRadius: BorderRadius.circular(20),
             ),
-            const SizedBox(height: 16),
-            const Text('Set filters and tap Search',
-                style: TextStyle(
-                    color:      AppColors.textSecondary,
-                    fontSize:   14.5,
-                    fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            const Text('Results will appear here',
-                style: TextStyle(
-                    color: AppColors.textMuted, fontSize: 12.5)),
-          ],
-        ),
+            child: const Icon(Icons.business_center,
+                size: 36, color: AppColors.primary),
+          ),
+          const SizedBox(height: 16),
+          const Text('Select a deal and tap Search',
+              style: TextStyle(
+                  color:      AppColors.textSecondary,
+                  fontSize:   14.5,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          const Text('Results will appear here',
+              style: TextStyle(
+                  color: AppColors.textMuted, fontSize: 12.5)),
+        ],
       ),
-    );
-  }
-
+    ),
+  );
+}
   // ── Skeleton ───────────────────────────────────────────────────────────────
   Widget _buildSkeletonList() {
     return Column(
@@ -1255,7 +1282,7 @@ Future<void> _printReport() async {
             Text(
               _searchQuery.isNotEmpty
                   ? 'No results for "$_searchQuery"'
-                  : 'No leads found for the selected filters',
+                  : 'No enquiries found for the selected filters',
               textAlign: TextAlign.center,
               style: const TextStyle(
                   color:      AppColors.textSecondary,
@@ -1266,7 +1293,7 @@ Future<void> _printReport() async {
             Text(
               _searchQuery.isNotEmpty
                   ? 'Try a different search term'
-                  : 'Try adjusting the date range or status',
+                  : 'Try adjusting the date range or deal',
               style: const TextStyle(
                   color: AppColors.textMuted, fontSize: 12.5),
             ),

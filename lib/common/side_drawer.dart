@@ -20,6 +20,9 @@ import 'package:coremicron_crm_app/screens/my_profile/leave_application/my_leave
 import 'package:coremicron_crm_app/screens/my_profile/pending_works/my_pending_works.dart';
 import 'package:coremicron_crm_app/screens/my_profile/completed_tasks/my_completed_tasks.dart';
 import 'package:coremicron_crm_app/screens/reports/lead_wise_report.dart';
+import 'package:coremicron_crm_app/screens/reports/deal_wise_report.dart';
+import 'package:coremicron_crm_app/screens/reports/employee_wise_report.dart';
+import 'package:coremicron_crm_app/screens/reports/pending_wise_report.dart';
 import 'package:coremicron_crm_app/screens/settings/change_password.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:coremicron_crm_app/screens/login.dart';
@@ -80,7 +83,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
     _DrawerMenuItem(icon: Icons.format_list_bulleted_rounded, label: 'Leads Wise'),
     _DrawerMenuItem(icon: Icons.handshake_outlined,           label: 'Deal Wise'),
     _DrawerMenuItem(icon: Icons.badge_outlined,               label: 'Employee Wise'),
-    _DrawerMenuItem(icon: Icons.pending_actions_rounded,      label: 'Pending Works'),
+    _DrawerMenuItem(icon: Icons.pending_actions_rounded,      label: 'Pending Works', id: 'pending_wise'),
     _DrawerMenuItem(icon: Icons.fingerprint_rounded,          label: 'Attendance'),
     _DrawerMenuItem(icon: Icons.beach_access_outlined,        label: 'Leave Application'),
   ];
@@ -320,8 +323,8 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
         if (item.label != 'Logout') {
           Navigator.pop(context);
         }
-        switch (item.label) {
-
+        final String key = item.id ?? item.label;
+        switch (key) {
           // ── Registration ─────────────────────────────────────────────
           case 'Department':
             Navigator.push(
@@ -368,6 +371,13 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
             break;
 
           // ── To Do ────────────────────────────────────────────────────
+          case 'Ticket':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        TicketsPage(username: widget.username)));
+            break;
           case 'My Task':
             Navigator.push(
                 context,
@@ -463,7 +473,26 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                         LeadWiseReportPage(username: widget.username)));
             break;
           case 'Deal Wise':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        DealWiseReportPage(username: widget.username)));
+            break;
           case 'Employee Wise':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        EmployeeWiseReportPage(username: widget.username)));
+            break;
+          case 'pending_wise':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        PendingWiseReportPage(username: widget.username)));
+            break;
           case 'Attendance':
             AppSnackBar.show(context,
                 '${item.label} report coming soon.');
@@ -700,5 +729,6 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
 class _DrawerMenuItem {
   final IconData icon;
   final String   label;
-  const _DrawerMenuItem({required this.icon, required this.label});
+  final String?  id;
+  const _DrawerMenuItem({required this.icon, required this.label, this.id});
 }

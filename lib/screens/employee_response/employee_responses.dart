@@ -132,7 +132,7 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
       final sessionId = prefs.getString(kTokenKey) ?? '';
       
       // 1. Fetch tickets first for lookup
-      final ticketUrl = Uri.parse('${ApiService.baseUrl}/api/ticket/list.php');
+      final ticketUrl = Uri.parse('${ApiService.baseUrl}/api/ticket/');
       final tRes = await ApiService.get(ticketUrl);
       if (tRes.statusCode == 200) {
         final tData = jsonDecode(tRes.body);
