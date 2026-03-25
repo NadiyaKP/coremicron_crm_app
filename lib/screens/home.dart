@@ -5,6 +5,7 @@ import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTo
 import 'package:coremicron_crm_app/common/theme.dart';
 import 'package:coremicron_crm_app/common/side_drawer.dart';
 import 'package:coremicron_crm_app/screens/chat/chat_list.dart';
+import 'package:coremicron_crm_app/common/chat_websocket_service.dart';
 
 class HomePage extends StatefulWidget {
   final String username;
@@ -33,6 +34,7 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
+    ChatWebSocketService().connect();
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),

@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:coremicron_crm_app/common/api_service.dart';
 import 'package:coremicron_crm_app/common/theme.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
+import 'package:coremicron_crm_app/common/chat_websocket_service.dart';
 import 'package:coremicron_crm_app/screens/chat/chatting.dart';
 
 class ChatListPage extends StatefulWidget {
@@ -17,11 +19,53 @@ class _ChatListPageState extends State<ChatListPage> {
   List<dynamic> _chats       = [];
   bool          _isLoading   = true;
   String?       _errorMessage;
+  StreamSubscription? _wsSub;
 
   @override
   void initState() {
     super.initState();
     _fetchChats();
+    _listenToWebSocket();
+  }
+
+  @override
+  void dispose() {
+    _wsSub?.cancel();
+    super.dispose();
+  }
+
+  void _listenToWebSocket() {
+    _wsSub = ChatWebSocketService().messageStream.listen((msg) {
+      if (msg['type'] == 'chat_message') {
+        _handleIncomingMessage(msg);
+      }
+    });
+  }
+
+  void _handleIncomingMessage(Map<String, dynamic> msg) {
+    if (!mounted) return;
+    
+    final convId = msg['conversation_id'];
+    int index = _chats.indexWhere((c) => c['conversation_id'] == convId);
+
+    setState(() {
+      if (index != -1) {
+        // Update existing chat
+        final chat = Map<String, dynamic>.from(_chats[index]);
+        chat['message'] = msg['message'];
+        chat['created_at'] = DateTime.now().toIso8601String();
+        // Increment unread if we are not in the chat with this person
+        // Actually, we don't know if the user is in chatting.dart right now
+        // But the user said "unread badge... are not showing in realtime"
+        chat['unread'] = (int.tryParse(chat['unread']?.toString() ?? '0') ?? 0) + 1;
+        
+        _chats.removeAt(index);
+        _chats.insert(0, chat);
+      } else {
+        // New conversation or not in list - refresh to be safe
+        _fetchChats();
+      }
+    });
   }
 
   Future<void> _fetchChats() async {
@@ -153,7 +197,6 @@ class _ChatListPageState extends State<ChatListPage> {
     final String timeStr        = _formatLastTime(chat['created_at']);
     final bool   hasUnread      = unread > 0;
 
-    // Avatar color derived from first letter
     final List<Color> avatarColors = [
       const Color(0xFF1558E7),
       const Color(0xFF0277BD),
@@ -201,7 +244,6 @@ class _ChatListPageState extends State<ChatListPage> {
         ),
         child: Row(
           children: [
-            // ── Avatar ────────────────────────────────────────────────
             Container(
                   width: 50, height: 50,
                   decoration: BoxDecoration(
@@ -222,10 +264,7 @@ class _ChatListPageState extends State<ChatListPage> {
                     ),
                   ),
                 ),
-
             const SizedBox(width: 12),
-
-            // ── Content ───────────────────────────────────────────────
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,9 +300,7 @@ class _ChatListPageState extends State<ChatListPage> {
                         ),
                     ],
                   ),
-
                   const SizedBox(height: 4),
-
                   Row(
                     children: [
                       Expanded(
@@ -360,7 +397,6 @@ class _ChatListPageState extends State<ChatListPage> {
   }) =>
       _ShimmerBox(width: width, height: height, radius: radius);
 
-  // ── Empty ──────────────────────────────────────────────────────────────────
   Widget _buildEmpty() {
     return Center(
       child: Column(
@@ -390,7 +426,6 @@ class _ChatListPageState extends State<ChatListPage> {
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────────────────────
   Widget _buildError() {
     return Center(
       child: Column(
@@ -425,7 +460,6 @@ class _ChatListPageState extends State<ChatListPage> {
   }
 }
 
-// ── Shimmer Box ────────────────────────────────────────────────────────────
 class _ShimmerBox extends StatefulWidget {
   final double width, height, radius;
   const _ShimmerBox(
