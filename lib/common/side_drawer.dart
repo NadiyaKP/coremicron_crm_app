@@ -23,6 +23,8 @@ import 'package:coremicron_crm_app/screens/reports/lead_wise_report.dart';
 import 'package:coremicron_crm_app/screens/reports/deal_wise_report.dart';
 import 'package:coremicron_crm_app/screens/reports/employee_wise_report.dart';
 import 'package:coremicron_crm_app/screens/reports/pending_wise_report.dart';
+import 'package:coremicron_crm_app/screens/reports/attendance_wise_report.dart';
+import 'package:coremicron_crm_app/screens/reports/leave_application_report.dart';
 import 'package:coremicron_crm_app/screens/settings/change_password.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:coremicron_crm_app/screens/login.dart';
@@ -85,7 +87,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
     _DrawerMenuItem(icon: Icons.badge_outlined,               label: 'Employee Wise'),
     _DrawerMenuItem(icon: Icons.pending_actions_rounded,      label: 'Pending Works', id: 'pending_wise'),
     _DrawerMenuItem(icon: Icons.fingerprint_rounded,          label: 'Attendance'),
-    _DrawerMenuItem(icon: Icons.beach_access_outlined,        label: 'Leave Application'),
+    _DrawerMenuItem(icon: Icons.beach_access_outlined,        label: 'Leave Application', id: 'leave_report'),
   ];
 
   final List<_DrawerMenuItem> _settingsItems = [
@@ -493,9 +495,19 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                     builder: (_) =>
                         PendingWiseReportPage(username: widget.username)));
             break;
+          case 'leave_report':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        LeaveApplicationReportPage(username: widget.username)));
+            break;
           case 'Attendance':
-            AppSnackBar.show(context,
-                '${item.label} report coming soon.');
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        AttendanceWiseReportPage(username: widget.username)));
             break;
 
           // ── Settings ─────────────────────────────────────────────────
