@@ -4,6 +4,7 @@ import 'package:coremicron_crm_app/screens/login.dart' show LoginPage, kUsername
 import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
 import 'package:coremicron_crm_app/common/theme.dart';
 import 'package:coremicron_crm_app/common/side_drawer.dart';
+import 'package:coremicron_crm_app/screens/chat/chat_list.dart';
 
 class HomePage extends StatefulWidget {
   final String username;
@@ -148,7 +149,39 @@ class _HomePageState extends State<HomePage>
                             ),
                           ],
                         ),
-
+                        // Chat Button
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => ChatListPage(
+                                    username: widget.username)),
+                          ),
+                          child: Container(
+                            width: isTablet ? 42 : 38,
+                            height: isTablet ? 42 : 38,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: AppColors.border,
+                                width: 1.2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              color: AppColors.primary,
+                              size: isTablet ? 20 : 17,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
 
