@@ -194,17 +194,21 @@ class _HomePageState extends State<HomePage>
                     _buildTopBar(isTablet),
                     const SizedBox(height: 16),
 
-                    if (_isLoading) ...[
+                    _buildWelcomeSection(),
+                    const SizedBox(height: 20),
+                    _buildQuickSection(isTablet),
+                    const SizedBox(height: 24),
+
+                    if (_error != null) ...[
+                      _buildErrorCard(),
+                      const SizedBox(height: 24),
+                    ],
+
+                    if (_isLoading && _dash == null) ...[
                       _buildSkeletonStats(),
                       const SizedBox(height: 22),
                       _buildSkeletonSection(),
-                    ] else if (_error != null) ...[
-                      _buildErrorCard(),
-                    ] else if (_dash != null) ...[
-                      _buildWelcomeSection(),
-                      const SizedBox(height: 20),
-                      _buildQuickSection(isTablet),
-                      const SizedBox(height: 24),
+                    ] else ...[
                       _buildStatisticsGrid(isTablet),
                       const SizedBox(height: 24),
                       _buildTaskLineChart(),
@@ -259,15 +263,14 @@ class _HomePageState extends State<HomePage>
           ),
         ),
         // Logo
-        RichText(
-          text: const TextSpan(children: [
-            TextSpan(text: 'Core',
-                style: TextStyle(color: AppColors.primary, fontSize: 18,
-                    fontWeight: FontWeight.w800, letterSpacing: -0.2)),
-            TextSpan(text: 'micron',
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 18,
-                    fontWeight: FontWeight.w800, letterSpacing: -0.2)),
-          ]),
+        const Text(
+          'CRM System',
+          style: TextStyle(
+            color:         AppColors.primary,
+            fontSize:      18,
+            fontWeight:    FontWeight.w800,
+            letterSpacing: -0.2,
+          ),
         ),
         // Notification Icon with Badge
         GestureDetector(
@@ -320,14 +323,14 @@ class _HomePageState extends State<HomePage>
         const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Welcome back —',
+            Text('Welcome back -',
                 style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5)),
             SizedBox(height: 2),
-            Text('here\'s what\'s happening today',
+            Text('Here is what happening today',
                 style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 14,
@@ -355,16 +358,16 @@ class _HomePageState extends State<HomePage>
 
   // ── Statistics Grid ───────────────────────────────────────────────────────
   Widget _buildStatisticsGrid(bool isTablet) {
-    final d = _dash!;
+    final d = _dash;
     final stats = [
-      _Stat('Leads',          d.enquiry,          Icons.group_outlined,               const Color(0xFF1976D2),   const Color(0xFFE3F2FD)),
-      _Stat('Task Assigned',  d.job,               Icons.assignment_outlined,           const Color(0xFF7B1FA2),   const Color(0xFFF3E5F5)),
-      _Stat('Task Completed', d.completed,         Icons.task_alt_rounded,              const Color(0xFF388E3C),   const Color(0xFFE8F5E9)),
-      _Stat('Follow-up',      d.pendingFollowups,  Icons.ring_volume_rounded,           const Color(0xFFF57C00),   const Color(0xFFFFF3E0),
+      _Stat('Leads',          d?.enquiry ?? 0,          Icons.group_outlined,               const Color(0xFF1976D2),   const Color(0xFFE3F2FD)),
+      _Stat('Task Assigned',  d?.job ?? 0,               Icons.assignment_outlined,           const Color(0xFF7B1FA2),   const Color(0xFFF3E5F5)),
+      _Stat('Task Completed', d?.completed ?? 0,         Icons.task_alt_rounded,              const Color(0xFF388E3C),   const Color(0xFFE8F5E9)),
+      _Stat('Follow-up',      d?.pendingFollowups ?? 0,  Icons.ring_volume_rounded,           const Color(0xFFF57C00),   const Color(0xFFFFF3E0),
           sub: ['0 Due Today']),
-      _Stat('Task Pending',   d.pending,           Icons.hourglass_empty_rounded,       const Color(0xFFD32F2F),   const Color(0xFFFFF1F1),
-          sub: ['${d.overdue} Overdue', '${d.dueTodayJobs} Due Today']),
-      _Stat('Leave',          d.leavesTaken,       Icons.event_busy_rounded,            const Color(0xFF00796B),   const Color(0xFFE0F2F1)),
+      _Stat('Task Pending',   d?.pending ?? 0,           Icons.hourglass_empty_rounded,       const Color(0xFFD32F2F),   const Color(0xFFFFF1F1),
+          sub: ['${d?.overdue ?? 0} Overdue', '${d?.dueTodayJobs ?? 0} Due Today']),
+      _Stat('Leave',          d?.leavesTaken ?? 0,       Icons.event_busy_rounded,            const Color(0xFF00796B),   const Color(0xFFE0F2F1)),
     ];
 
     return Column(
@@ -537,12 +540,10 @@ class _HomePageState extends State<HomePage>
 
   // ── Task Analysis Line Chart ───────────────────────────────────────────────
   Widget _buildTaskLineChart() {
-    final chart    = _dash!.taskChart;
+    final chart    = _dash?.taskChart ?? {};
     final labels   = (chart['labels']    as List? ?? []).map((e) => e.toString()).toList();
     final assigned = (chart['assigned']  as List? ?? []).map((e) => double.tryParse(e.toString()) ?? 0.0).toList();
     final completed= (chart['completed'] as List? ?? []).map((e) => double.tryParse(e.toString()) ?? 0.0).toList();
-
-    if (labels.isEmpty) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
@@ -576,7 +577,7 @@ class _HomePageState extends State<HomePage>
           const SizedBox(height: 24),
           SizedBox(
             height: 180,
-            child: LineChart(
+            child: labels.isNotEmpty ? LineChart(
               LineChartData(
                 gridData: const FlGridData(show: false),
                 titlesData: FlTitlesData(
@@ -649,7 +650,17 @@ class _HomePageState extends State<HomePage>
                   ),
                 ],
               ),
-            ),
+            ) : Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.bar_chart_rounded, size: 40, color: AppColors.textMuted.withOpacity(0.3)),
+                    const SizedBox(height: 8),
+                    const Text('Performance data not available',
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  ],
+                ),
+              ),
           ),
         ],
       ),
@@ -672,7 +683,7 @@ class _HomePageState extends State<HomePage>
 
   // ── Followup Leads ─────────────────────────────────────────────────────────
   Widget _buildFollowupLeads(bool isTablet) {
-    final list = _dash!.followupList;
+    final list = _dash?.followupList ?? [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -725,30 +736,34 @@ class _HomePageState extends State<HomePage>
                     final dealColor = _hexColor(colorStr);
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color:        dealColor,
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(color: dealColor.withOpacity(0.2),
-                                    blurRadius: 4, offset: const Offset(0, 2)),
-                              ],
-                            ),
-                            child: Text(
-                              _capitalize(name),
-                              style: const TextStyle(
-                                  color:      Colors.white,
-                                  fontSize:   12,
-                                  fontWeight: FontWeight.w700),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                              decoration: BoxDecoration(
+                                color:        dealColor,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(color: dealColor.withOpacity(0.2),
+                                      blurRadius: 4, offset: const Offset(0, 2)),
+                                ],
+                              ),
+                              child: Text(
+                                _capitalize(name),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color:      Colors.white,
+                                    fontSize:   13.5,
+                                    fontWeight: FontWeight.w700),
+                              ),
                             ),
                           ),
-                          const Spacer(),
+                          const SizedBox(width: 10),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               color:        dealColor.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(10),

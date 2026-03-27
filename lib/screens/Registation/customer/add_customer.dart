@@ -7,7 +7,7 @@ import 'package:coremicron_crm_app/common/theme.dart';
 
 // ── Add / Edit Customer Page ───────────────────────────────────────────────
 class AddCustomerPage extends StatefulWidget {
-  final Map<String, String>? customer; // keys: id, name, phone, email, address
+  final Map<String, String>? customer; // keys: id, name, phone, email, address, customer_code
 
   const AddCustomerPage({super.key, this.customer});
 
@@ -22,11 +22,13 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
   late final TextEditingController _phoneCtrl;
   late final TextEditingController _emailCtrl;
   late final TextEditingController _addressCtrl;
+  late final TextEditingController _customerCodeCtrl;
 
   final FocusNode _nameFocus    = FocusNode();
   final FocusNode _phoneFocus   = FocusNode();
   final FocusNode _emailFocus   = FocusNode();
   final FocusNode _addressFocus = FocusNode();
+  final FocusNode _customerCodeFocus = FocusNode();
 
   bool _isSaving = false;
 
@@ -40,8 +42,9 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
     _phoneCtrl   = TextEditingController(text: c?['phone']   ?? '');
     _emailCtrl   = TextEditingController(text: c?['email']   ?? '');
     _addressCtrl = TextEditingController(text: c?['address'] ?? '');
+    _customerCodeCtrl = TextEditingController(text: c?['customer_code'] ?? '');
 
-    for (final fn in [_nameFocus, _phoneFocus, _emailFocus, _addressFocus]) {
+    for (final fn in [_nameFocus, _phoneFocus, _emailFocus, _addressFocus, _customerCodeFocus]) {
       fn.addListener(() => setState(() {}));
     }
   }
@@ -52,10 +55,12 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
     _addressCtrl.dispose();
+    _customerCodeCtrl.dispose();
     _nameFocus.dispose();
     _phoneFocus.dispose();
     _emailFocus.dispose();
     _addressFocus.dispose();
+    _customerCodeFocus.dispose();
     super.dispose();
   }
 
@@ -72,6 +77,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         'phone_number':  _phoneCtrl.text.trim(),
         'email':         _emailCtrl.text.trim(),
         'address':       _addressCtrl.text.trim(),
+        'customer_code': _customerCodeCtrl.text.trim(),
       };
 
       final response = await ApiService.post(url, body: jsonEncode(requestBody))
@@ -119,6 +125,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         'phone_number':  _phoneCtrl.text.trim(),
         'email':         _emailCtrl.text.trim(),
         'address':       _addressCtrl.text.trim(),
+        'customer_code': _customerCodeCtrl.text.trim(),
       };
 
       final response = await ApiService.post(url, body: jsonEncode(requestBody))
@@ -243,7 +250,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
     );
   }
 
-  // ── Card with all 4 fields, each having its own visible box border ─────────
+  // ── Card with all 5 fields, each having its own visible box border ─────────
   Widget _buildFieldsCard(bool isTablet) {
     return Container(
       width: double.infinity,
@@ -304,11 +311,28 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
           _inputBox(
             ctrl:         _emailCtrl,
             focus:        _emailFocus,
-            next:         _addressFocus,
+            next:         _customerCodeFocus,
             hint:         'Enter email address',
             icon:         Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
             isTablet:     isTablet,
+          ),
+
+          const SizedBox(height: 18),
+
+          // ── Customer Code ────────────────────────────────────────────
+          _fieldLabel('CUSTOMER CODE', isTablet),
+          const SizedBox(height: 7),
+          _inputBox(
+            ctrl:         _customerCodeCtrl,
+            focus:        _customerCodeFocus,
+            next:         _addressFocus,
+            hint:         'Enter customer code',
+            icon:         Icons.code_outlined,
+            isTablet:     isTablet,
+            validator:    (v) => (v == null || v.trim().isEmpty)
+                ? 'Customer code is required'
+                : null,
           ),
 
           const SizedBox(height: 18),

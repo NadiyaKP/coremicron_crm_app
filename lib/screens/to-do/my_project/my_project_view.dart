@@ -1006,8 +1006,8 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              // Verify — hidden when already verified
-              if (!isVerified)
+              // Verify — shown only when status is "Completed"
+              if (job.status.toLowerCase() == 'completed')
                 _textActionBtn(
                   label:   'Verify',
                   color:   const Color(0xFF2E7D32),
@@ -1015,7 +1015,7 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
                   icon:    Icons.verified_outlined,
                   onTap:   () => _showVerifyDialog(job),
                 ),
-              if (!isVerified) const SizedBox(width: 6),
+              if (job.status.toLowerCase() == 'completed') const SizedBox(width: 6),
               // Reject — hidden when already rejected
               if (!isRejected)
                 _textActionBtn(

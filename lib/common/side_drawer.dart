@@ -26,6 +26,7 @@ import 'package:coremicron_crm_app/screens/reports/pending_wise_report.dart';
 import 'package:coremicron_crm_app/screens/reports/attendance_wise_report.dart';
 import 'package:coremicron_crm_app/screens/reports/leave_application_report.dart';
 import 'package:coremicron_crm_app/screens/settings/change_password.dart';
+import 'package:coremicron_crm_app/screens/settings/erp_url.dart'; 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:coremicron_crm_app/screens/login.dart';
 import 'package:coremicron_crm_app/common/api_service.dart';
@@ -92,6 +93,7 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
 
   final List<_DrawerMenuItem> _settingsItems = [
     _DrawerMenuItem(icon: Icons.lock_outline_rounded, label: 'Change Password'),
+    _DrawerMenuItem(icon: Icons.link_rounded,         label: 'Erp Url'),        // ← NEW
     _DrawerMenuItem(icon: Icons.logout_rounded,       label: 'Logout'),
   ];
 
@@ -516,6 +518,12 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                 context,
                 MaterialPageRoute(
                     builder: (_) => const ChangePasswordPage()));
+            break;
+          case 'API Url':                                          // ← NEW
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ApiUrlPage()));
             break;
           case 'Logout':
             _handleLogout();

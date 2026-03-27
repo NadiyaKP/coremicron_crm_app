@@ -7,7 +7,7 @@ import 'package:coremicron_crm_app/common/theme.dart';
 import 'package:coremicron_crm_app/screens/home.dart';
 import 'package:coremicron_crm_app/screens/Registation/customer/add_customer.dart';
 import 'package:coremicron_crm_app/screens/Registation/customer/customer_view.dart';
-import 'package:coremicron_crm_app/screens/Registation/customer/contact_list.dart'; // ← NEW import
+import 'package:coremicron_crm_app/screens/Registation/customer/contact_list.dart'; 
 import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
 
@@ -20,6 +20,7 @@ class Customer {
   final String address;
   final String status;
   final String confirm;
+  final String customerCode; 
 
   const Customer({
     required this.id,
@@ -29,6 +30,7 @@ class Customer {
     required this.address,
     required this.status,
     required this.confirm,
+    required this.customerCode,  
   });
 
   factory Customer.fromJson(Map<String, dynamic> json) => Customer(
@@ -39,9 +41,9 @@ class Customer {
         address: json['address']       ?? '',
         status:  json['status']        ?? '',
         confirm: json['confirm']       ?? '',
+        customerCode: json['customer_code'] ?? '',  
       );
 }
-
 // ── Customers Page ─────────────────────────────────────────────────────────
 class CustomersPage extends StatefulWidget {
   final String username;
@@ -194,23 +196,25 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   // ── Navigate: Edit Customer ────────────────────────────────────────────────
-  Future<void> _openEditCustomer(Customer c) async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AddCustomerPage(
-          customer: {
-            'id':      c.id,
-            'name':    c.name,
-            'phone':   c.phone,
-            'email':   c.email,
-            'address': c.address,
-          },
-        ),
+Future<void> _openEditCustomer(Customer c) async {
+  final result = await Navigator.push<bool>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => AddCustomerPage(
+        customer: {
+          'id':      c.id,
+          'name':    c.name,
+          'phone':   c.phone,
+          'email':   c.email,
+          'address': c.address,
+          'customer_code': c.customerCode,  
+        },
       ),
-    );
-    if (result == true) _fetchCustomers();
-  }
+    ),
+  );
+  if (result == true) _fetchCustomers();
+}
+  
 
   // ── Navigate: View Customer ────────────────────────────────────────────────
   void _openViewCustomer(Customer c) {
