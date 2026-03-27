@@ -45,6 +45,7 @@ dependencies:
   printing: ^5.11.1
   share_plus: ^7.0.0 
   pdf: ^3.10.7
+  fl_chart: ^0.66.0
 
 
 

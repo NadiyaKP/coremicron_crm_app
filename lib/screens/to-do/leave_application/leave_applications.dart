@@ -7,7 +7,7 @@ import 'package:coremicron_crm_app/common/theme.dart';
 import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/screens/home.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
-import 'package:coremicron_crm_app/screens/leave_application/pending_tasks_view.dart';
+import 'package:coremicron_crm_app/screens/to-do/leave_application/pending_tasks_view.dart';
 
 // ── Leave Application Model ────────────────────────────────────────────────
 class _LeaveApplication {

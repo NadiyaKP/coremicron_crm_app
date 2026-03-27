@@ -7,6 +7,7 @@ import 'package:coremicron_crm_app/common/theme.dart';
 import 'package:coremicron_crm_app/screens/home.dart';
 import 'package:coremicron_crm_app/screens/Registation/customer/add_customer.dart';
 import 'package:coremicron_crm_app/screens/Registation/customer/customer_view.dart';
+import 'package:coremicron_crm_app/screens/Registation/customer/contact_list.dart'; // ← NEW import
 import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
 
@@ -109,7 +110,16 @@ class _CustomersPageState extends State<CustomersPage> {
 
     try {
       final url = Uri.parse('${ApiService.baseUrl}/api/customer/list.php');
+
+      debugPrint('──── API REQUEST ────────────────────────────────────────');
+      debugPrint('GET ${url.toString()}');
+
       final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
+
+      debugPrint('──── API RESPONSE ───────────────────────────────────────');
+      debugPrint('Status: ${response.statusCode}');
+      debugPrint('Body:   ${response.body}');
+      debugPrint('─────────────────────────────────────────────────────────');
 
       final Map<String, dynamic> data = jsonDecode(response.body);
 
@@ -135,8 +145,17 @@ class _CustomersPageState extends State<CustomersPage> {
       final url  = Uri.parse('${ApiService.baseUrl}/api/customer/delete.php');
       final body = {'id': id, 'reason': reason};
 
+      debugPrint('──── API REQUEST ────────────────────────────────────────');
+      debugPrint('POST ${url.toString()}');
+      debugPrint('Body:   ${jsonEncode(body)}');
+
       final response = await ApiService.post(url, body: jsonEncode(body))
           .timeout(const Duration(seconds: 15));
+
+      debugPrint('──── API RESPONSE ───────────────────────────────────────');
+      debugPrint('Status: ${response.statusCode}');
+      debugPrint('Body:   ${response.body}');
+      debugPrint('─────────────────────────────────────────────────────────');
 
       if (!mounted) return;
       final Map<String, dynamic> data = jsonDecode(response.body);
@@ -199,6 +218,19 @@ class _CustomersPageState extends State<CustomersPage> {
       context,
       MaterialPageRoute(
         builder: (_) => CustomerViewPage(
+          customerId:   c.id,
+          customerName: c.name,
+        ),
+      ),
+    );
+  }
+
+  // ── Navigate: Contact List ─────────────────────────────────────────────────
+  void _openContactList(Customer c) {                              // ← NEW
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ContactListPage(
           customerId:   c.id,
           customerName: c.name,
         ),
@@ -694,14 +726,23 @@ class _CustomersPageState extends State<CustomersPage> {
 
                 const SizedBox(height: 10),
 
+                // ── Action icons row (now includes Contacts icon) ────────────
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    // ── NEW: Contacts icon ───────────────────────────────────
+                    _actionIcon(
+                      icon:    Icons.contacts_outlined,
+                      color:   const Color(0xFF7C3AED),   // purple tint
+                      bgColor: const Color(0xFFF3EDFF),
+                      onTap:   () => _openContactList(c),
+                    ),
+                    const SizedBox(width: 7),
                     _actionIcon(
                       icon:    Icons.remove_red_eye_outlined,
                       color:   AppColors.success,
                       bgColor: AppColors.successBg,
-                      onTap:   () => _openViewCustomer(c),   // ← navigates
+                      onTap:   () => _openViewCustomer(c),
                     ),
                     const SizedBox(width: 7),
                     _actionIcon(
@@ -779,6 +820,8 @@ class _CustomersPageState extends State<CustomersPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    _shimmer(width: 30, height: 30, radius: 7),
+                    const SizedBox(width: 7),
                     _shimmer(width: 30, height: 30, radius: 7),
                     const SizedBox(width: 7),
                     _shimmer(width: 30, height: 30, radius: 7),

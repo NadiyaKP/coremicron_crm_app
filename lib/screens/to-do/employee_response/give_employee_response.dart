@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:coremicron_crm_app/common/api_service.dart' show ApiService, kTokenKey;
 import 'package:coremicron_crm_app/common/theme.dart';
 import 'package:coremicron_crm_app/screens/login.dart' show kTokenKey;
-import 'package:coremicron_crm_app/screens/employee_response/employee_responses.dart';
+import 'package:coremicron_crm_app/screens/to-do/employee_response/employee_responses.dart';
 
 class GiveEmployeeResponsePage extends StatefulWidget {
   final EmployeeResponse response;

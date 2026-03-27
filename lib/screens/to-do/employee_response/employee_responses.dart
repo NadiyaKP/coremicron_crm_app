@@ -9,7 +9,7 @@ import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
 import 'package:coremicron_crm_app/screens/ticket/ticket_view.dart';
 import 'package:coremicron_crm_app/screens/ticket/tickets.dart' show Ticket;
-import 'package:coremicron_crm_app/screens/employee_response/give_employee_response.dart';
+import 'package:coremicron_crm_app/screens/to-do/employee_response/give_employee_response.dart';
 
 // ── Employee Response Model ────────────────────────────────────────────────
 class EmployeeResponse {
