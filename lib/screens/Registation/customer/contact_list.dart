@@ -28,11 +28,13 @@ class Contact {
 class ContactListPage extends StatefulWidget {
   final String customerId;
   final String customerName;
+  final bool   readOnly;     // ← NEW
 
   const ContactListPage({
     super.key,
     required this.customerId,
     required this.customerName,
+    this.readOnly = false,    // ← NEW (defaults to false)
   });
 
   @override
@@ -726,15 +728,17 @@ class _ContactListPageState extends State<ContactListPage> {
       ),
 
       // ── FAB: Add contact ──────────────────────────────────────────────────
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddContactDialog,
-        backgroundColor: AppColors.primary,
-        elevation: 2,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        child:
-            const Icon(Icons.add_rounded, color: Colors.white, size: 24),
-      ),
+      floatingActionButton: widget.readOnly // ← NEW: Hide FAB if read-only
+          ? null
+          : FloatingActionButton(
+              onPressed: _showAddContactDialog,
+              backgroundColor: AppColors.primary,
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+              child: const Icon(Icons.add_rounded,
+                  color: Colors.white, size: 24),
+            ),
     );
   }
 
@@ -872,24 +876,25 @@ class _ContactListPageState extends State<ContactListPage> {
           ),
 
           // ── Action icons: Edit + Delete ──────────────────────────────────
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _actionIcon(
-                icon:    Icons.edit_outlined,
-                color:   AppColors.primary,
-                bgColor: AppColors.primaryLight,
-                onTap:   () => _showEditContactDialog(c),
-              ),
-              const SizedBox(width: 7),
-              _actionIcon(
-                icon:    Icons.delete_outline_rounded,
-                color:   AppColors.error,
-                bgColor: const Color(0xFFFFF1F1),
-                onTap:   () => _showDeleteDialog(c),
-              ),
-            ],
-          ),
+          if (!widget.readOnly) // ← NEW: Hide actions if read-only
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _actionIcon(
+                  icon:    Icons.edit_outlined,
+                  color:   AppColors.primary,
+                  bgColor: AppColors.primaryLight,
+                  onTap:   () => _showEditContactDialog(c),
+                ),
+                const SizedBox(width: 7),
+                _actionIcon(
+                  icon:    Icons.delete_outline_rounded,
+                  color:   AppColors.error,
+                  bgColor: const Color(0xFFFFF1F1),
+                  onTap:   () => _showDeleteDialog(c),
+                ),
+              ],
+            ),
         ],
       ),
     );

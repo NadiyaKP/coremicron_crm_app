@@ -518,7 +518,7 @@ class _EmployeePermissionPageState extends State<EmployeePermissionPage> {
                     ]),
 
                     _buildSection('REPORTS', [
-                      _checkRow('Enquiry',      _repEnquiry,    (v) => setState(() => _repEnquiry    = v)),
+                      _checkRow('Leads',        _repEnquiry,    (v) => setState(() => _repEnquiry    = v)),
                       _checkRow('Deal',         _repDeal,       (v) => setState(() => _repDeal       = v)),
                       _checkRow('Employee',     _repEmployee,   (v) => setState(() => _repEmployee   = v)),
                       _checkRow('Pending Works',_repPending,    (v) => setState(() => _repPending    = v)),

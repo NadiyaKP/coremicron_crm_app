@@ -44,7 +44,8 @@ class _Attendance {
 // ── My Attendance Page ─────────────────────────────────────────────────────
 class MyAttendancePage extends StatefulWidget {
   final String username;
-  const MyAttendancePage({super.key, required this.username});
+  final String? highlightId;
+  const MyAttendancePage({super.key, required this.username, this.highlightId});
 
   @override
   State<MyAttendancePage> createState() => _MyAttendancePageState();
@@ -912,13 +913,17 @@ class _MyAttendancePageState extends State<MyAttendancePage> {
   Widget _attendanceCard(_Attendance a) {
     final reqClr = _reqStatusColor(a.requestStatus);
     final reqBg  = _reqStatusBg(a.requestStatus);
+    final bool isHighlighted = widget.highlightId == a.id;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
         color:        Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight, width: 1),
+        border: Border.all(
+          color: isHighlighted ? AppColors.primary : AppColors.borderLight,
+          width: isHighlighted ? 2 : 1,
+        ),
         boxShadow: [
           BoxShadow(
               color:      Colors.black.withOpacity(0.03),
@@ -926,9 +931,19 @@ class _MyAttendancePageState extends State<MyAttendancePage> {
               offset:     const Offset(0, 2)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
+          if (isHighlighted)
+            Positioned(
+              top: 0, left: 0,
+              child: Container(
+                width: 8, height: 8,
+                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              ),
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // ── Top row: date + request_status badge ──────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1004,6 +1019,8 @@ class _MyAttendancePageState extends State<MyAttendancePage> {
                 bgColor: const Color(0xFFE8F5E9),
                 onTap:   () => _showSubmitRequestSheet(a),
               ),
+            ],
+          ),
             ],
           ),
         ],

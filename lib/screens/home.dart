@@ -1,18 +1,26 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-
 import 'package:coremicron_crm_app/common/api_service.dart' show ApiService;
-
 import 'package:coremicron_crm_app/common/theme.dart';
 import 'package:coremicron_crm_app/common/side_drawer.dart';
 import 'package:coremicron_crm_app/screens/chat/chat_list.dart';
 import 'package:coremicron_crm_app/common/chat_websocket_service.dart';
 import 'package:coremicron_crm_app/screens/to-do/Follow_Up/follow_ups.dart';
 import 'package:coremicron_crm_app/screens/to-do/my_task/my_tasks.dart';
+import 'package:coremicron_crm_app/screens/to-do/my_task/tasks_view.dart';
 import 'package:coremicron_crm_app/screens/my_profile/pending_works/my_pending_works.dart';
 import 'package:coremicron_crm_app/screens/my_profile/my_attendance/my_attendance.dart';
 import 'package:coremicron_crm_app/screens/ticket/tickets.dart';
+import 'package:coremicron_crm_app/screens/my_profile/leave_application/my_leave_application.dart';
+import 'package:coremicron_crm_app/screens/to-do/leave_application/leave_applications.dart';
+import 'package:coremicron_crm_app/screens/to-do/update_attendance/update_attendance_list.dart';
+import 'package:coremicron_crm_app/screens/to-do/my_assigned_leads/my_assigned_leads.dart';
+import 'package:coremicron_crm_app/screens/leads/leads.dart';
+import 'package:coremicron_crm_app/screens/to-do/my_project/my_projects.dart';
+import 'package:coremicron_crm_app/screens/to-do/my_project/my_project_view.dart';
+import 'package:coremicron_crm_app/screens/to-do/employee_response/employee_responses.dart';
+import 'package:coremicron_crm_app/screens/leads/leads_list.dart';
 import 'package:http/http.dart' as http;
 
 // ── Dashboard data model ───────────────────────────────────────────────────
@@ -138,6 +146,80 @@ class _HomePageState extends State<HomePage>
   }
 
   // ── Date / time ────────────────────────────────────────────────────────────
+  void _navigateFromNotification(String type, String id) {
+    if (id.isEmpty || id == 'null') id = '';
+
+    final t = type.toLowerCase().trim();
+    Widget? page;
+
+    // Dual-stage navigation for job_completed: MyProjects -> MyProjectView
+    if (t == 'job_completed') {
+      // 1. Push MyProjectsPage
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => MyProjectsPage(username: widget.username),
+      ));
+      
+      // 2. Push MyProjectViewPage
+      // Note: passing empty strings for number/title as they will be fetched in MyProjectViewPage if needed
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => MyProjectViewPage(ticketId: id, ticketNumber: '', title: '', highlightId: id),
+      ));
+      return;
+    }
+
+    // Dual-stage navigation for other jobs: MyTasks -> TasksView
+    if (t == 'job_assigned' || t == 'job_message_reply' || 
+        t == 'job_deadline_extended' || t == 'job_verified' || t == 'job_rejected') {
+      
+      // 1. Push MyTasksPage
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => MyTasksPage(username: widget.username),
+      ));
+      
+      // 2. Push TasksViewPage
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => TasksViewPage(ticketId: id, highlightId: id),
+      ));
+      return;
+    }
+
+    switch (t) {
+      case 'leave_approved':
+      case 'leave_rejected':
+        page = MyLeaveApplicationPage(username: widget.username, highlightId: id);
+        break;
+      case 'leave_application_submitted':
+        page = LeaveApplicationsPage(username: widget.username, highlightId: id);
+        break;
+      case 'attendance_request_reject':
+      case 'attendance_request_delete':
+      case 'attendance_request_approved':
+        page = MyAttendancePage(username: widget.username, highlightId: id);
+        break;
+      case 'attendance_change_request':
+        page = UpdateAttendancePage(username: widget.username, highlightId: id);
+        break;
+      case 'bulk_enquiry_assigned':
+      case 'enquiry_assigned':
+      case 'enquiry_reassigned':
+        page = MyAssignedLeadsPage(username: widget.username, highlightId: id);
+        break;
+      case 'enquiry_reject':
+        page = LeadsPage(username: widget.username, highlightId: id);
+        break;
+      case 'ticket_assigned':
+        page = MyProjectsPage(username: widget.username, highlightId: id);
+        break;
+      case 'job_message':
+        page = EmployeeResponsesPage(username: widget.username, highlightId: id);
+        break;
+    }
+
+    if (page != null) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => page!));
+    }
+  }
+
   String _fmtNotifTime(String? raw) {
     if (raw == null || raw.isEmpty) return '';
     try {
@@ -155,11 +237,25 @@ class _HomePageState extends State<HomePage>
   }
 
   Color _hexColor(String hex, {Color fallback = const Color(0xFF1558E7)}) {
-
     try {
       final s = hex.replaceAll('#', '');
       return Color(int.parse('FF$s', radix: 16));
     } catch (_) { return fallback; }
+  }
+
+  Future<void> _markNotificationAsRead(String notifId) async {
+    if (notifId.isEmpty || notifId == 'null') return;
+    try {
+      final url = Uri.parse('${ApiService.baseUrl}/api/notification/mark.php');
+      final body = {'notification_id': notifId};
+      
+      final res = await ApiService.post(url, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 10));
+      
+      debugPrint('📥  [MARK READ] ${res.statusCode}  ${res.body}');
+    } catch (e) {
+      debugPrint('Error marking notification as read: $e');
+    }
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -737,44 +833,64 @@ class _HomePageState extends State<HomePage>
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      child: GestureDetector(
+                        onTap: () {
+                          final String dealId = (item['deals_id'] ?? item['id'] ?? item['deal_id'] ?? '').toString();
+                          debugPrint('Deal item tapped: $item');
+                          if (dealId.isNotEmpty) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => LeadsListPage(
+                                  dealId:    dealId,
+                                  dealName:  name,
+                                  dealColor: colorStr,
+                                ),
+                              ),
+                            );
+                          } else {
+                            debugPrint('Deal ID is empty for item: $item');
+                          }
+                        },
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                                decoration: BoxDecoration(
+                                  color:        dealColor,
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: [
+                                    BoxShadow(color: dealColor.withOpacity(0.2),
+                                        blurRadius: 4, offset: const Offset(0, 2)),
+                                  ],
+                                ),
+                                child: Text(
+                                  _capitalize(name),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      color:      Colors.white,
+                                      fontSize:   13.5,
+                                      fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color:        dealColor,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [
-                                  BoxShadow(color: dealColor.withOpacity(0.2),
-                                      blurRadius: 4, offset: const Offset(0, 2)),
-                                ],
+                                color:        dealColor.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Text(
-                                _capitalize(name),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    color:      Colors.white,
-                                    fontSize:   13.5,
-                                    fontWeight: FontWeight.w700),
-                              ),
+                              child: Text(total,
+                                  style: TextStyle(
+                                      color:      dealColor,
+                                      fontSize:   12,
+                                      fontWeight: FontWeight.w800)),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color:        dealColor.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(total,
-                                style: TextStyle(
-                                    color:      dealColor,
-                                    fontSize:   12,
-                                    fontWeight: FontWeight.w800)),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -817,61 +933,157 @@ class _HomePageState extends State<HomePage>
             const Divider(height: 1),
             Expanded(
               child: notifs.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.notifications_off_outlined, size: 48, color: AppColors.textMuted.withOpacity(0.4)),
-                          const SizedBox(height: 16),
-                          const Text('No new notifications',
-                              style: TextStyle(color: AppColors.textSecondary, fontSize: 15, fontWeight: FontWeight.w500)),
-                        ],
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      itemCount: notifs.length,
-                      separatorBuilder: (_, __) => const Divider(indent: 72),
-                      itemBuilder: (_, i) {
-                        final n = notifs[i] as Map<String, dynamic>;
-                        final type = (n['type'] ?? '').toString();
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 44, height: 44,
-                                decoration: BoxDecoration(color: _notifBg(type), borderRadius: BorderRadius.circular(14)),
-                                child: Icon(_notifIcon(type), size: 22, color: _notifColor(type)),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.notifications_off_outlined,
+                                size: 48,
+                                color: AppColors.textMuted.withOpacity(0.4)),
+                            const SizedBox(height: 16),
+                            const Text('No new notifications',
+                                style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500)),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 12),
+                        itemCount: notifs.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 10),
+                        itemBuilder: (_, i) {
+                          final n = notifs[i] as Map<String, dynamic>;
+                          final type = (n['type'] ?? '').toString();
+                          final entityId = (n['entity_id'] ??
+                                  n['ticket_id'] ??
+                                  n['job_id'] ??
+                                  n['enquiry_id'] ??
+                                  n['communication_id'] ??
+                                  n['request_id'] ??
+                                  n['leave_id'] ??
+                                  n['id'] ??
+                                  '')
+                              .toString();
+                          final notifId = (n['id'] ?? '').toString();
+
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color: AppColors.borderLight, width: 1),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                _markNotificationAsRead(notifId);
+                                _navigateFromNotification(type, entityId);
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(14),
+                                child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      (n['title'] ?? '').toString(),
-                                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                          color: _notifBg(type),
+                                          borderRadius:
+                                              BorderRadius.circular(14)),
+                                      child: Icon(_notifIcon(type),
+                                          size: 24, color: _notifColor(type)),
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      (n['message'] ?? '').toString(),
-                                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      _fmtNotifTime(n['created_at']?.toString()),
-                                      style: const TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w500),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  (n['title'] ?? '').toString(),
+                                                  style: const TextStyle(
+                                                      color: AppColors
+                                                          .textPrimary,
+                                                      fontSize: 14.5,
+                                                      fontWeight:
+                                                          FontWeight.w800),
+                                                ),
+                                              ),
+                                              const Icon(
+                                                  Icons.arrow_forward_ios_rounded,
+                                                  size: 12,
+                                                  color: AppColors.textMuted),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            (n['message'] ?? '').toString(),
+                                            style: const TextStyle(
+                                                color: AppColors.textSecondary,
+                                                fontSize: 13,
+                                                height: 1.45),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                _fmtNotifTime(n['created_at']
+                                                    ?.toString()),
+                                                style: const TextStyle(
+                                                    color: AppColors.textMuted,
+                                                    fontSize: 11,
+                                                    fontWeight:
+                                                        FontWeight.w600),
+                                              ),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primaryLight,
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: const Text(
+                                                  'View Detail',
+                                                  style: TextStyle(
+                                                      color: AppColors.primary,
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w700),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                            ),
+                          );
+                        },
+                      ),
             ),
           ],
         ),

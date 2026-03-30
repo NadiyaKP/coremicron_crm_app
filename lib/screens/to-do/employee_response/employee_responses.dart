@@ -72,7 +72,8 @@ class EmployeeResponse {
 // ── Employee Responses Page ────────────────────────────────────────────────
 class EmployeeResponsesPage extends StatefulWidget {
   final String username;
-  const EmployeeResponsesPage({super.key, required this.username});
+  final String? highlightId;
+  const EmployeeResponsesPage({super.key, required this.username, this.highlightId});
 
   @override
   State<EmployeeResponsesPage> createState() => _EmployeeResponsesPageState();
@@ -128,12 +129,9 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
   Future<void> _fetchResponses() async {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      final prefs     = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString(kTokenKey) ?? '';
-      
       // 1. Fetch tickets first for lookup
-      final ticketUrl = Uri.parse('${ApiService.baseUrl}/api/ticket/');
-      final tRes = await ApiService.get(ticketUrl);
+      final ticketUrl = Uri.parse('${ApiService.baseUrl}/api/ticket/list.php');
+      final tRes = await ApiService.get(ticketUrl).timeout(const Duration(seconds: 15));
       if (tRes.statusCode == 200) {
         final tData = jsonDecode(tRes.body);
         if (tData['success'] == true) {
@@ -144,10 +142,15 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
 
       // 2. Fetch communications
       final url = Uri.parse('${ApiService.baseUrl}/api/ticket/communication_list.php?mode=inbox');
-      final response = await ApiService.get(url);
+      final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
-      final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint('📥  [EMPLOYEE RESPONSE] ${response.statusCode}  ${response.body}');
+      
+      if (response.body.trim().isEmpty) {
+        throw Exception('Server returned an empty response body.');
+      }
+      
+      final Map<String, dynamic> data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
         final List list = data['communications'] ?? [];
@@ -156,10 +159,12 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
       } else {
         _errorMessage = data['error'] ?? data['message'] ?? 'Failed to load responses.';
       }
-    } on http.ClientException {
+    } on http.ClientException catch (e) {
+      debugPrint('❌  [EMPLOYEE RESPONSE] ClientException: $e');
       _errorMessage = 'Unable to reach the server. Check your connection.';
-    } catch (_) {
-      _errorMessage = 'Something went wrong. Please try again.';
+    } catch (e) {
+      debugPrint('❌  [EMPLOYEE RESPONSE] Unexpected Error: $e');
+      _errorMessage = 'Something went wrong: $e';
     }
     if (mounted) setState(() => _isLoading = false);
   }
@@ -320,13 +325,17 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
   Widget _responseCard(EmployeeResponse r) {
     final bool isDone = r.messageStatus.toLowerCase() == 'yes';
     final Color borderColor = isDone ? const Color(0xFF2E7D32) : const Color(0xFFE65100);
+    final bool isHighlighted = widget.highlightId == r.communicationId;
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color:        Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor.withOpacity(0.5), width: 1.2),
+        border: Border.all(
+          color: isHighlighted ? AppColors.primary : borderColor.withOpacity(0.5),
+          width: isHighlighted ? 2 : 1.2,
+        ),
         boxShadow: [
           BoxShadow(
               color:      Colors.black.withOpacity(0.04),
@@ -334,9 +343,19 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
               offset:     const Offset(0, 3)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
+          if (isHighlighted)
+            Positioned(
+              top: 0, left: 0,
+              child: Container(
+                width: 8, height: 8,
+                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              ),
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -415,6 +434,8 @@ class _EmployeeResponsesPageState extends State<EmployeeResponsesPage> {
                   child: const Icon(Icons.mark_chat_read_outlined, size: 18, color: AppColors.primary),
                 ),
               ),
+            ],
+          ),
             ],
           ),
         ],

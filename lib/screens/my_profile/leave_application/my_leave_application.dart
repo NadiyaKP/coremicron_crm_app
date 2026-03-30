@@ -48,7 +48,8 @@ class LeaveApplication {
 // ── My Leave Application Page ──────────────────────────────────────────────
 class MyLeaveApplicationPage extends StatefulWidget {
   final String username;
-  const MyLeaveApplicationPage({super.key, required this.username});
+  final String? highlightId;
+  const MyLeaveApplicationPage({super.key, required this.username, this.highlightId});
 
   @override
   State<MyLeaveApplicationPage> createState() =>
@@ -564,13 +565,17 @@ class _MyLeaveApplicationPageState extends State<MyLeaveApplicationPage> {
   Widget _leaveCard(LeaveApplication l) {
     final stClr = _statusColor(l.status);
     final stBg  = _statusBg(l.status);
+    final bool isHighlighted = widget.highlightId == l.leaveId;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
         color:        Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight, width: 1),
+        border: Border.all(
+          color: isHighlighted ? AppColors.primary : AppColors.borderLight,
+          width: isHighlighted ? 2 : 1,
+        ),
         boxShadow: [
           BoxShadow(
               color:      Colors.black.withOpacity(0.03),
@@ -578,9 +583,19 @@ class _MyLeaveApplicationPageState extends State<MyLeaveApplicationPage> {
               offset:     const Offset(0, 2)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
+          if (isHighlighted)
+            Positioned(
+              top: 0, left: 0,
+              child: Container(
+                width: 8, height: 8,
+                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              ),
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // ── Top row: type + status badge ──────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -678,6 +693,8 @@ class _MyLeaveApplicationPageState extends State<MyLeaveApplicationPage> {
                 bgColor: const Color(0xFFFFF1F1),
                 onTap:   () => _showDeleteDialog(l),
               ),
+            ],
+          ),
             ],
           ),
         ],

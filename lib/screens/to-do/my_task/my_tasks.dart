@@ -15,7 +15,8 @@ import 'package:coremicron_crm_app/common/string_extensions.dart';
 // ── My Tasks Page ──────────────────────────────────────────────────────────
 class MyTasksPage extends StatefulWidget {
   final String username;
-  const MyTasksPage({super.key, required this.username});
+  final String? highlightId;
+  const MyTasksPage({super.key, required this.username, this.highlightId});
 
   @override
   State<MyTasksPage> createState() => _MyTasksPageState();
@@ -319,13 +320,17 @@ class _MyTasksPageState extends State<MyTasksPage> {
   Widget _taskCard(Ticket t) {
     final priorityClr = _priorityColor(t.priority);
     final priorityBg  = _priorityBg(t.priority);
+    final bool isHighlighted = widget.highlightId == t.ticketId;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
         color:        Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight, width: 1),
+        border: Border.all(
+          color: isHighlighted ? AppColors.primary : AppColors.borderLight,
+          width: isHighlighted ? 2 : 1,
+        ),
         boxShadow: [
           BoxShadow(
               color:      Colors.black.withOpacity(0.03),
@@ -333,11 +338,21 @@ class _MyTasksPageState extends State<MyTasksPage> {
               offset:     const Offset(0, 2)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // ── Top row: date + ticket number badge ───────────────────────
-          Row(
+          if (isHighlighted)
+            Positioned(
+              top: 0, left: 0,
+              child: Container(
+                width: 8, height: 8,
+                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              ),
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Top row: date + ticket number badge ───────────────────────
+              Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
@@ -483,6 +498,8 @@ class _MyTasksPageState extends State<MyTasksPage> {
                       size: 15, color: Color(0xFF2E7D32)),
                 ),
               ),
+            ],
+          ),
             ],
           ),
         ],

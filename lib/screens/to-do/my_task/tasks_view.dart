@@ -11,8 +11,10 @@ import 'package:coremicron_crm_app/screens/to-do/my_task/tasks_reply.dart';
 
 // ── Task View Page ─────────────────────────────────────────────────────────
 class TasksViewPage extends StatefulWidget {
-  final Ticket ticket;
-  const TasksViewPage({super.key, required this.ticket});
+  final Ticket? ticket;
+  final String? ticketId;
+  final String? highlightId;
+  const TasksViewPage({super.key, this.ticket, this.ticketId, this.highlightId});
 
   @override
   State<TasksViewPage> createState() => _TasksViewPageState();
@@ -37,7 +39,7 @@ class _TasksViewPageState extends State<TasksViewPage> {
     try {
       final url = Uri.parse(
           '${ApiService.baseUrl}/api/ticket/job_list.php'
-          '?mode=my_assigned&ticket_id=${widget.ticket.ticketId}');
+          '?mode=my_assigned&ticket_id=${widget.ticketId ?? widget.ticket?.ticketId}');
 
       final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
@@ -304,9 +306,9 @@ class _TasksViewPageState extends State<TasksViewPage> {
               children: [
                 Text(
                   _isLoading
-                      ? (widget.ticket.title.isEmpty
+                      ? (widget.ticket?.title.isEmpty ?? true
                           ? 'Task Details'
-                          : widget.ticket.title.capitalize())
+                          : widget.ticket!.title.capitalize())
                       : (_title.isEmpty
                           ? 'Task Details'
                           : _title.capitalize()),
@@ -319,7 +321,7 @@ class _TasksViewPageState extends State<TasksViewPage> {
                       letterSpacing: -0.3),
                 ),
                 Text(
-                  'Ticket #${_isLoading ? widget.ticket.ticketNumber : _ticketNumber}',
+                  'Ticket #${_isLoading ? (widget.ticket?.ticketNumber ?? widget.ticketId) : _ticketNumber}',
                   style: const TextStyle(
                       color:    AppColors.textSecondary,
                       fontSize: 12),
@@ -476,6 +478,7 @@ class _TasksViewPageState extends State<TasksViewPage> {
     final fixbyDate   = _fmtDate(job['fixby_date']?.toString());
     final statusClr   = _statusColor(status);
     final statusBg    = _statusBg(status);
+    final bool isHighlighted = widget.highlightId == job['associated_id']?.toString();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -483,10 +486,12 @@ class _TasksViewPageState extends State<TasksViewPage> {
         color:        Colors.white,
         borderRadius: BorderRadius.circular(13),
         border: Border.all(
-          color: completed
-              ? const Color(0xFF2E7D32).withOpacity(0.25)
-              : AppColors.borderLight,
-          width: 1,
+          color: isHighlighted
+              ? AppColors.primary
+              : (completed
+                  ? const Color(0xFF2E7D32).withOpacity(0.25)
+                  : AppColors.borderLight),
+          width: isHighlighted ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
@@ -495,9 +500,19 @@ class _TasksViewPageState extends State<TasksViewPage> {
               offset:     const Offset(0, 2)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
+          if (isHighlighted)
+            Positioned(
+              top: 0, left: 0,
+              child: Container(
+                width: 8, height: 8,
+                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              ),
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // ── Main row: checkbox + content ──────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 12, 12, 8),
@@ -704,6 +719,8 @@ class _TasksViewPageState extends State<TasksViewPage> {
                 ),
               ],
             ),
+          ),
+            ],
           ),
         ],
       ),

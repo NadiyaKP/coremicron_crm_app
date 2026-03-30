@@ -169,47 +169,60 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     final hPad = AppSpacing.horizontalPadding(isTablet, size.width);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: hPad),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: AppSpacing.topPadding(isTablet)),
+        child: Center(
+          child: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 500),
+              padding: EdgeInsets.symmetric(horizontal: hPad),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: isTablet ? 40 : 20),
 
-                // ── Logo ─────────────────────────────────────────────────
-                FadeTransition(
-                  opacity: _logoFade,
-                  child: _buildLogo(isTablet),
-                ),
-
-                SizedBox(height: isTablet ? 36 : 28),
-
-                // ── Hero Card ─────────────────────────────────────────────
-                FadeTransition(
-                  opacity: _cardFade,
-                  child: SlideTransition(
-                    position: _cardSlide,
-                    child: _buildHeroCard(isTablet),
+                  // ── Logo ─────────────────────────────────────────────────
+                  FadeTransition(
+                    opacity: _logoFade,
+                    child: _buildLogo(isTablet),
                   ),
-                ),
 
-                SizedBox(height: AppSpacing.sectionGap(isTablet)),
+                  const SizedBox(height: 32),
 
-                // ── Form ──────────────────────────────────────────────────
-                FadeTransition(
-                  opacity: _formFade,
-                  child: SlideTransition(
-                    position: _formSlide,
-                    child: _buildForm(isTablet),
+                  // ── Hero Section ──────────────────────────────────────────
+                  FadeTransition(
+                    opacity: _cardFade,
+                    child: SlideTransition(
+                      position: _cardSlide,
+                      child: _buildHeroSection(isTablet),
+                    ),
                   ),
-                ),
 
-                SizedBox(height: isTablet ? 32 : 24),
-              ],
+                  const SizedBox(height: 48),
+
+                  // ── Form ──────────────────────────────────────────────────
+                  FadeTransition(
+                    opacity: _formFade,
+                    child: SlideTransition(
+                      position: _formSlide,
+                      child: _buildForm(isTablet),
+                    ),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Footer
+                  Center(
+                    child: Text(
+                      '© ${DateTime.now().year} Coremicron CRM',
+                      style: AppTextStyles.footer,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
         ),
@@ -222,131 +235,61 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     return Row(
       children: [
         Container(
-          width: AppSpacing.logoSize(isTablet),
-          height: AppSpacing.logoSize(isTablet),
-          decoration: AppDecorations.logoBox(isTablet),
-          child: Icon(
-            Icons.layers_rounded,
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
             color: Colors.white,
-            size: AppSpacing.logoIconSize(isTablet),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.borderLight, width: 1),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.03), 
+                  blurRadius: 6, offset: const Offset(0, 2)),
+            ],
+          ),
+          child: const Center(
+            child: Icon(Icons.blur_on_rounded, color: AppColors.primary, size: 28),
           ),
         ),
-        const SizedBox(width: 11),
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(text: 'Core',   style: AppTextStyles.brandCore(isTablet)),
-              TextSpan(text: 'micron', style: AppTextStyles.brandMicron(isTablet)),
-            ],
+        const SizedBox(width: 12),
+        const Text(
+          'CRM System',
+          style: TextStyle(
+            color: AppColors.primary,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
           ),
         ),
       ],
     );
   }
 
-  // ── Hero Card ──────────────────────────────────────────────────────────────
-  Widget _buildHeroCard(bool isTablet) {
-    return Container(
-      width: double.infinity,
-      decoration: AppDecorations.heroCard,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          children: [
-            // Decorative circles
-            Positioned(
-              right: -40,
-              top: -40,
-              child: Container(
-                width: isTablet ? 160 : 130,
-                height: isTablet ? 160 : 130,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.07),
-                ),
-              ),
-            ),
-            Positioned(
-              left: -30,
-              bottom: -30,
-              child: Container(
-                width: isTablet ? 100 : 80,
-                height: isTablet ? 100 : 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.06),
-                ),
-              ),
-            ),
-            Positioned(
-              right: isTablet ? 60 : 44,
-              bottom: isTablet ? 28 : 22,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.35),
-                ),
-              ),
-            ),
-            Positioned(
-              right: isTablet ? 36 : 26,
-              top: isTablet ? 40 : 32,
-              child: Container(
-                width: 5,
-                height: 5,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.25),
-                ),
-              ),
-            ),
-
-            // Content
-            Padding(
-              padding: EdgeInsets.all(isTablet ? 30 : 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'Manage every\ncustomer ',
-                          style: AppTextStyles.heroHeadline(isTablet),
-                        ),
-                        TextSpan(
-                          text: 'relationship',
-                          style: AppTextStyles.heroAccent(isTablet),
-                        ),
-                        TextSpan(
-                          text: '\nin one place.',
-                          style: AppTextStyles.heroHeadline(isTablet),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: isTablet ? 12 : 10),
-                  Container(
-                    width: 36,
-                    height: 2.5,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.40),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  SizedBox(height: isTablet ? 12 : 10),
-                  Text(
-                    'Automate follow-ups, and close deals\nfaster with Coremicron CRM.',
-                    style: AppTextStyles.heroSubtitle(isTablet),
-                  ),
-                ],
-              ),
-            ),
-          ],
+  // ── Hero Section (Branding) ────────────────────────────────────────────────
+  Widget _buildHeroSection(bool isTablet) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Manage every\ncustomer relationship\nin one place.',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 34,
+            fontWeight: FontWeight.w800,
+            height: 1.15,
+            letterSpacing: -1.2,
+          ),
         ),
-      ),
+        const SizedBox(height: 18),
+        Text(
+          'Streamline your pipeline, automate follow-ups,\nand close deals faster with Coremicron CRM.',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 15,
+            height: 1.6,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 
@@ -355,18 +298,19 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Welcome back', style: AppTextStyles.headline(isTablet)),
-        const SizedBox(height: 4),
-        Text(
+        const Text('Welcome back', 
+            style: TextStyle(color: AppColors.textPrimary, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+        const SizedBox(height: 6),
+        const Text(
           'Sign in to your account to continue',
-          style: AppTextStyles.subtitle(isTablet),
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 14, fontWeight: FontWeight.w500),
         ),
 
-        SizedBox(height: isTablet ? 28 : 22),
+        const SizedBox(height: 38),
 
         // Username
         _buildLabel('USERNAME', isTablet),
-        const SizedBox(height: 7),
+        const SizedBox(height: 10),
         _buildInputField(
           controller: _usernameController,
           focusNode: _usernameFocus,
@@ -377,11 +321,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           nextFocus: _passwordFocus,
         ),
 
-        SizedBox(height: AppSpacing.fieldGap(isTablet)),
+        const SizedBox(height: 18),
 
         // Password
         _buildLabel('PASSWORD', isTablet),
-        const SizedBox(height: 7),
+        const SizedBox(height: 10),
         _buildInputField(
           controller: _passwordController,
           focusNode: _passwordFocus,
@@ -392,70 +336,46 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           isTablet: isTablet,
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
 
         // Forgot password
         Align(
           alignment: Alignment.centerRight,
           child: GestureDetector(
-            onTap: () {
-              // TODO: Handle forgot password
-            },
-            child: Text(
-              'Forgot password?',
-              style: AppTextStyles.link(isTablet),
+            onTap: () {},
+            child: const Text('Forgot password?',
+              style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ),
 
-        SizedBox(height: isTablet ? 28 : 22),
+        const SizedBox(height: 32),
 
         // Sign In Button
         SizedBox(
           width: double.infinity,
-          height: AppSpacing.buttonHeight(isTablet),
+          height: 56,
           child: ElevatedButton(
             onPressed: _isLoading ? null : _handleSignIn,
-            style: AppButtonStyles.primary,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: _isLoading
-                  ? const SizedBox(
-                      key: ValueKey('loader'),
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : Text(
-                      'Sign In',
-                      key: const ValueKey('label'),
-                      style: AppTextStyles.button(isTablet),
-                    ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4A90E2),
+              foregroundColor: Colors.white,
+              elevation: 4,
+              shadowColor: const Color(0xFF4A90E2).withOpacity(0.4),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
+            child: _isLoading
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
           ),
         ),
-
-        SizedBox(height: isTablet ? 36 : 28),
-
-        // Footer
-        Center(
-          child: Text(
-            '© ${DateTime.now().year} Coremicron · Privacy · Terms',
-            style: AppTextStyles.footer,
-          ),
-        ),
-
-        SizedBox(height: isTablet ? 28 : 20),
       ],
     );
   }
 
   // ── Field Label ────────────────────────────────────────────────────────────
   Widget _buildLabel(String text, bool isTablet) =>
-      Text(text, style: AppTextStyles.fieldLabel(isTablet));
+      Text(text, style: const TextStyle(color: AppColors.textLabel, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5));
 
   // ── Input Field ────────────────────────────────────────────────────────────
   Widget _buildInputField({
@@ -475,9 +395,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           final focused = Focus.of(ctx).hasFocus;
           return AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            decoration: focused
-                ? AppDecorations.inputFocused
-                : AppDecorations.inputIdle,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: focused ? const Color(0xFF4A90E2) : AppColors.border,
+                width: focused ? 1.5 : 1,
+              ),
+            ),
             child: TextField(
               controller: controller,
               focusNode: focusNode,
@@ -492,20 +417,15 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   _handleSignIn();
                 }
               },
-              style: AppTextStyles.body(isTablet),
-              cursorColor: AppColors.primary,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w500),
+              cursorColor: const Color(0xFF4A90E2),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: AppTextStyles.hint(isTablet),
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Icon(
-                    icon,
-                    color: focused
-                        ? AppColors.primary
-                        : AppColors.iconDefault,
-                    size: isTablet ? 21 : 19,
-                  ),
+                hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14, fontWeight: FontWeight.w400),
+                prefixIcon: Icon(
+                  icon,
+                  color: focused ? const Color(0xFF4A90E2) : AppColors.iconDefault,
+                  size: 20,
                 ),
                 suffixIcon: isPassword
                     ? IconButton(
@@ -514,16 +434,16 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
                           color: AppColors.iconDefault,
-                          size: isTablet ? 21 : 19,
+                          size: 20,
                         ),
                         onPressed: () => setState(
                             () => _obscurePassword = !_obscurePassword),
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
+                contentPadding: const EdgeInsets.symmetric(
                   horizontal: 14,
-                  vertical: isTablet ? 18 : 15,
+                  vertical: 16,
                 ),
               ),
             ),

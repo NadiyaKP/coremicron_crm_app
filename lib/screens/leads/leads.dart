@@ -10,6 +10,7 @@ import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/screens/leads/lead_view.dart';
 import 'package:coremicron_crm_app/screens/leads/new_lead.dart';
 import 'package:coremicron_crm_app/screens/leads/bulk_add.dart';
+import 'package:coremicron_crm_app/screens/Registation/customer/contact_list.dart'; // ← NEW
 import 'package:coremicron_crm_app/common/string_extensions.dart';
 
 // ── Lead Model ─────────────────────────────────────────────────────────────
@@ -67,7 +68,8 @@ class Lead {
 // ── Leads Page ─────────────────────────────────────────────────────────────
 class LeadsPage extends StatefulWidget {
   final String username;
-  const LeadsPage({super.key, required this.username});
+  final String? highlightId;
+  const LeadsPage({super.key, required this.username, this.highlightId});
 
   @override
   State<LeadsPage> createState() => _LeadsPageState();
@@ -575,12 +577,17 @@ class _LeadsPageState extends State<LeadsPage> {
 
   // ── Lead card ──────────────────────────────────────────────────────────────
   Widget _leadCard(Lead l) {
+    final bool isHighlighted = widget.highlightId == l.enquiryId;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
       decoration: BoxDecoration(
         color:        Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight, width: 1),
+        border: Border.all(
+          color: isHighlighted ? AppColors.primary : AppColors.borderLight,
+          width: isHighlighted ? 2 : 1,
+        ),
         boxShadow: [
           BoxShadow(
               color:      Colors.black.withOpacity(0.03),
@@ -588,9 +595,19 @@ class _LeadsPageState extends State<LeadsPage> {
               offset:     const Offset(0, 2)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
+          if (isHighlighted)
+            Positioned(
+              top: 0, left: 0,
+              child: Container(
+                width: 8, height: 8,
+                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              ),
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -644,12 +661,32 @@ class _LeadsPageState extends State<LeadsPage> {
                   size: 11, color: AppColors.textMuted),
               const SizedBox(width: 3),
               Expanded(
-                child: Text(l.customerName.capitalize(),
+                child: GestureDetector(
+                  onTap: () {
+                    // Navigate directly to ContactListPage (read-only)
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ContactListPage(
+                          customerId:   l.customerId,
+                          customerName: l.customerName,
+                          readOnly:     true,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    l.customerName.capitalize(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        color:    AppColors.textSecondary,
-                        fontSize: 12)),
+                      color: AppColors.primary, // Changed to primary to indicate it's clickable
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline, // Add underline for clarity
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(width: 10),
               const Icon(Icons.phone_outlined,
@@ -706,6 +743,8 @@ class _LeadsPageState extends State<LeadsPage> {
                 bgColor: const Color(0xFFFFF1F1),
                 onTap:   () => _showDeleteDialog(l),
               ),
+            ],
+          ),
             ],
           ),
         ],

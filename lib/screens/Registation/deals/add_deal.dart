@@ -202,12 +202,23 @@ class _AddDealPageState extends State<AddDealPage> {
                     Container(
                       width:  double.infinity,
                       height: 50,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color:        _selectedColor,
                         borderRadius: BorderRadius.circular(11),
                         border: Border.all(
                             color: Colors.black.withOpacity(0.08),
                             width: 1),
+                      ),
+                      child: Text(
+                        _colorToHex(_selectedColor).toUpperCase(),
+                        style: TextStyle(
+                            color: _selectedColor.computeLuminance() > 0.5
+                                ? Colors.black.withOpacity(0.65)
+                                : Colors.white.withOpacity(0.85),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5),
                       ),
                     ),
 

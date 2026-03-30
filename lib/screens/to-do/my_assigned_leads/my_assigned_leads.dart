@@ -67,7 +67,8 @@ class AssignedLead {
 // ── My Assigned Leads Page ─────────────────────────────────────────────────
 class MyAssignedLeadsPage extends StatefulWidget {
   final String username;
-  const MyAssignedLeadsPage({super.key, required this.username});
+  final String? highlightId;
+  const MyAssignedLeadsPage({super.key, required this.username, this.highlightId});
 
   @override
   State<MyAssignedLeadsPage> createState() => _MyAssignedLeadsPageState();
@@ -581,12 +582,17 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
 
   // ── Lead Card ──────────────────────────────────────────────────────────────
   Widget _leadCard(AssignedLead l) {
+    final bool isHighlighted = widget.highlightId == l.enquiryId;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
       decoration: BoxDecoration(
         color:        Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight, width: 1),
+        border: Border.all(
+          color: isHighlighted ? AppColors.primary : AppColors.borderLight,
+          width: isHighlighted ? 2 : 1,
+        ),
         boxShadow: [
           BoxShadow(
               color:      Colors.black.withOpacity(0.03),
@@ -594,9 +600,19 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
               offset:     const Offset(0, 2)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
+          if (isHighlighted)
+            Positioned(
+              top: 0, left: 0,
+              child: Container(
+                width: 8, height: 8,
+                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              ),
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // ── Top row: date + enquiry number badge ─────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -750,6 +766,8 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
                 bgColor: const Color(0xFFFFF1F1),
                 onTap:   () => _showRejectDialog(l),
               ),
+            ],
+          ),
             ],
           ),
         ],

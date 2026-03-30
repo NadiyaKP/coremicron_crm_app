@@ -43,17 +43,18 @@ class _Job {
       );
 }
 
-// ── My Project View Page ───────────────────────────────────────────────────
 class MyProjectViewPage extends StatefulWidget {
   final String ticketId;
   final String ticketNumber;
   final String title;
+  final String? highlightId;
 
   const MyProjectViewPage({
     super.key,
     required this.ticketId,
     required this.ticketNumber,
     this.title = '',
+    this.highlightId,
   });
 
   @override
@@ -833,7 +834,7 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
                       letterSpacing: -0.3),
                 ),
                 Text(
-                  'Ticket #${widget.ticketNumber}',
+                  'Ticket #${widget.ticketNumber.isEmpty ? widget.ticketId : widget.ticketNumber}',
                   style: const TextStyle(
                       color:    AppColors.textSecondary,
                       fontSize: 12),
@@ -877,12 +878,17 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
     final isRejected  = job.status.toLowerCase() == 'rejected';
     final hasImage    = job.image != null && job.image!.isNotEmpty;
 
+    final bool isHighlighted = widget.highlightId == job.jobId;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color:        Colors.white,
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AppColors.borderLight, width: 1),
+        border: Border.all(
+          color: isHighlighted ? AppColors.primary : AppColors.borderLight,
+          width: isHighlighted ? 2 : 1,
+        ),
         boxShadow: [
           BoxShadow(
               color:      Colors.black.withOpacity(0.03),
@@ -890,7 +896,17 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
               offset:     const Offset(0, 2)),
         ],
       ),
-      child: Column(
+      child: Stack(
+        children: [
+          if (isHighlighted)
+            Positioned(
+              top: 0, left: 0,
+              child: Container(
+                width: 8, height: 8,
+                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              ),
+            ),
+          Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Top row: fix-by (left) + status badge (right) ─────────────
@@ -1038,7 +1054,10 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
           ),
         ],
       ),
+        ],
+      ),
     );
+    
   }
 
   // ── Image Dialog ───────────────────────────────────────────────────────────

@@ -534,18 +534,19 @@ class _BulkAddPageState extends State<BulkAddPage> {
 
   // ── Excel Preview ──────────────────────────────────────────────────────────
   Widget _buildExcelPreview() {
-    final previewRows = _excelRows.take(5).toList();
+    final previewRows = _excelRows; // Show all rows
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Preview (first ${previewRows.length} rows)',
+        Text('Data Preview (${_excelRows.length} rows)',
             style: const TextStyle(
                 color:      AppColors.textMuted,
                 fontSize:   11.5,
                 fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Container(
+          height: 320, // Set a fixed height for the preview area
           decoration: BoxDecoration(
             color:        Colors.white,
             borderRadius: BorderRadius.circular(10),
@@ -553,36 +554,39 @@ class _BulkAddPageState extends State<BulkAddPage> {
           ),
           clipBehavior: Clip.hardEdge,
           child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              headingRowColor: MaterialStateProperty.all(
-                  AppColors.primaryLight),
-              headingTextStyle: const TextStyle(
-                  color:      AppColors.primary,
-                  fontSize:   11.5,
-                  fontWeight: FontWeight.w700),
-              dataTextStyle: const TextStyle(
-                  color:    AppColors.textSecondary,
-                  fontSize: 12),
-              columnSpacing: 20,
-              horizontalMargin: 14,
-              headingRowHeight: 36,
-              dataRowMinHeight: 32,
-              dataRowMaxHeight: 40,
-              columns: _excelColumns
-                  .map((h) => DataColumn(label: Text(h)))
-                  .toList(),
-              rows: previewRows.map((row) {
-                return DataRow(
-                  cells: List.generate(
-                    _excelColumns.length,
-                    (i) => DataCell(Text(
-                        i < row.length ? row[i] : '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis)),
-                  ),
-                );
-              }).toList(),
+            scrollDirection: Axis.vertical, // Add vertical scrolling
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                headingRowColor: MaterialStateProperty.all(
+                    AppColors.primaryLight),
+                headingTextStyle: const TextStyle(
+                    color:      AppColors.primary,
+                    fontSize:   11.5,
+                    fontWeight: FontWeight.w700),
+                dataTextStyle: const TextStyle(
+                    color:    AppColors.textSecondary,
+                    fontSize: 12),
+                columnSpacing: 20,
+                horizontalMargin: 14,
+                headingRowHeight: 36,
+                dataRowMinHeight: 32,
+                dataRowMaxHeight: 40,
+                columns: _excelColumns
+                    .map((h) => DataColumn(label: Text(h)))
+                    .toList(),
+                rows: previewRows.map((row) {
+                  return DataRow(
+                    cells: List.generate(
+                      _excelColumns.length,
+                      (i) => DataCell(Text(
+                          i < row.length ? row[i] : '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis)),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
         ),
