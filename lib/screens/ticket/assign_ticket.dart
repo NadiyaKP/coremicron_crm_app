@@ -182,7 +182,7 @@ class _AssignTicketPageState extends State<AssignTicketPage>
       listenFor:      const Duration(minutes: 1),
       pauseFor:       const Duration(seconds: 10), // Longer pause allowed
       localeId:       'en_US',
-      cancelOnError:  false, // Don't stop on minor errors
+      cancelOnError:  false,
       partialResults: true,
     );
 

@@ -976,10 +976,7 @@ class _ContactListPageState extends State<ContactListPage> {
                 fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Tap the + button to add a contact',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 12.5),
-          ),
+          
         ],
       ),
     );

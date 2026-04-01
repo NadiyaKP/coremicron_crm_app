@@ -11,6 +11,8 @@ import 'package:coremicron_crm_app/screens/Registation/customer/contact_list.dar
 import 'ticket_view.dart';
 import 'new_ticket.dart';
 import 'assign_ticket.dart';
+import 'amc_details.dart';
+import 'amc_ticket.dart';
 
 // ── Ticket Model ───────────────────────────────────────────────────────────
 class Ticket {
@@ -589,30 +591,31 @@ class _TicketsPageState extends State<TicketsPage> {
           // ── Priority + Type badges ────────────────────────────────────
           Row(
             children: [
-              // Priority
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 7, vertical: 3),
-                decoration: BoxDecoration(
-                  color:        priorityBg,
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(
-                      color: priorityClr.withOpacity(0.3), width: 1),
+              // Priority (hide for AMC)
+              if (t.typeOfTickets.toUpperCase() != 'AMC')
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color:        priorityBg,
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(
+                        color: priorityClr.withOpacity(0.3), width: 1),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.flag_outlined,
+                          size: 10, color: priorityClr),
+                      const SizedBox(width: 3),
+                      Text(t.priority.capitalize(),
+                          style: TextStyle(
+                              color:      priorityClr,
+                              fontSize:   10.5,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.flag_outlined,
-                        size: 10, color: priorityClr),
-                    const SizedBox(width: 3),
-                    Text(t.priority.capitalize(),
-                        style: TextStyle(
-                            color:      priorityClr,
-                            fontSize:   10.5,
-                            fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
 
               const Spacer(),
 
@@ -661,29 +664,53 @@ class _TicketsPageState extends State<TicketsPage> {
                 color:   AppColors.primary,
                 bgColor: AppColors.primaryLight,
                 onTap:   () async {
-                  final result = await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => NewTicketPage(
-                          username: widget.username, ticket: t),
-                    ),
-                  );
-                  if (result == true) _fetchTickets();
+                  if (t.typeOfTickets.toUpperCase() == 'AMC') {
+                    final result = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AmcTicketPage(
+                            username: widget.username, ticket: t),
+                      ),
+                    );
+                    if (result == true) _fetchTickets();
+                  } else {
+                    final result = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NewTicketPage(
+                            username: widget.username, ticket: t),
+                      ),
+                    );
+                    if (result == true) _fetchTickets();
+                  }
                 },
               ),
               const SizedBox(width: 6),
-              // Assign to
-              _actionIcon(
-                icon:    Icons.person_add_outlined,
-                color:   const Color(0xFF6A1B9A),
-                bgColor: const Color(0xFFF3E5F5),
-                onTap:   () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AssignTicketPage(ticket: t),
-                  ),
-                ),
-              ),
+              // Assign to or AMC Details
+              t.typeOfTickets.toUpperCase() == 'AMC'
+                  ? _actionIcon(
+                      icon: Icons.list_alt_rounded,
+                      color: AppColors.primary,
+                      bgColor: AppColors.primaryLight,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AmcDetailsPage(
+                              ticketId: t.ticketId, ticketNumber: t.ticketNumber),
+                        ),
+                      ),
+                    )
+                  : _actionIcon(
+                      icon: Icons.person_add_outlined,
+                      color: const Color(0xFF6A1B9A),
+                      bgColor: const Color(0xFFF3E5F5),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AssignTicketPage(ticket: t),
+                        ),
+                      ),
+                    ),
               const SizedBox(width: 6),
               // Delete
               _actionIcon(

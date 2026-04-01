@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:coremicron_crm_app/screens/ticket/amc_ticket.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -793,6 +794,8 @@ class _NewTicketPageState extends State<NewTicketPage> {
           _typeOption('Complaints', Icons.report_problem_outlined),
           Container(width: 1, height: 48, color: AppColors.borderLight),
           _typeOption('New Works', Icons.construction_outlined),
+          Container(width: 1, height: 48, color: AppColors.borderLight),
+          _typeOption('AMC', Icons.history_rounded),
         ],
       ),
     );
@@ -802,11 +805,25 @@ class _NewTicketPageState extends State<NewTicketPage> {
     final selected = _ticketType == value;
     return Expanded(
       child: InkWell(
-        onTap: () => setState(() => _ticketType = value),
+        onTap: () async {
+          if (value == 'AMC') {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AmcTicketPage(username: widget.username),
+              ),
+            );
+            if (result == true) {
+              Navigator.pop(context, true);
+            }
+          } else {
+            setState(() => _ticketType = value);
+          }
+        },
         borderRadius: BorderRadius.circular(11),
         child: Container(
           padding:
-              const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.primary.withOpacity(0.07)
@@ -817,38 +834,42 @@ class _NewTicketPageState extends State<NewTicketPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon,
-                  size:  18,
+                  size: 13,
                   color: selected
                       ? AppColors.primary
                       : AppColors.iconDefault),
-              const SizedBox(width: 7),
-              Text(value,
-                  style: TextStyle(
-                      color: selected
-                          ? AppColors.primary
-                          : AppColors.textLabel,
-                      fontSize:   13.5,
-                      fontWeight: selected
-                          ? FontWeight.w700
-                          : FontWeight.w500)),
-              const SizedBox(width: 6),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: 18, height: 18,
+              const SizedBox(width: 3),
+              Flexible(
+                child: Text(value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: selected
+                            ? AppColors.primary
+                            : AppColors.textLabel,
+                        fontSize: 11,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500)),
+              ),
+              const SizedBox(width: 3),
+              Container(
+                width: 13,
+                height: 13,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
                       color: selected
                           ? AppColors.primary
                           : AppColors.border,
-                      width: 2),
+                      width: 1.5),
                   color: selected
                       ? AppColors.primary
                       : Colors.transparent,
                 ),
                 child: selected
                     ? const Icon(Icons.check_rounded,
-                        size: 11, color: Colors.white)
+                        size: 8, color: Colors.white)
                     : null,
               ),
             ],
