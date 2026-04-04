@@ -53,14 +53,16 @@ class _LeadViewPageState extends State<LeadViewPage>
   Future<void> _fetchTrackHistory() async {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      final url       = Uri.parse(
+      final url = Uri.parse(
           '${ApiService.baseUrl}/api/leads/track_history.php'
           '?enquiry_id=${widget.enquiryId}');
 
-      final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
+      final response = await ApiService.get(url)
+          .timeout(const Duration(seconds: 15));
 
       final Map<String, dynamic> data = jsonDecode(response.body);
-      debugPrint('📥  [LEAD TRACK HISTORY] ${response.statusCode}  ${response.body}');
+      debugPrint(
+          '📥  [LEAD TRACK HISTORY] ${response.statusCode}  ${response.body}');
 
       if (response.statusCode == 200 && data['success'] == true) {
         final d = data['data'] ?? {};
@@ -136,7 +138,8 @@ class _LeadViewPageState extends State<LeadViewPage>
       padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 13),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.borderLight)),
+        border: Border(
+            bottom: BorderSide(color: AppColors.borderLight)),
       ),
       child: Row(
         children: [
@@ -147,7 +150,8 @@ class _LeadViewPageState extends State<LeadViewPage>
               decoration: BoxDecoration(
                 color:        AppColors.background,
                 borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: AppColors.border, width: 1.2),
+                border:
+                    Border.all(color: AppColors.border, width: 1.2),
               ),
               child: const Icon(Icons.arrow_back_ios_new_rounded,
                   size: 15, color: AppColors.textPrimary),
@@ -183,7 +187,8 @@ class _LeadViewPageState extends State<LeadViewPage>
               decoration: BoxDecoration(
                 color:        AppColors.background,
                 borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: AppColors.border, width: 1.2),
+                border:
+                    Border.all(color: AppColors.border, width: 1.2),
               ),
               child: const Icon(Icons.refresh_rounded,
                   size: 18, color: AppColors.primary),
@@ -241,6 +246,9 @@ class _LeadViewPageState extends State<LeadViewPage>
           _skeletonCard(rows: 2),
           const SizedBox(height: 14),
           _skeletonCard(rows: 4, tall: true),
+          const SizedBox(height: 14),
+          // placeholder for Assigned Employees card
+          _skeletonCard(rows: 2),
         ],
       ),
     );
@@ -323,7 +331,8 @@ class _LeadViewPageState extends State<LeadViewPage>
                 _shimmer(width: 32, height: 32, radius: 16),
                 if (!isLast)
                   Expanded(
-                    child: Container(width: 2, color: AppColors.borderLight),
+                    child: Container(
+                        width: 2, color: AppColors.borderLight),
                   ),
               ],
             ),
@@ -336,7 +345,8 @@ class _LeadViewPageState extends State<LeadViewPage>
               decoration: BoxDecoration(
                 color:        Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderLight, width: 1),
+                border:
+                    Border.all(color: AppColors.borderLight, width: 1),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,13 +359,17 @@ class _LeadViewPageState extends State<LeadViewPage>
                     ],
                   ),
                   const SizedBox(height: 12),
-                  _shimmer(width: double.infinity, height: 12, radius: 4),
+                  _shimmer(
+                      width: double.infinity,
+                      height: 12,
+                      radius: 4),
                   const SizedBox(height: 8),
                   _shimmer(width: 180, height: 12, radius: 4),
                   const SizedBox(height: 8),
                   _shimmer(width: 140, height: 12, radius: 4),
                   const SizedBox(height: 12),
-                  const Divider(height: 1, color: AppColors.borderLight),
+                  const Divider(
+                      height: 1, color: AppColors.borderLight),
                   const SizedBox(height: 10),
                   Row(
                     children: [
@@ -423,8 +437,29 @@ class _LeadViewPageState extends State<LeadViewPage>
   // ── Tab 1 : Lead Details ──────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildLeadDetails(double hPad) {
-    final customer   = _enquiry['customer']    as Map? ?? {};
-    final assignedTo = _enquiry['assigned_to'] as Map? ?? {};
+    final customer = _enquiry['customer'] as Map? ?? {};
+    
+    // Handle assigned_to which can be a List or Map (but API returns List)
+    // Parse assigned employees from either assigned_to or assigned_employees
+    final assignedData = _enquiry['assigned_to'] ?? _enquiry['assigned_employees'];
+    
+    // Parse assigned employees — handles List<Map> or comma-string
+    List<String> empNames = [];
+    if (assignedData is List) {
+      empNames = assignedData
+          .map((e) => (e is Map ? (_str(e['name'])) : e.toString().trim()))
+          .where((n) => n.isNotEmpty)
+          .toList();
+    } else if (assignedData is String && assignedData.trim().isNotEmpty) {
+      empNames = assignedData
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    
+    // For "Assigned To" field in Enquiry Information, show all assigned employees
+    String assignedToDisplay = empNames.isNotEmpty ? empNames.join(', ').capitalize() : 'Not Assigned';
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 32),
@@ -452,7 +487,7 @@ class _LeadViewPageState extends State<LeadViewPage>
               _detailRow(
                 icon:  Icons.person_pin_outlined,
                 label: 'Assigned To',
-                value: _str(assignedTo['name']).capitalize(),
+                value: assignedToDisplay,
               ),
             ],
           ),
@@ -500,7 +535,7 @@ class _LeadViewPageState extends State<LeadViewPage>
             ],
           ),
 
-          // ── Lead Status — from enquiry status field ───────────────────
+          // ── Lead Status ───────────────────────────────────────────────
           if (_str(_enquiry['status']).isNotEmpty) ...[
             const SizedBox(height: 14),
             _sectionCard(
@@ -533,6 +568,112 @@ class _LeadViewPageState extends State<LeadViewPage>
               ],
             ),
           ],
+
+          // ── Assigned Employees ─────────────────────────────────────────
+          const SizedBox(height: 14),
+          _sectionCard(
+            title: 'Assigned Employees',
+            icon:  Icons.badge_outlined,
+            children: [
+              if (empNames.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 14),
+                  child: Text(
+                    'No employees assigned.',
+                    style: TextStyle(
+                        color:     AppColors.textMuted,
+                        fontSize:  13,
+                        fontStyle: FontStyle.italic),
+                  ),
+                )
+              else
+                ...empNames.asMap().entries.map((entry) {
+                  final i      = entry.key;
+                  final name   = entry.value;
+                  final isLast = i == empNames.length - 1;
+
+                  final List<Color> avatarColors = [
+                    const Color(0xFF1558E7),
+                    const Color(0xFF0277BD),
+                    const Color(0xFF2E7D32),
+                    const Color(0xFF6A1B9A),
+                    const Color(0xFFC62828),
+                    const Color(0xFFE65100),
+                  ];
+                  final color = avatarColors[
+                      (name.isNotEmpty ? name.codeUnitAt(0) : 0) %
+                          avatarColors.length];
+
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 11, 16, 11),
+                        child: Row(
+                          children: [
+                            // Coloured avatar
+                            Container(
+                              width: 34, height: 34,
+                              decoration: BoxDecoration(
+                                color:  color.withOpacity(0.12),
+                                shape:  BoxShape.circle,
+                                border: Border.all(
+                                    color: color.withOpacity(0.28),
+                                    width: 1.5),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  name.isNotEmpty
+                                      ? name[0].toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                      color:      color,
+                                      fontSize:   13,
+                                      fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            // Employee name
+                            Expanded(
+                              child: Text(
+                                name.capitalize(),
+                                style: const TextStyle(
+                                    color:      AppColors.textPrimary,
+                                    fontSize:   13.5,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            // Numeric index badge
+                            Container(
+                              width: 22, height: 22,
+                              decoration: BoxDecoration(
+                                color:        AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${i + 1}',
+                                  style: const TextStyle(
+                                      color:      AppColors.primary,
+                                      fontSize:   11,
+                                      fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!isLast)
+                        const Divider(
+                            height: 1,
+                            indent: 16,
+                            endIndent: 16,
+                            color: AppColors.borderLight),
+                    ],
+                  );
+                }),
+            ],
+          ),
         ],
       ),
     );
@@ -549,7 +690,8 @@ class _LeadViewPageState extends State<LeadViewPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: const [
-              Icon(Icons.history_rounded, size: 52, color: AppColors.border),
+              Icon(Icons.history_rounded,
+                  size: 52, color: AppColors.border),
               SizedBox(height: 14),
               Text(
                 'No track history found for this enquiry',
@@ -616,13 +758,15 @@ class _LeadViewPageState extends State<LeadViewPage>
                     color:  typeBg,
                     shape:  BoxShape.circle,
                     border: Border.all(
-                        color: typeColor.withOpacity(0.4), width: 1.5),
+                        color: typeColor.withOpacity(0.4),
+                        width: 1.5),
                   ),
                   child: Icon(typeIcon, size: 15, color: typeColor),
                 ),
                 if (!isLast)
                   Expanded(
-                    child: Container(width: 2, color: AppColors.borderLight),
+                    child: Container(
+                        width: 2, color: AppColors.borderLight),
                   ),
               ],
             ),
@@ -638,7 +782,8 @@ class _LeadViewPageState extends State<LeadViewPage>
               decoration: BoxDecoration(
                 color:        Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderLight, width: 1),
+                border:
+                    Border.all(color: AppColors.borderLight, width: 1),
                 boxShadow: [
                   BoxShadow(
                       color:      Colors.black.withOpacity(0.03),
@@ -683,20 +828,21 @@ class _LeadViewPageState extends State<LeadViewPage>
 
                   if (deal.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    _historyRow(Icons.handshake_outlined, 'Deal', deal),
+                    _historyRow(
+                        Icons.handshake_outlined, 'Deal', deal),
                   ],
 
                   if (followUp.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     _historyRow(
-                        Icons.event_outlined, 'Follow Up',
+                        Icons.event_outlined,
+                        'Follow Up',
                         _formatDate(followUp),
                         suffix: fStatus.isNotEmpty
                             ? _followUpChip(fStatus)
                             : null),
                   ],
 
-                  // Assigned To — shown whenever name is provided
                   if (assignedName.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Row(
@@ -721,7 +867,8 @@ class _LeadViewPageState extends State<LeadViewPage>
                   ],
 
                   const SizedBox(height: 10),
-                  const Divider(height: 1, color: AppColors.borderLight),
+                  const Divider(
+                      height: 1, color: AppColors.borderLight),
                   const SizedBox(height: 8),
 
                   // Added by
@@ -856,7 +1003,8 @@ class _LeadViewPageState extends State<LeadViewPage>
                     color:        AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, size: 15, color: AppColors.primary),
+                  child:
+                      Icon(icon, size: 15, color: AppColors.primary),
                 ),
                 const SizedBox(width: 10),
                 Text(title,
@@ -910,50 +1058,53 @@ class _LeadViewPageState extends State<LeadViewPage>
   }
 
   Widget _divider() => const Divider(
-      height: 1, indent: 16, endIndent: 16,
+      height: 1,
+      indent: 16,
+      endIndent: 16,
       color: AppColors.borderLight);
 
   // ── Type helpers ───────────────────────────────────────────────────────────
   Color _typeColor(String type) {
     switch (type.toLowerCase()) {
-      case 'communication':  return const Color(0xFF1565C0);
-      case 'call':           return const Color(0xFF2E7D32);
-      case 'meeting':        return const Color(0xFF6A1B9A);
-      case 'email':          return const Color(0xFF00695C);
-      case 'note':           return const Color(0xFFE65100);
-      case 'status_change':  return const Color(0xFF0277BD);
-      default:               return AppColors.primary;
+      case 'communication': return const Color(0xFF1565C0);
+      case 'call':          return const Color(0xFF2E7D32);
+      case 'meeting':       return const Color(0xFF6A1B9A);
+      case 'email':         return const Color(0xFF00695C);
+      case 'note':          return const Color(0xFFE65100);
+      case 'status_change': return const Color(0xFF0277BD);
+      default:              return AppColors.primary;
     }
   }
 
   Color _typeBg(String type) {
     switch (type.toLowerCase()) {
-      case 'communication':  return const Color(0xFFE3F2FD);
-      case 'call':           return const Color(0xFFE8F5E9);
-      case 'meeting':        return const Color(0xFFF3E5F5);
-      case 'email':          return const Color(0xFFE0F2F1);
-      case 'note':           return const Color(0xFFFFF3E0);
-      case 'status_change':  return const Color(0xFFE1F5FE);
-      default:               return AppColors.primaryLight;
+      case 'communication': return const Color(0xFFE3F2FD);
+      case 'call':          return const Color(0xFFE8F5E9);
+      case 'meeting':       return const Color(0xFFF3E5F5);
+      case 'email':         return const Color(0xFFE0F2F1);
+      case 'note':          return const Color(0xFFFFF3E0);
+      case 'status_change': return const Color(0xFFE1F5FE);
+      default:              return AppColors.primaryLight;
     }
   }
 
   IconData _typeIcon(String type) {
     switch (type.toLowerCase()) {
-      case 'communication':  return Icons.chat_bubble_outline_rounded;
-      case 'call':           return Icons.phone_outlined;
-      case 'meeting':        return Icons.people_outline_rounded;
-      case 'email':          return Icons.email_outlined;
-      case 'note':           return Icons.sticky_note_2_outlined;
-      case 'status_change':  return Icons.swap_horiz_rounded;
-      default:               return Icons.circle_outlined;
+      case 'communication': return Icons.chat_bubble_outline_rounded;
+      case 'call':          return Icons.phone_outlined;
+      case 'meeting':       return Icons.people_outline_rounded;
+      case 'email':         return Icons.email_outlined;
+      case 'note':          return Icons.sticky_note_2_outlined;
+      case 'status_change': return Icons.swap_horiz_rounded;
+      default:              return Icons.circle_outlined;
     }
   }
 
   String _formatDate(String raw) {
     try {
       final parts = raw.trim().split('-');
-      if (parts.length == 3) return '${parts[2]}-${parts[1]}-${parts[0]}';
+      if (parts.length == 3)
+        return '${parts[2]}-${parts[1]}-${parts[0]}';
     } catch (_) {}
     return raw;
   }
@@ -964,7 +1115,7 @@ class _LeadViewPageState extends State<LeadViewPage>
       if (spaceIdx != -1) {
         final datePart = raw.substring(0, spaceIdx);
         final timePart = raw.substring(spaceIdx + 1);
-        final timeHM   = timePart.length >= 5
+        final timeHM = timePart.length >= 5
             ? timePart.substring(0, 5)
             : timePart;
         return '${_formatDate(datePart)}  $timeHM';

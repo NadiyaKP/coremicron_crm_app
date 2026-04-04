@@ -25,6 +25,8 @@ import 'package:coremicron_crm_app/screens/reports/employee_wise_report.dart';
 import 'package:coremicron_crm_app/screens/reports/pending_wise_report.dart';
 import 'package:coremicron_crm_app/screens/reports/attendance_wise_report.dart';
 import 'package:coremicron_crm_app/screens/reports/leave_application_report.dart';
+import 'package:coremicron_crm_app/screens/reports/amc_wise_report.dart';
+import 'package:coremicron_crm_app/screens/reports/analysis_report.dart';
 import 'package:coremicron_crm_app/screens/settings/change_password.dart';
 import 'package:coremicron_crm_app/screens/settings/api_url.dart'; 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -89,6 +91,8 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
     _DrawerMenuItem(icon: Icons.pending_actions_rounded,      label: 'Pending Works', id: 'pending_wise'),
     _DrawerMenuItem(icon: Icons.fingerprint_rounded,          label: 'Attendance'),
     _DrawerMenuItem(icon: Icons.beach_access_outlined,        label: 'Leave Application', id: 'leave_report'),
+    _DrawerMenuItem(icon: Icons.description_rounded,          label: 'AMC Report', id: 'amc_report'),
+    _DrawerMenuItem(icon: Icons.analytics_rounded,            label: 'Analysis Report', id: 'analysis_report'),
   ];
 
   final List<_DrawerMenuItem> _settingsItems = [
@@ -503,6 +507,20 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                 MaterialPageRoute(
                     builder: (_) =>
                         LeaveApplicationReportPage(username: widget.username)));
+            break;
+          case 'amc_report':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        AmcReportPage(username: widget.username)));
+            break;
+          case 'analysis_report':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        AnalysisReportPage(username: widget.username)));
             break;
           case 'Attendance':
             Navigator.push(

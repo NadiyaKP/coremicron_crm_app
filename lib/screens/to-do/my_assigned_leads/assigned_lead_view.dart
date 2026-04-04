@@ -432,122 +432,125 @@ class _AssignLeadViewPageState extends State<AssignLeadViewPage>
   // ── Tab 1 : Lead Details ──────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildLeadDetails(double hPad) {
-    final customer   = _enquiry['customer']    as Map? ?? {};
-    final assignedTo = _enquiry['assigned_to'] as Map? ?? {};
+  final customer       = _enquiry['customer']    as Map? ?? {};
+  final assignedToList = (_enquiry['assigned_to'] as List?) ?? [];
+  final assignedTo     = assignedToList.isNotEmpty
+      ? assignedToList.first as Map? ?? {}
+      : <String, dynamic>{};
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Enquiry Information
-          _sectionCard(
-            title: 'Enquiry Information',
-            icon:  Icons.info_outline_rounded,
-            children: [
-              _detailRow(
-                icon:  Icons.tag_rounded,
-                label: 'Enquiry Number',
-                value: _str(_enquiry['enquiry_number']),
-              ),
-              _divider(),
-              _detailRow(
-                icon:  Icons.calendar_today_outlined,
-                label: 'Added Date',
-                value: _formatDate(_str(_enquiry['added_date'])),
-              ),
-              _divider(),
-              _detailRow(
-                icon:  Icons.person_pin_outlined,
-                label: 'Assigned To',
-                value: _str(assignedTo['name']).capitalize(),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // Customer
-          _sectionCard(
-            title: 'Customer',
-            icon:  Icons.person_outline_rounded,
-            children: [
-              _detailRow(
-                icon:  Icons.person_outline_rounded,
-                label: 'Name',
-                value: _str(customer['name']).capitalize(),
-              ),
-              _divider(),
-              _detailRow(
-                icon:  Icons.phone_outlined,
-                label: 'Phone',
-                value: _str(customer['phone']),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // Lead Details
-          _sectionCard(
-            title: 'Lead Details',
-            icon:  Icons.description_outlined,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
-                child: Text(
-                  _str(_enquiry['details']).isEmpty
-                      ? '—'
-                      : _str(_enquiry['details']),
-                  style: const TextStyle(
-                      color:    AppColors.textPrimary,
-                      fontSize: 13.5,
-                      height:   1.6),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // Lead Status — from enquiry status field
-          if (_str(_enquiry['status']).isNotEmpty) ...[
-            const SizedBox(height: 14),
-            _sectionCard(
-              title: 'Lead Status',
-              icon:  Icons.flag_outlined,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-                  child: Builder(builder: (ctx) {
-                    final status = _str(_enquiry['status']);
-                    final clr    = _statusColor(status);
-                    final bg     = _statusBg(status);
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 7),
-                      decoration: BoxDecoration(
-                        color:        bg,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: clr.withOpacity(0.3), width: 1),
-                      ),
-                      child: Text(status.capitalize(),
-                          style: TextStyle(
-                              color:      clr,
-                              fontSize:   13,
-                              fontWeight: FontWeight.w600)),
-                    );
-                  }),
-                ),
-              ],
+  return SingleChildScrollView(
+    padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 32),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Enquiry Information
+        _sectionCard(
+          title: 'Enquiry Information',
+          icon:  Icons.info_outline_rounded,
+          children: [
+            _detailRow(
+              icon:  Icons.tag_rounded,
+              label: 'Enquiry Number',
+              value: _str(_enquiry['enquiry_number']),
+            ),
+            _divider(),
+            _detailRow(
+              icon:  Icons.calendar_today_outlined,
+              label: 'Added Date',
+              value: _formatDate(_str(_enquiry['added_date'])),
+            ),
+            _divider(),
+            _detailRow(
+              icon:  Icons.person_pin_outlined,
+              label: 'Assigned To',
+              value: _str(assignedTo['name']).capitalize(),
             ),
           ],
+        ),
 
+        const SizedBox(height: 14),
+
+        // Customer
+        _sectionCard(
+          title: 'Customer',
+          icon:  Icons.person_outline_rounded,
+          children: [
+            _detailRow(
+              icon:  Icons.person_outline_rounded,
+              label: 'Name',
+              value: _str(customer['name']).capitalize(),
+            ),
+            _divider(),
+            _detailRow(
+              icon:  Icons.phone_outlined,
+              label: 'Phone',
+              value: _str(customer['phone']),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
+        // Lead Details
+        _sectionCard(
+          title: 'Lead Details',
+          icon:  Icons.description_outlined,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+              child: Text(
+                _str(_enquiry['details']).isEmpty
+                    ? '—'
+                    : _str(_enquiry['details']),
+                style: const TextStyle(
+                    color:    AppColors.textPrimary,
+                    fontSize: 13.5,
+                    height:   1.6),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
+        // Lead Status
+        if (_str(_enquiry['status']).isNotEmpty) ...[
+          const SizedBox(height: 14),
+          _sectionCard(
+            title: 'Lead Status',
+            icon:  Icons.flag_outlined,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                child: Builder(builder: (ctx) {
+                  final status = _str(_enquiry['status']);
+                  final clr    = _statusColor(status);
+                  final bg     = _statusBg(status);
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color:        bg,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                          color: clr.withOpacity(0.3), width: 1),
+                    ),
+                    child: Text(status.capitalize(),
+                        style: TextStyle(
+                            color:      clr,
+                            fontSize:   13,
+                            fontWeight: FontWeight.w600)),
+                  );
+                }),
+              ),
+            ],
+          ),
         ],
-      ),
-    );
-  }
+
+      ],
+    ),
+  );
+}
 
   Widget _buildDealChip(String name, String colorHex) {
     Color bg;
@@ -620,200 +623,206 @@ class _AssignLeadViewPageState extends State<AssignLeadViewPage>
   }
 
   Widget _historyItem(dynamic item, int index) {
-    final Map    h           = item as Map? ?? {};
-    final Map    addedBy     = h['added_by']   as Map? ?? {};
-    final Map    assignedTo  = h['assigned_to'] as Map? ?? {};
-    final String type        = _str(h['type']);
-    final String addedAt     = _str(h['added_at']);
-    final String notes       = _str(h['notes']);
-    final String deal        = _str(h['deal']);
-    final String followUp    = _str(h['follow_up']);
-    final String fStatus     = _str(h['followup_status']);
-    final String byName      = _str(addedBy['name']);
-    final String byType      = _str(addedBy['type']);
-    final String assignedName = _str(assignedTo['name']);
-    final bool   isLast      = index == _history.length - 1;
+  final Map    h          = item as Map? ?? {};
+  final Map    addedBy    = h['added_by'] as Map? ?? {};
 
-    final Color    typeColor = _typeColor(type);
-    final Color    typeBg    = _typeBg(type);
-    final IconData typeIcon  = _typeIcon(type);
+  // assigned_to can be a List or a Map depending on event type
+  final assignedToRaw  = h['assigned_to'];
+  final Map assignedTo = (assignedToRaw is List && assignedToRaw.isNotEmpty)
+      ? assignedToRaw.first as Map? ?? {}
+      : (assignedToRaw is Map ? assignedToRaw : {});
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Timeline spine
-          SizedBox(
-            width: 36,
-            child: Column(
-              children: [
-                Container(
-                  width: 32, height: 32,
-                  decoration: BoxDecoration(
-                    color:  typeBg,
-                    shape:  BoxShape.circle,
-                    border: Border.all(
-                        color: typeColor.withOpacity(0.4), width: 1.5),
-                  ),
-                  child: Icon(typeIcon, size: 15, color: typeColor),
+  final String type         = _str(h['type']);
+  final String addedAt      = _str(h['added_at']);
+  final String notes        = _str(h['notes']);
+  final String deal         = _str(h['deal']);
+  final String followUp     = _str(h['follow_up']);
+  final String fStatus      = _str(h['followup_status']);
+  final String byName       = _str(addedBy['name']);
+  final String byType       = _str(addedBy['type']);
+  final String assignedName = _str(assignedTo['name']);
+  final bool   isLast       = index == _history.length - 1;
+
+  final Color    typeColor = _typeColor(type);
+  final Color    typeBg    = _typeBg(type);
+  final IconData typeIcon  = _typeIcon(type);
+
+  return IntrinsicHeight(
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Timeline spine
+        SizedBox(
+          width: 36,
+          child: Column(
+            children: [
+              Container(
+                width: 32, height: 32,
+                decoration: BoxDecoration(
+                  color:  typeBg,
+                  shape:  BoxShape.circle,
+                  border: Border.all(
+                      color: typeColor.withOpacity(0.4), width: 1.5),
                 ),
-                if (!isLast)
-                  Expanded(
-                    child: Container(
-                        width: 2, color: AppColors.borderLight),
+                child: Icon(typeIcon, size: 15, color: typeColor),
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                      width: 2, color: AppColors.borderLight),
+                ),
+            ],
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
+        // Content card
+        Expanded(
+          child: Container(
+            margin: EdgeInsets.only(bottom: isLast ? 0 : 16),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            decoration: BoxDecoration(
+              color:        Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: AppColors.borderLight, width: 1),
+              boxShadow: [
+                BoxShadow(
+                    color:      Colors.black.withOpacity(0.03),
+                    blurRadius: 5,
+                    offset:     const Offset(0, 2)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color:        typeBg,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Text(type.capitalize(),
+                          style: TextStyle(
+                              color:      typeColor,
+                              fontSize:   10.5,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.access_time_rounded,
+                        size: 11, color: AppColors.textMuted),
+                    const SizedBox(width: 3),
+                    Text(
+                      _formatDateTime(addedAt),
+                      style: const TextStyle(
+                          color:    AppColors.textMuted,
+                          fontSize: 11),
+                    ),
+                  ],
+                ),
+
+                if (notes.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  _historyRow(Icons.notes_rounded, 'Notes', notes),
+                ],
+                if (deal.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _historyRow(
+                      Icons.handshake_outlined, 'Deal', deal),
+                ],
+                if (followUp.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _historyRow(
+                      Icons.event_outlined, 'Follow Up',
+                      _formatDate(followUp),
+                      suffix: fStatus.isNotEmpty
+                          ? _followUpChip(fStatus)
+                          : null),
+                ],
+                if (assignedName.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.person_pin_outlined,
+                          size: 13, color: AppColors.textMuted),
+                      const SizedBox(width: 6),
+                      const Text('Assigned To  ',
+                          style: TextStyle(
+                              color:      AppColors.textMuted,
+                              fontSize:   12,
+                              fontWeight: FontWeight.w500)),
+                      Expanded(
+                        child: Text(assignedName.capitalize(),
+                            style: const TextStyle(
+                                color:      AppColors.textPrimary,
+                                fontSize:   12.5,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    ],
                   ),
+                ],
+
+                const SizedBox(height: 10),
+                const Divider(height: 1, color: AppColors.borderLight),
+                const SizedBox(height: 8),
+
+                Row(
+                  children: [
+                    Container(
+                      width: 24, height: 24,
+                      decoration: BoxDecoration(
+                        color:        AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Center(
+                        child: Text(
+                          byName.isNotEmpty
+                              ? byName[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                              color:      AppColors.primary,
+                              fontSize:   11,
+                              fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: byName.capitalize(),
+                              style: const TextStyle(
+                                  color:      AppColors.textPrimary,
+                                  fontSize:   12,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            if (byType.isNotEmpty)
+                              TextSpan(
+                                text: '  ·  $byType',
+                                style: const TextStyle(
+                                    color:    AppColors.textMuted,
+                                    fontSize: 11.5),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
-
-          const SizedBox(width: 12),
-
-          // Content card
-          Expanded(
-            child: Container(
-              margin: EdgeInsets.only(bottom: isLast ? 0 : 16),
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-              decoration: BoxDecoration(
-                color:        Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: AppColors.borderLight, width: 1),
-                boxShadow: [
-                  BoxShadow(
-                      color:      Colors.black.withOpacity(0.03),
-                      blurRadius: 5,
-                      offset:     const Offset(0, 2)),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color:        typeBg,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text(type.capitalize(),
-                            style: TextStyle(
-                                color:      typeColor,
-                                fontSize:   10.5,
-                                fontWeight: FontWeight.w700)),
-                      ),
-                      const Spacer(),
-                      const Icon(Icons.access_time_rounded,
-                          size: 11, color: AppColors.textMuted),
-                      const SizedBox(width: 3),
-                      Text(
-                        _formatDateTime(addedAt),
-                        style: const TextStyle(
-                            color:    AppColors.textMuted,
-                            fontSize: 11),
-                      ),
-                    ],
-                  ),
-
-                  if (notes.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    _historyRow(Icons.notes_rounded, 'Notes', notes),
-                  ],
-                  if (deal.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    _historyRow(
-                        Icons.handshake_outlined, 'Deal', deal),
-                  ],
-                  if (followUp.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    _historyRow(
-                        Icons.event_outlined, 'Follow Up',
-                        _formatDate(followUp),
-                        suffix: fStatus.isNotEmpty
-                            ? _followUpChip(fStatus)
-                            : null),
-                  ],
-                  if (assignedName.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.person_pin_outlined,
-                            size: 13, color: AppColors.textMuted),
-                        const SizedBox(width: 6),
-                        const Text('Assigned To  ',
-                            style: TextStyle(
-                                color:      AppColors.textMuted,
-                                fontSize:   12,
-                                fontWeight: FontWeight.w500)),
-                        Expanded(
-                          child: Text(assignedName.capitalize(),
-                              style: const TextStyle(
-                                  color:      AppColors.textPrimary,
-                                  fontSize:   12.5,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                      ],
-                    ),
-                  ],
-
-                  const SizedBox(height: 10),
-                  const Divider(height: 1, color: AppColors.borderLight),
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Container(
-                        width: 24, height: 24,
-                        decoration: BoxDecoration(
-                          color:        AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Center(
-                          child: Text(
-                            byName.isNotEmpty
-                                ? byName[0].toUpperCase()
-                                : '?',
-                            style: const TextStyle(
-                                color:      AppColors.primary,
-                                fontSize:   11,
-                                fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 7),
-                      Expanded(
-                        child: RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: byName.capitalize(),
-                                style: const TextStyle(
-                                    color:      AppColors.textPrimary,
-                                    fontSize:   12,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                              if (byType.isNotEmpty)
-                                TextSpan(
-                                  text: '  ·  $byType',
-                                  style: const TextStyle(
-                                      color:    AppColors.textMuted,
-                                      fontSize: 11.5),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _historyRow(IconData icon, String label, String value,
       {Widget? suffix}) {

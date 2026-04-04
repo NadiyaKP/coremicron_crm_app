@@ -128,55 +128,70 @@ class _ChatListPageState extends State<ChatListPage> {
     );
   }
 
-  // ── App Bar ────────────────────────────────────────────────────────────────
   Widget _buildAppBar() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 12, 13),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.borderLight)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40, height: 40,
+  return Container(
+    padding: const EdgeInsets.fromLTRB(16, 14, 12, 13),
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      border: Border(bottom: BorderSide(color: AppColors.borderLight)),
+    ),
+    child: Row(
+      children: [
+        // ── Back Button ──────────────────────────────────────────
+        GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            width: 36, height: 36,
+            margin: const EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary, AppColors.primaryDark],
-                begin: Alignment.topLeft,
-                end:   Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(11),
+              color:        AppColors.background,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: AppColors.border, width: 1.2),
             ),
-            child: const Icon(Icons.chat_bubble_rounded,
-                color: Colors.white, size: 19),
+            child: const Icon(Icons.arrow_back_ios_new_rounded,
+                size: 16, color: AppColors.primary),
           ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text('Messages',
-                style: TextStyle(
-                    color:         AppColors.textPrimary,
-                    fontSize:      17,
-                    fontWeight:    FontWeight.w800,
-                    letterSpacing: -0.3)),
-          ),
-          GestureDetector(
-            onTap: _fetchChats,
-            child: Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(
-                color:        AppColors.background,
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: AppColors.border, width: 1.2),
-              ),
-              child: const Icon(Icons.refresh_rounded,
-                  size: 18, color: AppColors.primary),
+        ),
+        // ── Icon ─────────────────────────────────────────────────
+        Container(
+          width: 40, height: 40,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.primary, AppColors.primaryDark],
+              begin: Alignment.topLeft,
+              end:   Alignment.bottomRight,
             ),
+            borderRadius: BorderRadius.circular(11),
           ),
-        ],
-      ),
-    );
-  }
+          child: const Icon(Icons.chat_bubble_rounded,
+              color: Colors.white, size: 19),
+        ),
+        const SizedBox(width: 12),
+        const Expanded(
+          child: Text('Messages',
+              style: TextStyle(
+                  color:         AppColors.textPrimary,
+                  fontSize:      17,
+                  fontWeight:    FontWeight.w800,
+                  letterSpacing: -0.3)),
+        ),
+        GestureDetector(
+          onTap: _fetchChats,
+          child: Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color:        AppColors.background,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: AppColors.border, width: 1.2),
+            ),
+            child: const Icon(Icons.refresh_rounded,
+                size: 18, color: AppColors.primary),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   // ── Chat List ──────────────────────────────────────────────────────────────
   Widget _buildChatList() {

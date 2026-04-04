@@ -33,7 +33,7 @@ class _Employee {
 // ── New Lead Page ──────────────────────────────────────────────────────────
 class NewLeadPage extends StatefulWidget {
   final String username;
-  final Lead?  lead; // null = add mode, non-null = edit mode
+  final Lead?  lead;
 
   const NewLeadPage({super.key, required this.username, this.lead});
 
@@ -43,6 +43,7 @@ class NewLeadPage extends StatefulWidget {
 
 class _NewLeadPageState extends State<NewLeadPage> {
   bool get _isEdit => widget.lead != null;
+
   // ── Controllers ────────────────────────────────────────────────────────────
   final _customerCtrl    = TextEditingController();
   final _phoneCtrl       = TextEditingController();
@@ -57,22 +58,24 @@ class _NewLeadPageState extends State<NewLeadPage> {
   final _leadDetailsFocus = FocusNode();
   final _assignFocus      = FocusNode();
 
+  // ── GlobalKeys for keyboard-aware dropdown positioning ─────────────────────
+  final _customerFieldKey = GlobalKey();
+  final _employeeFieldKey = GlobalKey();
+
   // ── Selected values ────────────────────────────────────────────────────────
-  _Customer? _selectedCustomer;
-  _Employee? _selectedEmployee;
+  _Customer?      _selectedCustomer;
+  List<_Employee> _selectedEmployees = [];
 
   // ── Customer autocomplete ──────────────────────────────────────────────────
-  List<_Customer> _allCustomers      = [];
+  List<_Customer> _allCustomers        = [];
   List<_Customer> _customerSuggestions = [];
-  bool            _customersLoaded   = false;
-  bool            _showCustomerDrop  = false;
+  bool            _customersLoaded     = false;
   Timer?          _customerDebounce;
 
   // ── Employee autocomplete ──────────────────────────────────────────────────
-  List<_Employee> _allEmployees      = [];
+  List<_Employee> _allEmployees        = [];
   List<_Employee> _employeeSuggestions = [];
-  bool            _employeesLoaded   = false;
-  bool            _showEmployeeDrop  = false;
+  bool            _employeesLoaded     = false;
   Timer?          _employeeDebounce;
 
   bool _isSaving = false;
@@ -95,22 +98,34 @@ class _NewLeadPageState extends State<NewLeadPage> {
     _customerFocus.addListener(_onCustomerFocusChange);
     _assignFocus.addListener(_onEmployeeFocusChange);
 
-    // Pre-fill for edit mode
     if (_isEdit) {
       final l = widget.lead!;
       _customerCtrl.text    = l.customerName.capitalize();
       _phoneCtrl.text       = l.customerPhone;
       _titleCtrl.text       = l.title;
       _leadDetailsCtrl.text = l.enquiry;
-      _assignCtrl.text      = l.employeeName.capitalize();
-      // Create placeholder selected customer/employee so form validates
+
       _selectedCustomer = _Customer(
           id: l.customerId, name: l.customerName, phone: l.customerPhone);
-      if (l.employeeName.isNotEmpty) {
-        _selectedEmployee = _Employee(
-            id: l.assignId, name: l.employeeName,
-            phone: '', employeeId: '');
-      }
+// WITH this clean version:
+if (l.assignedEmployees.isNotEmpty) {
+  final names = l.assignedEmployees
+      .split(',')
+      .map((e) => e.trim())
+      .where((e) => e.isNotEmpty)
+      .toList();
+
+  _selectedEmployees = names.asMap().entries.map((entry) {
+    return _Employee(
+      id:         entry.key < l.assignedEmployeeIds.length
+                      ? l.assignedEmployeeIds[entry.key]
+                      : entry.key.toString(), // fallback unique id
+      name:       entry.value,
+      phone:      '',
+      employeeId: '',
+    );
+  }).toList();
+}
     }
   }
 
@@ -134,52 +149,58 @@ class _NewLeadPageState extends State<NewLeadPage> {
   // ── Focus listeners ────────────────────────────────────────────────────────
   void _onCustomerFocusChange() {
     if (!_customerFocus.hasFocus) {
-      Future.delayed(const Duration(milliseconds: 150),
-          _removeCustomerOverlay);
+      Future.delayed(const Duration(milliseconds: 150), _removeCustomerOverlay);
     }
   }
 
   void _onEmployeeFocusChange() {
     if (!_assignFocus.hasFocus) {
-      Future.delayed(const Duration(milliseconds: 150),
-          _removeEmployeeOverlay);
+      Future.delayed(const Duration(milliseconds: 150), _removeEmployeeOverlay);
     }
   }
 
-  // ── Load all customers (once) ──────────────────────────────────────────────
+  // ── Load customers ─────────────────────────────────────────────────────────
   Future<void> _loadCustomers() async {
     if (_customersLoaded) return;
     try {
-      final url = Uri.parse('${ApiService.baseUrl}/api/customer/list.php?view=dropdown');
-      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
+      final url = Uri.parse(
+          '${ApiService.baseUrl}/api/customer/list.php?view=dropdown');
+      final res =
+          await ApiService.get(url).timeout(const Duration(seconds: 15));
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       if (data['success'] == true) {
         final list = data['data'] as List? ?? [];
-        _allCustomers = list.map((e) => _Customer(
-          id:    e['id']            ?? '',
-          name:  e['customer_name'] ?? '',
-          phone: e['phone_number']  ?? '',
-        )).toList();
+        _allCustomers = list
+            .map((e) => _Customer(
+                  id:    e['id']            ?? '',
+                  name:  e['customer_name'] ?? '',
+                  phone: e['phone_number']  ?? '',
+                ))
+            .toList();
         _customersLoaded = true;
       }
     } catch (_) {}
   }
 
-  // ── Load all employees (once) ──────────────────────────────────────────────
+  // ── Load employees ─────────────────────────────────────────────────────────
   Future<void> _loadEmployees() async {
     if (_employeesLoaded) return;
     try {
-      final url = Uri.parse('${ApiService.baseUrl}/api/employee/list.php?view=dropdown');
-      final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
+      final url = Uri.parse(
+          '${ApiService.baseUrl}/api/employee/list.php?view=dropdown');
+      final res =
+          await ApiService.get(url).timeout(const Duration(seconds: 15));
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       if (data['success'] == true) {
         final list = data['data'] as List? ?? [];
-        _allEmployees = list.map((e) => _Employee(
-          id:         e['id']            ?? '',
-          name:       e['employee_name'] ?? '',
-          phone:      e['phone_number']  ?? '',
-          employeeId: e['employee_id']   ?? '',
-        )).toList();
+        _allEmployees = list
+            .map((e) => _Employee(
+                  id:         e['id']            ?? '',
+                  name:       e['employee_name'] ?? '',
+                  phone:      e['phone_number']  ?? '',
+                  employeeId: e['employee_id']   ?? '',
+                ))
+            .toList();
         _employeesLoaded = true;
       }
     } catch (_) {}
@@ -192,41 +213,35 @@ class _NewLeadPageState extends State<NewLeadPage> {
     _customerDebounce = Timer(const Duration(milliseconds: 250), () async {
       await _loadCustomers();
       final q = query.trim().toLowerCase();
-      if (q.isEmpty) {
-        _removeCustomerOverlay();
-        return;
-      }
-      _customerSuggestions = _allCustomers.where((c) =>
-          c.name.toLowerCase().contains(q) ||
-          c.phone.contains(q)).toList();
-      if (_customerSuggestions.isNotEmpty) {
-        _showCustomerDropdown();
-      } else {
-        _removeCustomerOverlay();
-      }
+      if (q.isEmpty) { _removeCustomerOverlay(); return; }
+      _customerSuggestions = _allCustomers
+          .where((c) =>
+              c.name.toLowerCase().contains(q) || c.phone.contains(q))
+          .toList();
+      _customerSuggestions.isNotEmpty
+          ? _showCustomerDropdown()
+          : _removeCustomerOverlay();
     });
   }
 
   // ── Employee search ────────────────────────────────────────────────────────
   void _onEmployeeChanged(String query) {
-    _selectedEmployee = null;
     _employeeDebounce?.cancel();
     _employeeDebounce = Timer(const Duration(milliseconds: 250), () async {
       await _loadEmployees();
       final q = query.trim().toLowerCase();
-      if (q.isEmpty) {
-        _removeEmployeeOverlay();
-        return;
-      }
-      _employeeSuggestions = _allEmployees.where((e) =>
-          e.name.toLowerCase().contains(q) ||
-          e.phone.contains(q) ||
-          e.employeeId.toLowerCase().contains(q)).toList();
-      if (_employeeSuggestions.isNotEmpty) {
-        _showEmployeeDropdown();
-      } else {
-        _removeEmployeeOverlay();
-      }
+      if (q.isEmpty) { _removeEmployeeOverlay(); return; }
+      final selectedIds = _selectedEmployees.map((e) => e.id).toSet();
+      _employeeSuggestions = _allEmployees
+          .where((e) =>
+              !selectedIds.contains(e.id) &&
+              (e.name.toLowerCase().contains(q) ||
+               e.phone.contains(q) ||
+               e.employeeId.toLowerCase().contains(q)))
+          .toList();
+      _employeeSuggestions.isNotEmpty
+          ? _showEmployeeDropdown()
+          : _removeEmployeeOverlay();
     });
   }
 
@@ -234,8 +249,9 @@ class _NewLeadPageState extends State<NewLeadPage> {
   void _showCustomerDropdown() {
     _removeCustomerOverlay();
     _customerOverlay = _buildOverlay(
-      link:     _customerLayerLink,
-      items:    _customerSuggestions,
+      link:        _customerLayerLink,
+      fieldKey:    _customerFieldKey,
+      items:       _customerSuggestions,
       itemBuilder: (c) => _customerTile(c as _Customer),
     );
     Overlay.of(context).insert(_customerOverlay!);
@@ -249,11 +265,9 @@ class _NewLeadPageState extends State<NewLeadPage> {
   void _selectCustomer(_Customer c) {
     _removeCustomerOverlay();
     setState(() {
-      _selectedCustomer = c;
+      _selectedCustomer  = c;
       _customerCtrl.text = c.name.capitalize();
-      if (_phoneCtrl.text.trim().isEmpty) {
-        _phoneCtrl.text = c.phone;
-      }
+      if (_phoneCtrl.text.trim().isEmpty) _phoneCtrl.text = c.phone;
     });
     FocusScope.of(context).requestFocus(_titleFocus);
   }
@@ -262,8 +276,9 @@ class _NewLeadPageState extends State<NewLeadPage> {
   void _showEmployeeDropdown() {
     _removeEmployeeOverlay();
     _employeeOverlay = _buildOverlay(
-      link:     _employeeLayerLink,
-      items:    _employeeSuggestions,
+      link:        _employeeLayerLink,
+      fieldKey:    _employeeFieldKey,
+      items:       _employeeSuggestions,
       itemBuilder: (e) => _employeeTile(e as _Employee),
     );
     Overlay.of(context).insert(_employeeOverlay!);
@@ -277,46 +292,80 @@ class _NewLeadPageState extends State<NewLeadPage> {
   void _selectEmployee(_Employee e) {
     _removeEmployeeOverlay();
     setState(() {
-      _selectedEmployee = e;
-      _assignCtrl.text = e.name.capitalize();
+      if (!_selectedEmployees.any((s) => s.id == e.id)) {
+        _selectedEmployees.add(e);
+      }
+      _assignCtrl.clear();
     });
-    FocusScope.of(context).unfocus();
   }
 
-  // ── Generic overlay builder ────────────────────────────────────────────────
+  void _removeEmployee(String id) {
+    setState(() => _selectedEmployees.removeWhere((e) => e.id == id));
+  }
+
+  // ── Keyboard-aware overlay builder ─────────────────────────────────────────
   OverlayEntry _buildOverlay({
-    required LayerLink      link,
-    required List<dynamic>  items,
+    required LayerLink             link,
+    required GlobalKey             fieldKey,
+    required List<dynamic>         items,
     required Widget Function(dynamic) itemBuilder,
   }) {
     return OverlayEntry(
-      builder: (_) => Positioned(
-        width: link.leaderSize?.width ?? 300,
-        child: CompositedTransformFollower(
-          link:            link,
-          showWhenUnlinked: false,
-          offset:          Offset(0, (link.leaderSize?.height ?? 48) + 4),
-          child: Material(
-            elevation:    6,
-            borderRadius: BorderRadius.circular(12),
-            color:        Colors.white,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 220),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: ListView.separated(
-                  padding:     EdgeInsets.zero,
-                  shrinkWrap:  true,
-                  itemCount:   items.length,
-                  separatorBuilder: (_, __) => const Divider(
-                      height: 1, color: AppColors.borderLight),
-                  itemBuilder: (_, i) => itemBuilder(items[i]),
+      builder: (overlayContext) {
+        final mq             = MediaQuery.of(overlayContext);
+        final keyboardHeight = mq.viewInsets.bottom;
+        final screenHeight   = mq.size.height;
+        final fieldWidth     = link.leaderSize?.width  ?? 300.0;
+        final fieldHeight    = link.leaderSize?.height ?? 48.0;
+
+        // ── Resolve field's global Y via GlobalKey ──────────────────────────
+        double fieldTop = 0;
+        final rb =
+            fieldKey.currentContext?.findRenderObject() as RenderBox?;
+        if (rb != null && rb.hasSize) {
+          fieldTop = rb.localToGlobal(Offset.zero).dy;
+        }
+        final fieldBottom = fieldTop + fieldHeight;
+
+        // ── Decide: show above or below ─────────────────────────────────────
+        final spaceBelow = screenHeight - keyboardHeight - fieldBottom - 8;
+        final spaceAbove = fieldTop - 8;
+        final showAbove  = spaceBelow < 150 && spaceAbove > spaceBelow;
+
+        final maxH =
+            (showAbove ? spaceAbove : spaceBelow).clamp(80.0, 220.0);
+
+        return Positioned(
+          width: fieldWidth,
+          child: CompositedTransformFollower(
+            link:             link,
+            showWhenUnlinked: false,
+            offset: showAbove
+                ? Offset(0, -(maxH + 6))       // flip above
+                : Offset(0, fieldHeight + 4),  // normal below
+            child: Material(
+              elevation:    8,
+              borderRadius: BorderRadius.circular(12),
+              color:        Colors.white,
+              shadowColor:  Colors.black.withOpacity(0.12),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxH),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: ListView.separated(
+                    padding:          EdgeInsets.zero,
+                    shrinkWrap:       true,
+                    itemCount:        items.length,
+                    separatorBuilder: (_, __) => const Divider(
+                        height: 1, color: AppColors.borderLight),
+                    itemBuilder: (_, i) => itemBuilder(items[i]),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -440,6 +489,71 @@ class _NewLeadPageState extends State<NewLeadPage> {
     );
   }
 
+  // ── Selected employee chips ────────────────────────────────────────────────
+  Widget _buildAssignedChips() {
+    if (_selectedEmployees.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Wrap(
+        spacing:    8,
+        runSpacing: 8,
+        children: _selectedEmployees.map((e) {
+          return Container(
+            padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
+            decoration: BoxDecoration(
+              color:        AppColors.primaryLight,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                  color: AppColors.primary.withOpacity(0.25), width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 20, height: 20,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      e.name.isNotEmpty ? e.name[0].toUpperCase() : 'E',
+                      style: const TextStyle(
+                          color:      Colors.white,
+                          fontSize:   10,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  e.name.capitalize(),
+                  style: const TextStyle(
+                      color:      AppColors.primary,
+                      fontSize:   12.5,
+                      fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () => _removeEmployee(e.id),
+                  child: Container(
+                    width: 18, height: 18,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close_rounded,
+                        size: 11, color: AppColors.primary),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   // ── Submit ─────────────────────────────────────────────────────────────────
   Future<void> _submit() async {
     if (_selectedCustomer == null) {
@@ -456,6 +570,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
     setState(() => _isSaving = true);
 
     try {
+      final assignIds = _selectedEmployees.map((e) => e.id).toList();
       final Uri url;
       final Map<String, dynamic> body;
 
@@ -464,7 +579,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
         body = {
           'enquiry_id':  widget.lead!.enquiryId,
           'customer_id': _selectedCustomer!.id,
-          'assign_id':   _selectedEmployee?.id ?? '',
+          'assign_ids':  assignIds,
           'title':       _titleCtrl.text.trim(),
           'lead':        _leadDetailsCtrl.text.trim(),
         };
@@ -472,7 +587,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
         url  = Uri.parse('${ApiService.baseUrl}/api/leads/create.php');
         body = {
           'customer_id': _selectedCustomer!.id,
-          'assign_id':   _selectedEmployee?.id ?? '',
+          'assign_ids':  assignIds,
           'title':       _titleCtrl.text.trim(),
           'lead':        _leadDetailsCtrl.text.trim(),
         };
@@ -500,7 +615,8 @@ class _NewLeadPageState extends State<NewLeadPage> {
       }
     } on http.ClientException {
       if (mounted) {
-        AppSnackBar.show(context, 'Unable to reach the server.', isError: true);
+        AppSnackBar.show(context, 'Unable to reach the server.',
+            isError: true);
         setState(() => _isSaving = false);
       }
     } catch (_) {
@@ -533,24 +649,27 @@ class _NewLeadPageState extends State<NewLeadPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
-                    // ── 1. Customer Name ────────────────────────────────
+                    // ── 1. Customer Name ──────────────────────────────────
                     _fieldLabel('Customer Name', required: true),
                     const SizedBox(height: 8),
                     CompositedTransformTarget(
                       link: _customerLayerLink,
-                      child: _buildSearchField(
-                        controller:  _customerCtrl,
-                        focusNode:   _customerFocus,
-                        hint:        'Type to search existing customers…',
-                        icon:        Icons.person_search_outlined,
-                        onChanged:   _onCustomerChanged,
-                        isSelected:  _selectedCustomer != null,
+                      child: KeyedSubtree(
+                        key: _customerFieldKey,
+                        child: _buildSearchField(
+                          controller: _customerCtrl,
+                          focusNode:  _customerFocus,
+                          hint:       'Type to search existing customers…',
+                          icon:       Icons.person_search_outlined,
+                          onChanged:  _onCustomerChanged,
+                          isSelected: _selectedCustomer != null,
+                        ),
                       ),
                     ),
 
                     const SizedBox(height: 16),
 
-                    // ── 2. Phone Number ─────────────────────────────────
+                    // ── 2. Phone Number ───────────────────────────────────
                     _fieldLabel('Phone Number'),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -564,7 +683,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
 
                     const SizedBox(height: 16),
 
-                    // ── 3. Title (required) ─────────────────────────────
+                    // ── 3. Title ──────────────────────────────────────────
                     _fieldLabel('Title', required: true),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -577,31 +696,37 @@ class _NewLeadPageState extends State<NewLeadPage> {
 
                     const SizedBox(height: 16),
 
-                    // ── 4. Lead Details ─────────────────────────────────
+                    // ── 4. Lead Details ───────────────────────────────────
                     _fieldLabel('Lead Details'),
                     const SizedBox(height: 8),
                     _buildMultilineField(),
 
                     const SizedBox(height: 16),
 
-                    // ── 5. Assign To ────────────────────────────────────
+                    // ── 5. Assign To ──────────────────────────────────────
                     _fieldLabel('Assign To'),
                     const SizedBox(height: 8),
                     CompositedTransformTarget(
                       link: _employeeLayerLink,
-                      child: _buildSearchField(
-                        controller: _assignCtrl,
-                        focusNode:  _assignFocus,
-                        hint:       'Type to search employee (name, phone, code)…',
-                        icon:       Icons.person_pin_outlined,
-                        onChanged:  _onEmployeeChanged,
-                        isSelected: _selectedEmployee != null,
+                      child: KeyedSubtree(
+                        key: _employeeFieldKey,
+                        child: _buildSearchField(
+                          controller: _assignCtrl,
+                          focusNode:  _assignFocus,
+                          hint:       'Search by name, phone or code…',
+                          icon:       Icons.person_pin_outlined,
+                          onChanged:  _onEmployeeChanged,
+                          isSelected: false,
+                        ),
                       ),
                     ),
 
+                    // ── Selected employee chips ────────────────────────────
+                    _buildAssignedChips(),
+
                     const SizedBox(height: 32),
 
-                    // ── Buttons ─────────────────────────────────────────
+                    // ── Buttons ───────────────────────────────────────────
                     Row(
                       children: [
                         Expanded(
@@ -643,7 +768,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
                               duration: const Duration(milliseconds: 200),
                               child: _isSaving
                                   ? const SizedBox(
-                                      key: ValueKey('s-loader'),
+                                      key:   ValueKey('s-loader'),
                                       width: 20, height: 20,
                                       child: CircularProgressIndicator(
                                           color:       Colors.white,
@@ -651,7 +776,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
                                   : Text(
                                       _isEdit ? 'Update' : 'Save',
                                       key: ValueKey('s-label'),
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                           color:      Colors.white,
                                           fontSize:   14,
                                           fontWeight: FontWeight.w700)),
@@ -676,7 +801,8 @@ class _NewLeadPageState extends State<NewLeadPage> {
       padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 13),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.borderLight)),
+        border:
+            Border(bottom: BorderSide(color: AppColors.borderLight)),
       ),
       child: Row(
         children: [
@@ -694,12 +820,14 @@ class _NewLeadPageState extends State<NewLeadPage> {
             ),
           ),
           const SizedBox(width: 12),
-          Text(_isEdit ? 'Edit Lead' : 'New Lead',
-              style: TextStyle(
-                  color:         AppColors.textPrimary,
-                  fontSize:      isTablet ? 20 : 17,
-                  fontWeight:    FontWeight.w800,
-                  letterSpacing: -0.3)),
+          Text(
+            _isEdit ? 'Edit Lead' : 'New Lead',
+            style: TextStyle(
+                color:         AppColors.textPrimary,
+                fontSize:      isTablet ? 20 : 17,
+                fontWeight:    FontWeight.w800,
+                letterSpacing: -0.3),
+          ),
         ],
       ),
     );
@@ -709,8 +837,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
   Widget _fieldLabel(String label, {bool required = false}) {
     return Row(
       children: [
-        Text(label.toUpperCase(),
-            style: AppTextStyles.fieldLabel(false)),
+        Text(label.toUpperCase(), style: AppTextStyles.fieldLabel(false)),
         if (required) ...[
           const SizedBox(width: 2),
           const Text(' *',
@@ -723,7 +850,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
     );
   }
 
-  // ── Search field (with selected state highlight) ───────────────────────────
+  // ── Search field ───────────────────────────────────────────────────────────
   Widget _buildSearchField({
     required TextEditingController controller,
     required FocusNode             focusNode,
@@ -768,22 +895,6 @@ class _NewLeadPageState extends State<NewLeadPage> {
                         ? AppColors.primary
                         : AppColors.iconDefault),
           ),
-          suffixIcon: isSelected
-              ? GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (icon == Icons.person_search_outlined) {
-                        _selectedCustomer = null;
-                      } else {
-                        _selectedEmployee = null;
-                      }
-                      controller.clear();
-                    });
-                  },
-                  child: const Icon(Icons.check_circle_rounded,
-                      size: 18, color: AppColors.success),
-                )
-              : null,
           border:         InputBorder.none,
           enabledBorder:  InputBorder.none,
           focusedBorder:  InputBorder.none,
@@ -800,8 +911,8 @@ class _NewLeadPageState extends State<NewLeadPage> {
     required FocusNode             focusNode,
     required String                hint,
     required IconData              icon,
-    TextInputType  keyboardType = TextInputType.text,
-    FocusNode?     nextFocus,
+    TextInputType keyboardType = TextInputType.text,
+    FocusNode?    nextFocus,
   }) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
@@ -847,7 +958,7 @@ class _NewLeadPageState extends State<NewLeadPage> {
     );
   }
 
-  // ── Multi-line Lead Details field ──────────────────────────────────────────
+  // ── Multi-line field ───────────────────────────────────────────────────────
   Widget _buildMultilineField() {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
@@ -855,19 +966,20 @@ class _NewLeadPageState extends State<NewLeadPage> {
           ? AppDecorations.inputFocused
           : AppDecorations.inputIdle,
       child: TextField(
-        controller:  _leadDetailsCtrl,
-        focusNode:   _leadDetailsFocus,
-        maxLines:    4,
-        minLines:    4,
-        cursorColor: AppColors.primary,
+        controller:      _leadDetailsCtrl,
+        focusNode:       _leadDetailsFocus,
+        maxLines:        4,
+        minLines:        4,
+        cursorColor:     AppColors.primary,
         textInputAction: TextInputAction.newline,
         style: const TextStyle(
             color:      AppColors.textPrimary,
             fontSize:   14,
             fontWeight: FontWeight.w400),
         decoration: const InputDecoration(
-          hintText:  'Enter lead details…',
-          hintStyle: TextStyle(color: AppColors.textHint, fontSize: 13.5),
+          hintText:       'Enter lead details…',
+          hintStyle:      TextStyle(
+              color: AppColors.textHint, fontSize: 13.5),
           border:         InputBorder.none,
           enabledBorder:  InputBorder.none,
           focusedBorder:  InputBorder.none,

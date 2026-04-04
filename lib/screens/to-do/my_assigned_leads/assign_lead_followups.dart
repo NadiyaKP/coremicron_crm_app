@@ -291,11 +291,6 @@ class _AssignLeadFollowUpPageState extends State<AssignLeadFollowUpPage>
       AppSnackBar.show(context, 'Please select a deal.', isError: true);
       return;
     }
-    if (_followUpDate == null) {
-      AppSnackBar.show(context, 'Please select a follow-up date.',
-          isError: true);
-      return;
-    }
     if (_notesCtrl.text.trim().isEmpty) {
       AppSnackBar.show(context, 'Please enter notes.', isError: true);
       return;
@@ -308,24 +303,24 @@ class _AssignLeadFollowUpPageState extends State<AssignLeadFollowUpPage>
           ? '${ApiService.baseUrl}/api/leads/followup_update.php'
           : '${ApiService.baseUrl}/api/leads/followup_add.php');
 
+      final String? formattedDate = _followUpDate != null
+          ? '${_followUpDate!.year}-'
+            '${_followUpDate!.month.toString().padLeft(2, '0')}-'
+            '${_followUpDate!.day.toString().padLeft(2, '0')}'
+          : null;
+
       final Map<String, dynamic> body = isUpdate
           ? {
-              'comid':     _editingFollowUp!.comId,
-              'deals_id':  _selectedDeal!.id,
-              'follow_up':
-                  '${_followUpDate!.year}-'
-                  '${_followUpDate!.month.toString().padLeft(2, '0')}-'
-                  '${_followUpDate!.day.toString().padLeft(2, '0')}',
-              'notes': _notesCtrl.text.trim(),
+              'comid':    _editingFollowUp!.comId,
+              'deals_id': _selectedDeal!.id,
+              'notes':    _notesCtrl.text.trim(),
+              if (formattedDate != null) 'follow_up': formattedDate,
             }
           : {
               'enquiry_id': widget.enquiryId,
               'deals_id':   _selectedDeal!.id,
-              'follow_up':
-                  '${_followUpDate!.year}-'
-                  '${_followUpDate!.month.toString().padLeft(2, '0')}-'
-                  '${_followUpDate!.day.toString().padLeft(2, '0')}',
-              'notes': _notesCtrl.text.trim(),
+              'notes':      _notesCtrl.text.trim(),
+              if (formattedDate != null) 'follow_up': formattedDate,
             };
 
       final res = await ApiService.post(url, body: jsonEncode(body))
@@ -899,7 +894,7 @@ class _AssignLeadFollowUpPageState extends State<AssignLeadFollowUpPage>
           const SizedBox(height: 16),
 
           // ── Follow Up Date ────────────────────────────────────────────
-          _fieldLabel('Follow Up Date', required: true),
+          _fieldLabel('Follow Up Date'),
           const SizedBox(height: 8),
           GestureDetector(
             onTap: _pickDate,

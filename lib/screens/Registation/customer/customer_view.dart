@@ -108,6 +108,58 @@ class _Ticket {
       );
 }
 
+// ── Skeleton Loading Widget ────────────────────────────────────────────────
+class _ShimmerBox extends StatefulWidget {
+  final double width;
+  final double height;
+  final double radius;
+
+  const _ShimmerBox({
+    required this.width,
+    required this.height,
+    required this.radius,
+  });
+
+  @override
+  State<_ShimmerBox> createState() => _ShimmerBoxState();
+}
+
+class _ShimmerBoxState extends State<_ShimmerBox>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.4, end: 1.0)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+        opacity: _anim,
+        child: Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8EDF5),
+            borderRadius: BorderRadius.circular(widget.radius),
+          ),
+        ),
+      );
+}
+
 // ── Customer View Page ─────────────────────────────────────────────────────
 class CustomerViewPage extends StatefulWidget {
   final String customerId;
@@ -232,6 +284,210 @@ class _CustomerViewPageState extends State<CustomerViewPage>
     }
   }
 
+  // ── Skeleton Builders ──────────────────────────────────────────────────────
+  Widget _buildSkeletonAppBar(bool isTablet, double hPad) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 13),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+            bottom: BorderSide(color: AppColors.borderLight, width: 1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: AppColors.border, width: 1.2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _ShimmerBox(width: 180, height: 16, radius: 4),
+                const SizedBox(height: 4),
+                const _ShimmerBox(width: 100, height: 11.5, radius: 4),
+              ],
+            ),
+          ),
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: AppColors.border, width: 1.2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonInfoCard(double hPad) {
+    return Container(
+      margin: EdgeInsets.fromLTRB(hPad, 14, hPad, 0),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderLight, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _ShimmerBox(width: 50, height: 50, radius: 25),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: _ShimmerBox(width: 150, height: 15, radius: 4),
+                    ),
+                    const SizedBox(width: 8),
+                    const _ShimmerBox(width: 60, height: 20, radius: 5),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const _ShimmerBox(width: 140, height: 12.5, radius: 4),
+                const SizedBox(height: 5),
+                const _ShimmerBox(width: 180, height: 12.5, radius: 4),
+                const SizedBox(height: 5),
+                const _ShimmerBox(width: 200, height: 12.5, radius: 4),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonTabBar() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: const [
+          Expanded(
+            child: _ShimmerBox(width: double.infinity, height: 30, radius: 4),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: _ShimmerBox(width: double.infinity, height: 30, radius: 4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonEnquiryCard() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              _ShimmerBox(width: 60, height: 22, radius: 6),
+              _ShimmerBox(width: 50, height: 22, radius: 5),
+            ],
+          ),
+          const SizedBox(height: 7),
+          const _ShimmerBox(width: 180, height: 13.5, radius: 4),
+          const SizedBox(height: 4),
+          const _ShimmerBox(width: double.infinity, height: 12.5, radius: 4),
+          const SizedBox(height: 8),
+          const Divider(height: 1, color: AppColors.borderLight),
+          const SizedBox(height: 7),
+          Wrap(
+            spacing: 12,
+            runSpacing: 4,
+            children: const [
+              _ShimmerBox(width: 100, height: 11.5, radius: 4),
+              _ShimmerBox(width: 100, height: 11.5, radius: 4),
+              _ShimmerBox(width: 80, height: 11.5, radius: 4),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonTicketCard() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              _ShimmerBox(width: 60, height: 22, radius: 6),
+              SizedBox(width: 6),
+              _ShimmerBox(width: 50, height: 22, radius: 5),
+              Spacer(),
+              _ShimmerBox(width: 50, height: 22, radius: 5),
+            ],
+          ),
+          const SizedBox(height: 7),
+          Row(
+            children: const [
+              Expanded(
+                child: _ShimmerBox(width: 150, height: 13.5, radius: 4),
+              ),
+              SizedBox(width: 8),
+              _ShimmerBox(width: 60, height: 22, radius: 5),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Divider(height: 1, color: AppColors.borderLight),
+          const SizedBox(height: 7),
+          Wrap(
+            spacing: 12,
+            runSpacing: 4,
+            children: const [
+              _ShimmerBox(width: 120, height: 11.5, radius: 4),
+              _ShimmerBox(width: 100, height: 11.5, radius: 4),
+              _ShimmerBox(width: 80, height: 11.5, radius: 4),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonEnquiriesList(double hPad) {
+    return ListView.separated(
+      padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 20),
+      itemCount: 3,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (_, __) => _buildSkeletonEnquiryCard(),
+    );
+  }
+
   // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
@@ -244,44 +500,49 @@ class _CustomerViewPageState extends State<CustomerViewPage>
       body: SafeArea(
         child: Column(
           children: [
-            _buildAppBar(isTablet, hPad),
+            if (_isLoading)
+              _buildSkeletonAppBar(isTablet, hPad)
+            else
+              _buildAppBar(isTablet, hPad),
 
             if (_isLoading)
-              const Expanded(child: Center(
-                  child: CircularProgressIndicator(
-                      color: AppColors.primary, strokeWidth: 2.4)))
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildSkeletonInfoCard(hPad),
+                    _buildSkeletonTabBar(),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: _buildSkeletonEnquiriesList(hPad),
+                    ),
+                  ],
+                ),
+              )
             else if (_errorMessage != null)
               Expanded(child: _buildError())
             else
               Expanded(
                 child: Column(
                   children: [
-                    // ── Customer Info Card ─────────────────────────────
                     _buildInfoCard(hPad),
-
-                    // ── Tab Bar ────────────────────────────────────────
                     Container(
                       color: Colors.white,
                       child: TabBar(
-                        controller:         _tabCtrl,
-                        labelColor:         AppColors.primary,
+                        controller: _tabCtrl,
+                        labelColor: AppColors.primary,
                         unselectedLabelColor: AppColors.textMuted,
-                        indicatorColor:     AppColors.primary,
-                        indicatorWeight:    2.5,
+                        indicatorColor: AppColors.primary,
+                        indicatorWeight: 2.5,
                         labelStyle: const TextStyle(
                             fontSize: 13.5, fontWeight: FontWeight.w700),
                         unselectedLabelStyle: const TextStyle(
                             fontSize: 13.5, fontWeight: FontWeight.w500),
                         tabs: [
-                          Tab(text:
-                              'Enquiries (${_enquiries.length})'),
-                          Tab(text:
-                              'Tickets (${_tickets.length})'),
+                          Tab(text: 'Enquiries (${_enquiries.length})'),
+                          Tab(text: 'Tickets (${_tickets.length})'),
                         ],
                       ),
                     ),
-
-                    // ── Tab Content ────────────────────────────────────
                     Expanded(
                       child: TabBarView(
                         controller: _tabCtrl,
@@ -388,7 +649,6 @@ class _CustomerViewPageState extends State<CustomerViewPage>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Avatar
           Container(
             width: 50, height: 50,
             decoration: const BoxDecoration(
@@ -408,7 +668,6 @@ class _CustomerViewPageState extends State<CustomerViewPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Name + status
                 Row(
                   children: [
                     Expanded(
@@ -436,18 +695,11 @@ class _CustomerViewPageState extends State<CustomerViewPage>
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 8),
-
-                // Phone
                 if (c.phone.isNotEmpty)
                   _infoRow(Icons.phone_outlined, c.phone),
-
-                // Email
                 if (c.email.isNotEmpty)
                   _infoRow(Icons.email_outlined, c.email),
-
-                // Address
                 if (c.address.isNotEmpty)
                   _infoRow(Icons.location_on_outlined,
                       c.address.capitalize()),
@@ -511,7 +763,6 @@ class _CustomerViewPageState extends State<CustomerViewPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Top row: enquiry number + status ────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -545,10 +796,7 @@ class _CustomerViewPageState extends State<CustomerViewPage>
               ),
             ],
           ),
-
           const SizedBox(height: 7),
-
-          // ── Title ──────────────────────────────────────────────────
           Text(
             e.title.isEmpty ? '(No title)' : e.title.capitalize(),
             style: TextStyle(
@@ -561,8 +809,6 @@ class _CustomerViewPageState extends State<CustomerViewPage>
                     ? FontStyle.italic
                     : FontStyle.normal),
           ),
-
-          // ── Enquiry text ───────────────────────────────────────────
           if (e.enquiry.trim().isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
@@ -575,12 +821,9 @@ class _CustomerViewPageState extends State<CustomerViewPage>
                   height:   1.4),
             ),
           ],
-
           const SizedBox(height: 8),
           const Divider(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 7),
-
-          // ── Bottom meta row ────────────────────────────────────────
           Wrap(
             spacing: 12,
             runSpacing: 4,
@@ -633,7 +876,6 @@ class _CustomerViewPageState extends State<CustomerViewPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Top row: ticket number + priority + status ──────────────
           Row(
             children: [
               Container(
@@ -683,10 +925,7 @@ class _CustomerViewPageState extends State<CustomerViewPage>
               ),
             ],
           ),
-
           const SizedBox(height: 7),
-
-          // ── Title + type chip in same row ─────────────────────────
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -722,12 +961,9 @@ class _CustomerViewPageState extends State<CustomerViewPage>
               ),
             ],
           ),
-
           const SizedBox(height: 8),
           const Divider(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 7),
-
-          // ── Bottom meta row ────────────────────────────────────────
           Wrap(
             spacing: 12,
             runSpacing: 4,

@@ -10,6 +10,7 @@ import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
 import 'package:coremicron_crm_app/screens/to-do/my_assigned_leads/assigned_lead_view.dart';
 import 'package:coremicron_crm_app/screens/to-do/my_assigned_leads/assign_lead_followups.dart';
+import 'package:coremicron_crm_app/screens/Registation/customer/contact_list.dart';
 
 // ── Follow-Up Model ────────────────────────────────────────────────────────
 class _FollowUp {
@@ -487,31 +488,45 @@ class _FollowUpsPageState extends State<FollowUpsPage> {
           const SizedBox(height: 6),
 
           // ── Customer + phone ──────────────────────────────────────────
-          Row(
-            children: [
-              const Icon(Icons.person_outline_rounded,
-                  size: 11, color: AppColors.textMuted),
-              const SizedBox(width: 3),
-              Expanded(
+        Row(
+          children: [
+            const Icon(Icons.person_outline_rounded,
+                size: 11, color: AppColors.textMuted),
+            const SizedBox(width: 3),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ContactListPage(
+                      customerId:   f.enquiryId,
+                      customerName: f.customerName,
+                      readOnly:     true,
+                    ),
+                  ),
+                ),
                 child: Text(
                   f.customerName.capitalize(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                      color:    AppColors.textSecondary,
-                      fontSize: 12),
+                      color:      AppColors.primary,
+                      fontSize:   12,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline),
                 ),
               ),
-              const SizedBox(width: 10),
-              const Icon(Icons.phone_outlined,
-                  size: 11, color: AppColors.textMuted),
-              const SizedBox(width: 3),
-              Text(f.phoneNumber,
-                  style: const TextStyle(
-                      color:    AppColors.textSecondary,
-                      fontSize: 12)),
-            ],
-          ),
+            ),
+            const SizedBox(width: 10),
+            const Icon(Icons.phone_outlined,
+                size: 11, color: AppColors.textMuted),
+            const SizedBox(width: 3),
+            Text(f.phoneNumber,
+                style: const TextStyle(
+                    color:    AppColors.textSecondary,
+                    fontSize: 12)),
+          ],
+        ),
 
           const SizedBox(height: 8),
           const Divider(height: 1, color: AppColors.borderLight),

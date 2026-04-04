@@ -9,9 +9,65 @@ import 'package:coremicron_crm_app/common/string_extensions.dart';
 
 // ── Ticket View Page ───────────────────────────────────────────────────────
 class TicketViewPage extends StatefulWidget {
-  final Ticket ticket;
+  final Ticket? ticket;
+  final String? ticketId;
+  final String? ticketNumber;
+  final String? title;
+  final String? customerName;
+  final String? phoneNumber;
+  final String? typeOfTickets;
+  final String? priority;
+  final String? status;
+  final String? addedDate;
+  final String? addedTime;
+  final String? addedBy;
+  final String? taskHandlerName;
+  final String? taskHandlerId;
+  final String? notes;
+  final String? customerId;
 
-  const TicketViewPage({super.key, required this.ticket});
+  const TicketViewPage({
+    super.key,
+    this.ticket,
+    this.ticketId,
+    this.ticketNumber,
+    this.title,
+    this.customerName,
+    this.phoneNumber,
+    this.typeOfTickets,
+    this.priority,
+    this.status,
+    this.addedDate,
+    this.addedTime,
+    this.addedBy,
+    this.taskHandlerName,
+    this.taskHandlerId,
+    this.notes,
+    this.customerId,
+  });
+
+  // Helper to get ticket data
+  Ticket get _ticket {
+    if (ticket != null) return ticket!;
+    
+    return Ticket(
+      ticketId: ticketId ?? '',
+      ticketNumber: ticketNumber ?? '',
+      title: title ?? '',
+      customerName: customerName ?? '',
+      phoneNumber: phoneNumber ?? '',
+      customerId: customerId ?? '',
+      typeOfTickets: typeOfTickets ?? '',
+      priority: priority ?? '',
+      status: status ?? '',
+      addedDate: addedDate ?? '',
+      addedTime: addedTime ?? '',
+      addedBy: addedBy ?? '',
+      taskHandlerName: taskHandlerName ?? '',
+      taskHandlerId: taskHandlerId ?? '',
+      notes: notes ?? '',
+    );
+  }
 
   @override
   State<TicketViewPage> createState() => _TicketViewPageState();
@@ -44,7 +100,7 @@ class _TicketViewPageState extends State<TicketViewPage>
     try {
       final url = Uri.parse(
           '${ApiService.baseUrl}/api/ticket/job_list.php'
-          '?ticket_id=${widget.ticket.ticketId}');
+          '?ticket_id=${widget._ticket.ticketId}');
       final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
       final Map<String, dynamic> data = jsonDecode(response.body);
@@ -141,7 +197,7 @@ class _TicketViewPageState extends State<TicketViewPage>
 
   // ── App Bar ────────────────────────────────────────────────────────────────
   Widget _buildAppBar(bool isTablet, double hPad) {
-    final t = widget.ticket;
+    final t = widget._ticket;
     return Container(
       padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 13),
       decoration: const BoxDecoration(
@@ -229,7 +285,7 @@ class _TicketViewPageState extends State<TicketViewPage>
   // ── Tab 1 : Ticket Details ─────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildTicketDetails(double hPad) {
-    final t = widget.ticket;
+    final t = widget._ticket;
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 32),

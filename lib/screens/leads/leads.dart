@@ -10,25 +10,27 @@ import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/screens/leads/lead_view.dart';
 import 'package:coremicron_crm_app/screens/leads/new_lead.dart';
 import 'package:coremicron_crm_app/screens/leads/bulk_add.dart';
-import 'package:coremicron_crm_app/screens/Registation/customer/contact_list.dart'; // ← NEW
+import 'package:coremicron_crm_app/screens/Registation/customer/contact_list.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
 
 // ── Lead Model ─────────────────────────────────────────────────────────────
 class Lead {
-  final String enquiryId;
-  final String title;
-  final String enquiryNumber;
-  final String enquiry;
-  final String customerId;
-  final String assignId;
-  final String addedDate;
-  final String addedTime;
-  final String status;
-  final String customerName;
-  final String customerPhone;
-  final String employeeName;
-  final String dealName;
-  final String dealColor;
+  final String       enquiryId;
+  final String       title;
+  final String       enquiryNumber;
+  final String       enquiry;
+  final String       customerId;
+  final String       assignId;
+  final String       addedDate;
+  final String       addedTime;
+  final String       status;
+  final String       customerName;
+  final String       customerPhone;
+  final String       assignedEmployees;
+  final List<String> assignedEmployeeIds;
+  final String       dealName;
+  final String       dealColor;
+  final List<Map<String, dynamic>>? assignedEmployeesList;
 
   const Lead({
     required this.enquiryId,
@@ -42,32 +44,58 @@ class Lead {
     required this.status,
     required this.customerName,
     required this.customerPhone,
-    required this.employeeName,
+    required this.assignedEmployees,
+    required this.assignedEmployeeIds,
     required this.dealName,
     required this.dealColor,
+    this.assignedEmployeesList,
   });
 
-  factory Lead.fromJson(Map<String, dynamic> json) => Lead(
-        enquiryId:     json['enquiry_id']    ?? '',
-        title:         json['title']         ?? '',
-        enquiryNumber: json['enquiry_number'] ?? '',
-        enquiry:       json['enquiry']       ?? '',
-        customerId:    json['customer_id']   ?? '',
-        assignId:      json['assign_id']     ?? '',
-        addedDate:     json['added_date']    ?? '',
-        addedTime:     json['added_time']    ?? '',
-        status:        json['status']        ?? '',
-        customerName:  json['customer_name'] ?? '',
-        customerPhone: json['customer_phone'] ?? '',
-        employeeName:  json['employee_name'] ?? '',
-        dealName:      json['deal_name']     ?? '',
-        dealColor:     json['deal_color']    ?? '',
-      );
+  factory Lead.fromJson(Map<String, dynamic> json) {
+    final rawIds = json['assigned_employee_ids'];
+    final List<String> empIds = rawIds is List
+        ? rawIds.map((e) => e.toString()).toList()
+        : [];
+
+    final String empNamesStr = json['assigned_employees'] ?? '';
+    final List<String> empNames = empNamesStr.isNotEmpty
+        ? empNamesStr.split(',').map((e) => e.trim()).toList()
+        : [];
+
+    final List<Map<String, dynamic>> empList = [];
+    for (int i = 0; i < empIds.length; i++) {
+      empList.add({
+        'id':          empIds[i],
+        'name':        i < empNames.length ? empNames[i] : '',
+        'phone':       '',
+        'employee_id': '',
+      });
+    }
+
+    return Lead(
+      enquiryId:            json['enquiry_id']      ?? '',
+      title:                json['title']            ?? '',
+      enquiryNumber:        json['enquiry_number']   ?? '',
+      enquiry:              json['enquiry']          ?? '',
+      customerId:           json['customer_id']      ?? '',
+      assignId:             json['added_id']         ?? '',
+      addedDate:            json['added_date']       ?? '',
+      addedTime:            json['added_time']       ?? '',
+      status:               json['status']           ?? '',
+      customerName:         json['customer_name']    ?? '',
+      customerPhone:        json['customer_phone']   ?? '',
+      assignedEmployees:    empNamesStr,
+      assignedEmployeeIds:  empIds,
+      dealName:             json['deal_name']        ?? '',
+      dealColor:            json['deal_color']       ?? '',
+      assignedEmployeesList: empList,
+    );
+  }
 }
 
 // ── Leads Page ─────────────────────────────────────────────────────────────
 class LeadsPage extends StatefulWidget {
-  final String username;
+  final String  username;
   final String? highlightId;
   const LeadsPage({super.key, required this.username, this.highlightId});
 
@@ -115,9 +143,9 @@ class _LeadsPageState extends State<LeadsPage> {
     } else {
       _filtered = _allLeads.where((l) {
         return l.enquiryNumber.toLowerCase().contains(_searchQuery) ||
-            l.title.toLowerCase().contains(_searchQuery) ||
-            l.customerName.toLowerCase().contains(_searchQuery) ||
-            l.customerPhone.toLowerCase().contains(_searchQuery) ||
+            l.title.toLowerCase().contains(_searchQuery)            ||
+            l.customerName.toLowerCase().contains(_searchQuery)     ||
+            l.customerPhone.toLowerCase().contains(_searchQuery)    ||
             l.addedDate.toLowerCase().contains(_searchQuery);
       }).toList();
     }
@@ -127,8 +155,9 @@ class _LeadsPageState extends State<LeadsPage> {
   Future<void> _fetchLeads() async {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      final url = Uri.parse('${ApiService.baseUrl}/api/leads/list.php');
-      final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
+      final url      = Uri.parse('${ApiService.baseUrl}/api/leads/list.php');
+      final response = await ApiService.get(url)
+          .timeout(const Duration(seconds: 15));
 
       final Map<String, dynamic> data = jsonDecode(response.body);
       debugPrint('📥  [LEADS LIST] ${response.statusCode}  ${response.body}');
@@ -138,7 +167,8 @@ class _LeadsPageState extends State<LeadsPage> {
         _allLeads = list.map((e) => Lead.fromJson(e)).toList();
         _applyFilter();
       } else {
-        _errorMessage = data['error'] ?? data['message'] ?? 'Failed to load leads.';
+        _errorMessage =
+            data['error'] ?? data['message'] ?? 'Failed to load leads.';
       }
     } on http.ClientException {
       _errorMessage = 'Unable to reach the server. Check your connection.';
@@ -172,7 +202,8 @@ class _LeadsPageState extends State<LeadsPage> {
       }
     } on http.ClientException {
       if (mounted)
-        AppSnackBar.show(context, 'Unable to reach the server.', isError: true);
+        AppSnackBar.show(context, 'Unable to reach the server.',
+            isError: true);
     } catch (_) {
       if (mounted)
         AppSnackBar.show(context, 'Something went wrong.', isError: true);
@@ -180,7 +211,8 @@ class _LeadsPageState extends State<LeadsPage> {
   }
 
   // ── Pagination ─────────────────────────────────────────────────────────────
-  int get _totalPages => paginationTotalPages(_filtered.length, _pageSize);
+  int get _totalPages =>
+      paginationTotalPages(_filtered.length, _pageSize);
   List<Lead> get _pageItems =>
       paginationPageItems(_filtered, _currentPage, _pageSize);
 
@@ -194,7 +226,146 @@ class _LeadsPageState extends State<LeadsPage> {
     );
   }
 
-  // ── Delete Dialog ──────────────────────────────────────────────────────────
+  // ── Assigned employees popup ───────────────────────────────────────────────
+  void _showAssignedEmployeesPopup(
+      BuildContext context, String assignedEmployees) {
+    final names = assignedEmployees
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        insetPadding:
+            const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header ──────────────────────────────────────────────────
+              Row(
+                children: [
+                  Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color:        AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.people_alt_rounded,
+                        size: 18, color: AppColors.primary),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text('Assigned Employees',
+                        style: TextStyle(
+                            color:      AppColors.textPrimary,
+                            fontSize:   15,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Container(
+                      width: 28, height: 28,
+                      decoration: BoxDecoration(
+                        color:        AppColors.background,
+                        borderRadius: BorderRadius.circular(7),
+                        border:
+                            Border.all(color: AppColors.border, width: 1),
+                      ),
+                      child: const Icon(Icons.close_rounded,
+                          size: 15, color: AppColors.textMuted),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              const Divider(height: 1, color: AppColors.borderLight),
+              const SizedBox(height: 14),
+
+              // ── Employee list ────────────────────────────────────────────
+              if (names.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'No employees assigned.',
+                    style: TextStyle(
+                        color:     AppColors.textMuted,
+                        fontSize:  13,
+                        fontStyle: FontStyle.italic),
+                  ),
+                )
+              else
+                ...names.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final name  = entry.value;
+                  final List<Color> avatarColors = [
+                    const Color(0xFF1558E7),
+                    const Color(0xFF0277BD),
+                    const Color(0xFF2E7D32),
+                    const Color(0xFF6A1B9A),
+                    const Color(0xFFC62828),
+                    const Color(0xFFE65100),
+                  ];
+                  final color = avatarColors[
+                      (name.isNotEmpty ? name.codeUnitAt(0) : 0) %
+                          avatarColors.length];
+                  return Padding(
+                    padding: EdgeInsets.only(
+                        bottom: index < names.length - 1 ? 12 : 0),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36, height: 36,
+                          decoration: BoxDecoration(
+                            color:  color.withOpacity(0.12),
+                            shape:  BoxShape.circle,
+                            border: Border.all(
+                                color: color.withOpacity(0.25),
+                                width: 1.5),
+                          ),
+                          child: Center(
+                            child: Text(
+                              name.isNotEmpty
+                                  ? name[0].toUpperCase()
+                                  : '?',
+                              style: TextStyle(
+                                  color:      color,
+                                  fontSize:   14,
+                                  fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            name.capitalize(),
+                            style: const TextStyle(
+                                color:      AppColors.textPrimary,
+                                fontSize:   13.5,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+
+              const SizedBox(height: 6),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Delete dialog ──────────────────────────────────────────────────────────
   void _showDeleteDialog(Lead l) {
     bool isDeleting = false;
     showDialog(
@@ -245,18 +416,21 @@ class _LeadsPageState extends State<LeadsPage> {
                 const SizedBox(height: 14),
                 const Divider(height: 1, color: AppColors.borderLight),
                 const SizedBox(height: 12),
-                _deleteDialogRow(Icons.tag_rounded,
-                    'Lead No', l.enquiryNumber),
+                _deleteDialogRow(
+                    Icons.tag_rounded, 'Lead No', l.enquiryNumber),
                 const SizedBox(height: 8),
                 _deleteDialogRow(Icons.person_outline_rounded,
                     'Customer', l.customerName.capitalize()),
                 const SizedBox(height: 8),
-                _deleteDialogRow(Icons.phone_outlined,
-                    'Phone', l.customerPhone),
+                _deleteDialogRow(
+                    Icons.phone_outlined, 'Phone', l.customerPhone),
                 const SizedBox(height: 8),
-                _deleteDialogRow(Icons.title_rounded,
+                _deleteDialogRow(
+                    Icons.title_rounded,
                     'Title',
-                    l.title.isEmpty ? '(No title)' : l.title.capitalize()),
+                    l.title.isEmpty
+                        ? '(No title)'
+                        : l.title.capitalize()),
                 const SizedBox(height: 20),
                 Row(
                   children: [
@@ -305,8 +479,9 @@ class _LeadsPageState extends State<LeadsPage> {
                           duration: const Duration(milliseconds: 200),
                           child: isDeleting
                               ? const SizedBox(
-                                  key: ValueKey('del-loader'),
-                                  width: 18, height: 18,
+                                  key:    ValueKey('del-loader'),
+                                  width:  18,
+                                  height: 18,
                                   child: CircularProgressIndicator(
                                       color:       Colors.white,
                                       strokeWidth: 2.3))
@@ -329,7 +504,8 @@ class _LeadsPageState extends State<LeadsPage> {
     );
   }
 
-  Widget _deleteDialogRow(IconData icon, String label, String value) {
+  Widget _deleteDialogRow(
+      IconData icon, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -390,11 +566,10 @@ class _LeadsPageState extends State<LeadsPage> {
                           fontWeight: FontWeight.w500),
                     ),
                   const Spacer(),
-                  // ── New Lead button ──────────────────────────────────
                   _actionButton(
-                    icon:    Icons.add_rounded,
-                    label:   'New Lead',
-                    color:   AppColors.primary,
+                    icon:  Icons.add_rounded,
+                    label: 'New Lead',
+                    color: AppColors.primary,
                     onTap: () async {
                       final result = await Navigator.push<bool>(
                         context,
@@ -407,11 +582,10 @@ class _LeadsPageState extends State<LeadsPage> {
                     },
                   ),
                   const SizedBox(width: 8),
-                  // ── Bulk Add button ──────────────────────────────────
                   _actionButton(
-                    icon:    Icons.upload_file_rounded,
-                    label:   'Bulk Add',
-                    color:   const Color(0xFF2E7D32),
+                    icon:  Icons.upload_file_rounded,
+                    label: 'Bulk Add',
+                    color: const Color(0xFF2E7D32),
                     onTap: () async {
                       final result = await Navigator.push<bool>(
                         context,
@@ -473,7 +647,8 @@ class _LeadsPageState extends State<LeadsPage> {
               decoration: BoxDecoration(
                 color:        AppColors.background,
                 borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: AppColors.border, width: 1.2),
+                border:
+                    Border.all(color: AppColors.border, width: 1.2),
               ),
               child: const Icon(Icons.arrow_back_ios_new_rounded,
                   size: 15, color: AppColors.textPrimary),
@@ -494,7 +669,8 @@ class _LeadsPageState extends State<LeadsPage> {
               decoration: BoxDecoration(
                 color:        AppColors.background,
                 borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: AppColors.border, width: 1.2),
+                border:
+                    Border.all(color: AppColors.border, width: 1.2),
               ),
               child: const Icon(Icons.refresh_rounded,
                   size: 18, color: AppColors.primary),
@@ -539,7 +715,7 @@ class _LeadsPageState extends State<LeadsPage> {
     );
   }
 
-  // ── Shared small action button ─────────────────────────────────────────────
+  // ── Action button ──────────────────────────────────────────────────────────
   Widget _actionButton({
     required IconData     icon,
     required String       label,
@@ -557,7 +733,8 @@ class _LeadsPageState extends State<LeadsPage> {
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
         elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+        padding: const EdgeInsets.symmetric(
+            horizontal: 11, vertical: 9),
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(9)),
       ),
@@ -585,7 +762,9 @@ class _LeadsPageState extends State<LeadsPage> {
         color:        Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isHighlighted ? AppColors.primary : AppColors.borderLight,
+          color: isHighlighted
+              ? AppColors.primary
+              : AppColors.borderLight,
           width: isHighlighted ? 2 : 1,
         ),
         boxShadow: [
@@ -602,149 +781,183 @@ class _LeadsPageState extends State<LeadsPage> {
               top: 0, left: 0,
               child: Container(
                 width: 8, height: 8,
-                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                    color: Colors.red, shape: BoxShape.circle),
               ),
             ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+
+              // ── Row 1: date + enquiry number (deal badge removed) ──────
               Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.calendar_today_outlined,
-                      size: 11, color: AppColors.textMuted),
-                  const SizedBox(width: 3),
-                  Text(l.addedDate,
-                      style: const TextStyle(
-                          color:    AppColors.textMuted,
-                          fontSize: 11)),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.calendar_today_outlined,
+                          size: 11, color: AppColors.textMuted),
+                      const SizedBox(width: 3),
+                      Text(l.addedDate,
+                          style: const TextStyle(
+                              color:    AppColors.textMuted,
+                              fontSize: 11)),
+                    ],
+                  ),
+                  // ── Enquiry number badge only ──────────────────────────
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color:        AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(l.enquiryNumber,
+                        style: const TextStyle(
+                            color:      AppColors.primary,
+                            fontSize:   11,
+                            fontWeight: FontWeight.w700)),
+                  ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color:        AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(6),
+
+              const SizedBox(height: 6),
+
+              // ── Row 2: title ───────────────────────────────────────────
+              Text(
+                l.title.isEmpty ? '(No title)' : l.title.capitalize(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color:      l.title.isEmpty
+                      ? AppColors.textMuted
+                      : AppColors.textPrimary,
+                  fontSize:   13.5,
+                  fontWeight: FontWeight.w600,
+                  fontStyle:  l.title.isEmpty
+                      ? FontStyle.italic
+                      : FontStyle.normal,
                 ),
-                child: Text(l.enquiryNumber,
-                    style: const TextStyle(
-                        color:      AppColors.primary,
-                        fontSize:   11,
-                        fontWeight: FontWeight.w700)),
               ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            l.title.isEmpty ? '(No title)' : l.title.capitalize(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color:      l.title.isEmpty
-                  ? AppColors.textMuted
-                  : AppColors.textPrimary,
-              fontSize:   13.5,
-              fontWeight: FontWeight.w600,
-              fontStyle:  l.title.isEmpty
-                  ? FontStyle.italic
-                  : FontStyle.normal,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Row(
-            children: [
-              const Icon(Icons.person_outline_rounded,
-                  size: 11, color: AppColors.textMuted),
-              const SizedBox(width: 3),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    // Navigate directly to ContactListPage (read-only)
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ContactListPage(
-                          customerId:   l.customerId,
-                          customerName: l.customerName,
-                          readOnly:     true,
+
+              const SizedBox(height: 5),
+
+              // ── Row 3: customer + phone ────────────────────────────────
+              Row(
+                children: [
+                  const Icon(Icons.person_outline_rounded,
+                      size: 11, color: AppColors.textMuted),
+                  const SizedBox(width: 3),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ContactListPage(
+                            customerId:   l.customerId,
+                            customerName: l.customerName,
+                            readOnly:     true,
+                          ),
                         ),
                       ),
-                    );
-                  },
-                  child: Text(
-                    l.customerName.capitalize(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.primary, // Changed to primary to indicate it's clickable
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      decoration: TextDecoration.underline, // Add underline for clarity
+                      child: Text(
+                        l.customerName.capitalize(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color:      AppColors.primary,
+                            fontSize:   12,
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline),
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  const Icon(Icons.phone_outlined,
+                      size: 11, color: AppColors.textMuted),
+                  const SizedBox(width: 3),
+                  Text(l.customerPhone,
+                      style: const TextStyle(
+                          color:    AppColors.textSecondary,
+                          fontSize: 12)),
+                ],
+              ),
+
+              // ── Row 4: Assign To tap button ────────────────────────────
+              const SizedBox(height: 6),
+              GestureDetector(
+                onTap: () => _showAssignedEmployeesPopup(
+                    context, l.assignedEmployees),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.badge_outlined,
+                        size: 12, color: AppColors.primary),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'Assign To',
+                      style: TextStyle(
+                          color:      AppColors.primary,
+                          fontSize:   12,
+                          fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 3),
+                    const Icon(Icons.arrow_forward_ios_rounded,
+                        size: 10, color: AppColors.primary),
+                  ],
                 ),
               ),
-              const SizedBox(width: 10),
-              const Icon(Icons.phone_outlined,
-                  size: 11, color: AppColors.textMuted),
-              const SizedBox(width: 3),
-              Text(l.customerPhone,
-                  style: const TextStyle(
-                      color:    AppColors.textSecondary,
-                      fontSize: 12)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Divider(height: 1, color: AppColors.borderLight),
-          const SizedBox(height: 7),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              _actionIcon(
-                icon:    Icons.visibility_outlined,
-                color:   const Color(0xFF2E7D32),
-                bgColor: const Color(0xFFE8F5E9),
-                onTap:   () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => LeadViewPage(
-                      enquiryId:     l.enquiryId,
-                      enquiryNumber: l.enquiryNumber,
-                      dealName:      l.dealName,
-                      dealColor:     l.dealColor,
+
+              const SizedBox(height: 8),
+              const Divider(height: 1, color: AppColors.borderLight),
+              const SizedBox(height: 7),
+
+              // ── Action icons ───────────────────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _actionIcon(
+                    icon:    Icons.visibility_outlined,
+                    color:   const Color(0xFF2E7D32),
+                    bgColor: const Color(0xFFE8F5E9),
+                    onTap:   () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LeadViewPage(
+                          enquiryId:     l.enquiryId,
+                          enquiryNumber: l.enquiryNumber,
+                          dealName:      l.dealName,
+                          dealColor:     l.dealColor,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 6),
+                  _actionIcon(
+                    icon:    Icons.edit_outlined,
+                    color:   AppColors.primary,
+                    bgColor: AppColors.primaryLight,
+                    onTap:   () async {
+                      final result = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => NewLeadPage(
+                              username: widget.username, lead: l),
+                        ),
+                      );
+                      if (result == true) _fetchLeads();
+                    },
+                  ),
+                  const SizedBox(width: 6),
+                  _actionIcon(
+                    icon:    Icons.delete_outline_rounded,
+                    color:   AppColors.error,
+                    bgColor: const Color(0xFFFFF1F1),
+                    onTap:   () => _showDeleteDialog(l),
+                  ),
+                ],
               ),
-              const SizedBox(width: 6),
-              _actionIcon(
-                icon:    Icons.edit_outlined,
-                color:   AppColors.primary,
-                bgColor: AppColors.primaryLight,
-                onTap:   () async {
-                  final result = await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          NewLeadPage(username: widget.username, lead: l),
-                    ),
-                  );
-                  if (result == true) _fetchLeads();
-                },
-              ),
-              const SizedBox(width: 6),
-              _actionIcon(
-                icon:    Icons.delete_outline_rounded,
-                color:   AppColors.error,
-                bgColor: const Color(0xFFFFF1F1),
-                onTap:   () => _showDeleteDialog(l),
-              ),
-            ],
-          ),
             ],
           ),
         ],
@@ -794,14 +1007,16 @@ class _LeadsPageState extends State<LeadsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _shimmer(width: 70, height: 11, radius: 4),
-              _shimmer(width: 40, height: 20, radius: 6),
+              _shimmer(width: 70,  height: 11, radius: 4),
+              _shimmer(width: 40,  height: 20, radius: 6),
             ],
           ),
           const SizedBox(height: 8),
-          _shimmer(width: 160, height: 13, radius: 4),
+          _shimmer(width: 160,             height: 13, radius: 4),
           const SizedBox(height: 6),
           _shimmer(width: double.infinity, height: 11, radius: 4),
+          const SizedBox(height: 6),
+          _shimmer(width: 80,              height: 11, radius: 4),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -918,7 +1133,7 @@ class _ShimmerBoxState extends State<_ShimmerBox>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this,
+        vsync:    this,
         duration: const Duration(milliseconds: 1200))
       ..repeat(reverse: true);
     _anim = Tween<double>(begin: 0.4, end: 1.0).animate(
