@@ -156,7 +156,7 @@ class _LeaveApplicationReportPageState
       context:     context,
       initialDate: initial,
       firstDate:   DateTime(2020),
-      lastDate:    DateTime(2030),
+      lastDate:    DateTime.now(),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(
@@ -292,20 +292,6 @@ class _LeaveApplicationReportPageState
         String reason = e.reason;
         String status = e.status.toUpperCase();
         
-        // Truncate long text to prevent wrapping
-        if (employeeName.length > 25) {
-          employeeName = employeeName.substring(0, 22) + '...';
-        }
-        if (typeOfAbsence.length > 15) {
-          typeOfAbsence = typeOfAbsence.substring(0, 12) + '...';
-        }
-        if (reason.length > 40) {
-          reason = reason.substring(0, 37) + '...';
-        }
-        if (status.length > 10) {
-          status = status.substring(0, 7) + '...';
-        }
-        
         tableData.add([
           (i + 1).toString(),
           employeeName,
@@ -323,7 +309,7 @@ class _LeaveApplicationReportPageState
 
       pdf.addPage(
         pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
+          pageFormat: PdfPageFormat.a4.landscape,
           margin: const pw.EdgeInsets.all(20),
           build: (pw.Context context) {
             return [

@@ -14,6 +14,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:coremicron_crm_app/screens/leads/lead_view.dart';
 
 // ── Employee Model for dropdown/search ──────────────────────────────────────
 class _Employee {
@@ -44,7 +45,8 @@ enum StyleOption {
   attendance('attendance', 'Attendance'),
   leaveApplication('leaveapplication', 'Leave Application'),
   pendingWorks('pendingworks', 'Pending Works'),
-  completedTasks('completedtasks', 'Completed Tasks');
+  completedTasks('completedtasks', 'Completed Tasks'),
+  leads('leads', 'Leads');
 
   final String apiValue;
   final String displayName;
@@ -158,6 +160,78 @@ class _Attendance {
       );
 }
 
+class _LeadTask {
+  final String enquiryId;
+  final String enquiryNumber;
+  final String title;
+  final String enquiry;
+  final String customerId;
+  final String customerName;
+  final String phoneNumber;
+  final String city;
+  final String addedDate;
+  final String addedBy;
+  final String assignedDate;
+  final String leadStatus;
+  final int totalFollowups;
+  final int completedFollowups;
+  final int pendingFollowups;
+  final String? lastFollowupDate;
+  final String? lastFollowupStatus;
+  final String? lastFollowupNote;
+  final String? currentDeal;
+  final String? dealColor;
+  final String? coAssignees;
+
+  const _LeadTask({
+    required this.enquiryId,
+    required this.enquiryNumber,
+    required this.title,
+    required this.enquiry,
+    required this.customerId,
+    required this.customerName,
+    required this.phoneNumber,
+    required this.city,
+    required this.addedDate,
+    required this.addedBy,
+    required this.assignedDate,
+    required this.leadStatus,
+    required this.totalFollowups,
+    required this.completedFollowups,
+    required this.pendingFollowups,
+    this.lastFollowupDate,
+    this.lastFollowupStatus,
+    this.lastFollowupNote,
+    this.currentDeal,
+    this.dealColor,
+    this.coAssignees,
+  });
+
+  factory _LeadTask.fromJson(Map<String, dynamic> j) => _LeadTask(
+        enquiryId: j['enquiry_id'] ?? '',
+        enquiryNumber: j['enquiry_number'] ?? '',
+        title: j['title'] ?? '',
+        enquiry: j['enquiry'] ?? '',
+        customerId: j['customer_id'] ?? '',
+        customerName: j['customer_name'] ?? '',
+        phoneNumber: j['phone_number'] ?? '',
+        city: j['city'] ?? '',
+        addedDate: j['added_date'] ?? '',
+        addedBy: j['added_by'] ?? '',
+        assignedDate: j['assigned_date'] ?? '',
+        leadStatus: j['lead_status'] ?? '',
+        totalFollowups: j['total_followups'] ?? 0,
+        completedFollowups: j['completed_followups'] ?? 0,
+        pendingFollowups: j['pending_followups'] ?? 0,
+        lastFollowupDate: j['last_followup_date'],
+        lastFollowupStatus: j['last_followup_status'],
+        lastFollowupNote: j['last_followup_note'],
+        currentDeal: j['current_deal'],
+        dealColor: j['deal_color'],
+        coAssignees: j['co_assignees'],
+      );
+}
+
 // ── Employee Wise Report Page ───────────────────────────────────────────────
 class EmployeeWiseReportPage extends StatefulWidget {
   final String username;
@@ -246,6 +320,13 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
           final attendance = item as _Attendance;
           return attendance.date.contains(_searchQuery) ||
               attendance.totalWorked.contains(_searchQuery);
+        } else if (_selectedStyle == StyleOption.leads) {
+          final lead = item as _LeadTask;
+          return lead.enquiryNumber.contains(_searchQuery) ||
+              lead.customerName.toLowerCase().contains(_searchQuery) ||
+              lead.phoneNumber.contains(_searchQuery) ||
+              lead.title.toLowerCase().contains(_searchQuery) ||
+              lead.enquiry.toLowerCase().contains(_searchQuery);
         }
         return false;
       }).toList();
@@ -275,7 +356,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
       context: context,
       initialDate: initial,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      lastDate: DateTime.now(),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(
@@ -389,6 +470,8 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
           _all = list.map((e) => _LeaveApplication.fromJson(e)).toList();
         } else if (_selectedStyle == StyleOption.attendance) {
           _all = list.map((e) => _Attendance.fromJson(e)).toList();
+        } else if (_selectedStyle == StyleOption.leads) {
+          _all = list.map((e) => _LeadTask.fromJson(e)).toList();
         }
         
         _totalCount = data['total'] as int? ?? _all.length;
@@ -439,7 +522,6 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
         for (int i = 0; i < _filtered.length; i++) {
           final e = _filtered[i] as _CompletedTask;
           String toDo = e.toDo;
-          if (toDo.length > 40) toDo = toDo.substring(0, 37) + '...';
           tableData.add([
             (i + 1).toString(),
             e.ticketNumber,
@@ -458,7 +540,6 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
         for (int i = 0; i < _filtered.length; i++) {
           final e = _filtered[i] as _PendingWork;
           String toDo = e.toDo;
-          if (toDo.length > 50) toDo = toDo.substring(0, 47) + '...';
           tableData.add([
             (i + 1).toString(),
             e.ticketNumber,
@@ -475,7 +556,6 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
         for (int i = 0; i < _filtered.length; i++) {
           final e = _filtered[i] as _LeaveApplication;
           String reason = e.reason;
-          if (reason.length > 50) reason = reason.substring(0, 47) + '...';
           tableData.add([
             (i + 1).toString(),
             _fmtDate(e.absenceFrom),
@@ -496,7 +576,6 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
             final outTime = s['out_time'] ?? '--:--:--';
             return '$inTime - $outTime';
           }).join(', ');
-          if (sessionsStr.length > 60) sessionsStr = sessionsStr.substring(0, 57) + '...';
           tableData.add([
             (i + 1).toString(),
             _fmtDate(e.date),
@@ -504,11 +583,32 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
             sessionsStr,
           ]);
         }
+      } else if (_selectedStyle == StyleOption.leads) {
+        tableData = [
+          ['S.No', 'Enq No', 'Customer', 'Phone', 'Title', 'Added', 'Last FU', 'Status', 'Enquiry'],
+        ];
+        for (int i = 0; i < _filtered.length; i++) {
+          final e = _filtered[i] as _LeadTask;
+          String enquiry = e.enquiry;
+          String title = e.title;
+          
+          tableData.add([
+            (i + 1).toString(),
+            e.enquiryNumber,
+            e.customerName,
+            e.phoneNumber,
+            title,
+            _fmtDate(e.addedDate),
+            _fmtDate(e.lastFollowupDate),
+            e.leadStatus.toUpperCase(),
+            enquiry,
+          ]);
+        }
       }
 
       pdf.addPage(
         pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
+          pageFormat: PdfPageFormat.a4.landscape,
           margin: const pw.EdgeInsets.all(20),
           build: (pw.Context context) {
             return [
@@ -603,6 +703,8 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
         headers = ['S.NO', 'Absence From', 'Absence Through', 'Type of Absence', 'Reason', 'Status'];
       } else if (_selectedStyle == StyleOption.attendance) {
         headers = ['S.NO', 'Date', 'Total Worked', 'Sessions'];
+      } else if (_selectedStyle == StyleOption.leads) {
+        headers = ['S.NO', 'Enq No', 'Customer Name', 'Phone Number', 'Title', 'Added Date', 'Last FU Date', 'Status', 'Enquiry'];
       }
 
       final headerStyle = CellStyle(
@@ -673,6 +775,19 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
             e.totalWorked,
             sessionsStr,
           ];
+        } else if (_selectedStyle == StyleOption.leads) {
+          final e = _filtered[i] as _LeadTask;
+          rowData = [
+            (i + 1).toString(),
+            e.enquiryNumber,
+            e.customerName,
+            e.phoneNumber,
+            e.title,
+            _fmtDate(e.addedDate),
+            _fmtDate(e.lastFollowupDate),
+            e.leadStatus.toUpperCase(),
+            e.enquiry,
+          ];
         }
 
         final evenBg = ExcelColor.fromHexString('#F0F4FF');
@@ -738,7 +853,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         return Container(
-          height: 40,
+          height: 34,
           decoration: BoxDecoration(
             color: AppColors.background,
             borderRadius: BorderRadius.circular(9),
@@ -789,7 +904,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
                         )
                       : null,
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
               );
             },
@@ -891,7 +1006,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
   // ── Style Dropdown ─────────────────────────────────────────────────────────
   Widget _styleDropdown() {
     return Container(
-      height: 40,
+      height: 34,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: AppColors.background,
@@ -984,7 +1099,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
                     _buildSearchBar(),
 
                   if (_hasFetched && !_isLoading && _errorMessage == null)
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 7),
 
                   if (_hasFetched && !_isLoading && _errorMessage == null)
                     Row(
@@ -1008,7 +1123,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
                     ),
 
                   if (_hasFetched && !_isLoading && _errorMessage == null)
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 7),
 
                   if (!_hasFetched)
                     _buildIdleState()
@@ -1102,7 +1217,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
 
   Widget _buildFilterCard(bool isTablet) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -1172,16 +1287,16 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+      const SizedBox(height: 7),
           const Divider(height: 1, color: AppColors.borderLight),
-          const SizedBox(height: 12),
+      const SizedBox(height: 7),
 
           _filterLabel(
             label: 'Employee',
             child: _employeeSearchField(),
           ),
 
-          const SizedBox(height: 12),
+      const SizedBox(height: 7),
 
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -1215,7 +1330,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
             ],
           ),
 
-          const SizedBox(height: 12),
+      const SizedBox(height: 7),
 
           Align(
             alignment: Alignment.centerRight,
@@ -1262,7 +1377,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
                 fontSize: 10.5,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.3)),
-        const SizedBox(height: 5),
+        const SizedBox(height: 2),
         child,
       ],
     );
@@ -1273,7 +1388,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
     return GestureDetector(
       onTap: () => _pickDate(isFrom),
       child: Container(
-        height: 40,
+        height: 34,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: AppColors.background,
@@ -1297,7 +1412,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
 
   Widget _buildSearchBar() {
     return Container(
-      height: 44,
+      height: 38,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(11),
@@ -1335,6 +1450,8 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
       return 'Search by type, reason, status...';
     } else if (_selectedStyle == StyleOption.attendance) {
       return 'Search by date, total worked...';
+    } else if (_selectedStyle == StyleOption.leads) {
+      return 'Search by enq no, customer, phone, title, enquiry...';
     }
     return 'Search...';
   }
@@ -1358,7 +1475,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
       }
 
       return Container(
-        padding: const EdgeInsets.fromLTRB(13, 11, 13, 12),
+        padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1405,7 +1522,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 7),
             Text(
               e.toDo,
               style: const TextStyle(
@@ -1417,7 +1534,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 7),
             const Divider(height: 1, color: AppColors.borderLight),
             const SizedBox(height: 9),
             Wrap(
@@ -1481,7 +1598,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
       Color statusColor = e.status.toLowerCase() == 'pending' ? Colors.orange : AppColors.textSecondary;
 
       return Container(
-        padding: const EdgeInsets.fromLTRB(13, 11, 13, 12),
+        padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1528,7 +1645,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 7),
             Text(
               e.toDo,
               style: const TextStyle(
@@ -1540,7 +1657,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 7),
             const Divider(height: 1, color: AppColors.borderLight),
             const SizedBox(height: 9),
             Wrap(
@@ -1592,7 +1709,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
       }
 
       return Container(
-        padding: const EdgeInsets.fromLTRB(13, 11, 13, 12),
+        padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1639,7 +1756,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 7),
             Text(
               e.reason,
               style: const TextStyle(
@@ -1651,7 +1768,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 7),
             const Divider(height: 1, color: AppColors.borderLight),
             const SizedBox(height: 9),
             Wrap(
@@ -1689,7 +1806,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
       final e = item as _Attendance;
       
       return Container(
-        padding: const EdgeInsets.fromLTRB(13, 11, 13, 12),
+        padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1734,7 +1851,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 7),
             Column(
               children: e.sessions.map((session) {
                 final inTime = session['in_time'] ?? '--:--:--';
@@ -1768,9 +1885,222 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
           ],
         ),
       );
+    } else if (_selectedStyle == StyleOption.leads) {
+      return _leadCard(item as _LeadTask);
     }
     
     return const SizedBox.shrink();
+  }
+
+  Widget _leadCard(_LeadTask e) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LeadViewPage(
+                        enquiryId: e.enquiryId,
+                        enquiryNumber: e.enquiryNumber,
+                        dealName: e.currentDeal ?? '',
+                        dealColor: e.dealColor ?? '',
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '#${e.enquiryNumber}',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: (e.leadStatus.toLowerCase() == 'active' ? Colors.green : Colors.orange).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  e.leadStatus.toUpperCase(),
+                  style: TextStyle(
+                    color: e.leadStatus.toLowerCase() == 'active' ? Colors.green : Colors.orange,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 7),
+          Text(
+            e.customerName,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(Icons.phone_rounded, size: 12, color: AppColors.textSecondary),
+              const SizedBox(width: 4),
+              Text(
+                e.phoneNumber,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            e.title,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Divider(height: 1, color: AppColors.borderLight),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.calendar_today_rounded,
+                            size: 11, color: AppColors.textMuted),
+                        const SizedBox(width: 3),
+                        Text('Added: ${_fmtDate(e.addedDate)}',
+                            style: const TextStyle(
+                                color: AppColors.textSecondary, fontSize: 11)),
+                      ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.history_rounded,
+                            size: 11, color: AppColors.textMuted),
+                        const SizedBox(width: 3),
+                        Text('Last FU: ${_fmtDate(e.lastFollowupDate)}',
+                            style: const TextStyle(
+                                color: AppColors.textSecondary, fontSize: 11)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => _showLeadDetails(e),
+                icon: const Icon(Icons.visibility_outlined, size: 18, color: AppColors.primary),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                tooltip: 'View Details',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLeadDetails(_LeadTask e) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, color: AppColors.primary),
+            const SizedBox(width: 8),
+            const Text('Lead Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Spacer(),
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.close_rounded, size: 20),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _detailItem('Title', e.title),
+              _detailItem('Enquiry', e.enquiry),
+              _detailItem('City', e.city.isEmpty ? '-' : e.city),
+              _detailItem('Added By', e.addedBy),
+              _detailItem('Assigned Date', _fmtDate(e.assignedDate)),
+              _detailItem('Lead Status', e.leadStatus.capitalize()),
+              _detailItem('Total Follow-ups', e.totalFollowups.toString()),
+              _detailItem('Completed Follow-ups', e.completedFollowups.toString()),
+              _detailItem('Pending Follow-ups', e.pendingFollowups.toString()),
+              _detailItem('Last Follow-up Date', _fmtDate(e.lastFollowupDate)),
+              _detailItem('Last Follow-up Status', e.lastFollowupStatus ?? '-'),
+              _detailItem('Last Follow-up Note', e.lastFollowupNote ?? '-'),
+              _detailItem('Current Deal', e.currentDeal ?? 'N/A'),
+              _detailItem('Co-assignees', e.coAssignees ?? '-'),
+              _detailItem('Phone Number', e.phoneNumber),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _detailItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 2),
+          Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
   }
 
   Widget _buildIdleState() {
@@ -1816,7 +2146,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
 
   Widget _skeletonCard() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(13, 11, 13, 12),
+      padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1836,7 +2166,7 @@ class _EmployeeWiseReportPageState extends State<EmployeeWiseReportPage> {
           _shimmer(width: double.infinity, height: 32, radius: 4),
           const SizedBox(height: 12),
           _shimmer(width: double.infinity, height: 1, radius: 1),
-          const SizedBox(height: 10),
+          const SizedBox(height: 7),
           Wrap(
             spacing: 14,
             children: [

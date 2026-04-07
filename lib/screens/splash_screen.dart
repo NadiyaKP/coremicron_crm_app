@@ -153,49 +153,30 @@ class _SplashScreenState extends State<SplashScreen>
                   opacity: _logoFade,
                   child: ScaleTransition(
                     scale: _logoScale,
-                    child: Container(
+                    child: Image.asset(
+                      'assets/images/cm_logo1.png',
                       width: isTablet ? 88 : 72,
                       height: isTablet ? 88 : 72,
-                      decoration: AppDecorations.logoBox(isTablet),
-                      child: Icon(
-                        Icons.layers_rounded,
-                        color: Colors.white,
-                        size: isTablet ? 44 : 36,
-                      ),
+                      fit: BoxFit.contain,
                     ),
                   ),
                 ),
 
                 SizedBox(height: isTablet ? 24 : 20),
 
-                // Brand name
-                FadeTransition(
-                  opacity: _textFade,
-                  child: RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'Core',
-                          style: TextStyle(
-                            color: const Color(0xFF0A0F1E),
-                            fontSize: isTablet ? 32 : 26,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        TextSpan(
-                          text: 'micron',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: isTablet ? 32 : 26,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                      ],
+                  // Brand name
+                  FadeTransition(
+                    opacity: _textFade,
+                    child: Text(
+                      'CRM System',
+                      style: TextStyle(
+                        color: const Color(0xFF0A0F1E),
+                        fontSize: isTablet ? 32 : 26,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                   ),
-                ),
 
                 SizedBox(height: isTablet ? 10 : 8),
 

@@ -74,23 +74,23 @@ class ReportSummary {
   final int followupsTotal, followupsPending, followupsCompleted, followupsOverdue;
 
   ReportSummary.fromJson(Map<String, dynamic> j)
-      : leadsTotal         = j['leads']['total'],
-        leadsActive        = j['leads']['active'],
-        leadsRejected      = j['leads']['rejected'],
-        ticketsTotal       = j['tickets']['total'],
-        ticketsOpen        = j['tickets']['open'],
-        ticketsClosed      = j['tickets']['closed'],
-        jobsTotal          = j['jobs']['total'],
-        jobsPending        = j['jobs']['pending'],
-        jobsCompleted      = j['jobs']['completed'],
-        customersTotal     = j['customers']['total'],
-        customersActive    = j['customers']['active'],
-        customersInactive  = j['customers']['inactive'],
-        employees          = j['employees'],
-        followupsTotal     = j['followups']['total'],
-        followupsPending   = j['followups']['pending'],
-        followupsCompleted = j['followups']['completed'],
-        followupsOverdue   = j['followups']['overdue'];
+      : leadsTotal         = (j['leads']?['total'] as num?)?.toInt() ?? 0,
+        leadsActive        = (j['leads']?['active'] as num?)?.toInt() ?? 0,
+        leadsRejected      = (j['leads']?['rejected'] as num?)?.toInt() ?? 0,
+        ticketsTotal       = (j['tickets']?['total'] as num?)?.toInt() ?? 0,
+        ticketsOpen        = (j['tickets']?['open'] as num?)?.toInt() ?? 0,
+        ticketsClosed      = (j['tickets']?['closed'] as num?)?.toInt() ?? 0,
+        jobsTotal          = (j['jobs']?['total'] as num?)?.toInt() ?? 0,
+        jobsPending        = (j['jobs']?['pending'] as num?)?.toInt() ?? 0,
+        jobsCompleted      = (j['jobs']?['completed'] as num?)?.toInt() ?? 0,
+        customersTotal     = (j['customers']?['total'] as num?)?.toInt() ?? 0,
+        customersActive    = (j['customers']?['active'] as num?)?.toInt() ?? 0,
+        customersInactive  = (j['customers']?['inactive'] as num?)?.toInt() ?? 0,
+        employees          = (j['employees'] as num?)?.toInt() ?? 0,
+        followupsTotal     = (j['followups']?['total'] as num?)?.toInt() ?? 0,
+        followupsPending   = (j['followups']?['pending'] as num?)?.toInt() ?? 0,
+        followupsCompleted = (j['followups']?['completed'] as num?)?.toInt() ?? 0,
+        followupsOverdue   = (j['followups']?['overdue'] as num?)?.toInt() ?? 0;
 }
 
 class EmployeePerformance {
@@ -100,15 +100,15 @@ class EmployeePerformance {
   final double completionScore;
 
   EmployeePerformance.fromJson(Map<String, dynamic> j)
-      : id                 = j['employee_id'],
-        name               = j['employee_name'],
-        jobsAssigned       = j['jobs_assigned'],
-        jobsCompleted      = j['jobs_completed'],
-        jobsVerified       = j['jobs_verified'],
-        jobsPending        = j['jobs_pending'],
-        followupsCompleted = j['followups_completed'],
-        followupsPending   = j['followups_pending'],
-        completionScore    = (j['completion_score'] as num).toDouble();
+      : id                 = j['employee_id']?.toString() ?? '',
+        name               = j['employee_name']?.toString() ?? '',
+        jobsAssigned       = (j['jobs_assigned'] as num?)?.toInt() ?? 0,
+        jobsCompleted      = (j['jobs_completed'] as num?)?.toInt() ?? 0,
+        jobsVerified       = (j['jobs_verified'] as num?)?.toInt() ?? 0,
+        jobsPending        = (j['jobs_pending'] as num?)?.toInt() ?? 0,
+        followupsCompleted = (j['followups_completed'] as num?)?.toInt() ?? 0,
+        followupsPending   = (j['followups_pending'] as num?)?.toInt() ?? 0,
+        completionScore    = (j['completion_score'] as num?)?.toDouble() ?? 0.0;
 }
 
 class Lead {
@@ -116,17 +116,17 @@ class Lead {
   final String? lastFollowupDate, lastFollowupStatus, currentDeal;
 
   Lead.fromJson(Map<String, dynamic> j)
-      : id                 = j['enquiry_id'],
-        number             = j['enquiry_number'],
-        title              = j['title'],
-        customerName       = j['customer_name'],
-        phone              = j['phone_number'],
-        addedDate          = j['added_date'],
-        status             = j['status'],
-        assignedTo         = j['assigned_to'],
-        lastFollowupDate   = j['last_followup_date'],
-        lastFollowupStatus = j['last_followup_status'],
-        currentDeal        = j['current_deal'];
+      : id                 = j['enquiry_id']?.toString() ?? '',
+        number             = j['enquiry_number']?.toString() ?? '',
+        title              = j['title']?.toString() ?? '',
+        customerName       = j['customer_name']?.toString() ?? '',
+        phone              = j['phone_number']?.toString() ?? '',
+        addedDate          = j['added_date']?.toString() ?? '',
+        status             = j['status']?.toString() ?? '',
+        assignedTo         = j['assigned_to']?.toString() ?? '',
+        lastFollowupDate   = j['last_followup_date']?.toString(),
+        lastFollowupStatus = j['last_followup_status']?.toString(),
+        currentDeal        = j['current_deal']?.toString();
 }
 
 class Ticket {
@@ -134,20 +134,20 @@ class Ticket {
   final int totalJobs, completedJobs, pendingJobs, verifiedJobs;
 
   Ticket.fromJson(Map<String, dynamic> j)
-      : id           = j['ticket_id'],
-        number       = j['ticket_number'],
-        type         = j['type_of_tickets'],
-        title        = j['title'],
-        priority     = j['priority'] ?? '',
-        status       = j['status'],
-        customerName = j['customer_name'],
-        addedDate    = j['added_date'],
-        raisedBy     = j['raised_by'],
-        taskHandler  = j['task_handler'],
-        totalJobs    = int.tryParse(j['total_jobs'].toString()) ?? 0,
-        completedJobs= int.tryParse(j['completed_jobs'].toString()) ?? 0,
-        pendingJobs  = int.tryParse(j['pending_jobs'].toString()) ?? 0,
-        verifiedJobs = int.tryParse(j['verified_jobs'].toString()) ?? 0;
+      : id           = j['ticket_id']?.toString() ?? '',
+        number       = j['ticket_number']?.toString() ?? '',
+        type         = j['type_of_tickets']?.toString() ?? '',
+        title        = j['title']?.toString() ?? '',
+        priority     = j['priority']?.toString() ?? '',
+        status       = j['status']?.toString() ?? '',
+        customerName = j['customer_name']?.toString() ?? '',
+        addedDate    = j['added_date']?.toString() ?? '',
+        raisedBy     = j['raised_by']?.toString() ?? '',
+        taskHandler  = j['task_handler']?.toString() ?? '',
+        totalJobs    = int.tryParse(j['total_jobs']?.toString() ?? '0') ?? 0,
+        completedJobs= int.tryParse(j['completed_jobs']?.toString() ?? '0') ?? 0,
+        pendingJobs  = int.tryParse(j['pending_jobs']?.toString() ?? '0') ?? 0,
+        verifiedJobs = int.tryParse(j['verified_jobs']?.toString() ?? '0') ?? 0;
 }
 
 class Customer {
@@ -157,14 +157,14 @@ class Customer {
   final int? daysSinceActivity;
 
   Customer.fromJson(Map<String, dynamic> j)
-      : id               = j['customer_id'],
-        name             = j['customer_name'],
-        phone            = j['phone_number'],
-        email            = j['email'],
-        lastActivityDate = j['last_activity_date'],
-        totalEnquiries   = int.tryParse(j['total_enquiries'].toString()) ?? 0,
-        totalFollowups   = int.tryParse(j['total_followups'].toString()) ?? 0,
-        daysSinceActivity= j['days_since_activity'];
+      : id               = j['customer_id']?.toString() ?? '',
+        name             = j['customer_name']?.toString() ?? '',
+        phone            = j['phone_number']?.toString() ?? '',
+        email            = j['email']?.toString(),
+        lastActivityDate = j['last_activity_date']?.toString(),
+        totalEnquiries   = int.tryParse(j['total_enquiries']?.toString() ?? '0') ?? 0,
+        totalFollowups   = int.tryParse(j['total_followups']?.toString() ?? '0') ?? 0,
+        daysSinceActivity= (j['days_since_activity'] as num?)?.toInt();
 }
 
 class OverdueFollowup {
@@ -172,15 +172,15 @@ class OverdueFollowup {
   final int daysOverdue;
 
   OverdueFollowup.fromJson(Map<String, dynamic> j)
-      : comid         = j['comid'],
-        followUp      = j['follow_up'],
-        notes         = j['notes'],
-        enquiryNumber = j['enquiry_number'],
-        enquiryTitle  = j['enquiry_title'],
-        customerName  = j['customer_name'],
-        phone         = j['phone_number'],
-        assignedTo    = j['assigned_to'],
-        daysOverdue   = int.tryParse(j['days_overdue'].toString()) ?? 0;
+      : comid         = j['comid']?.toString() ?? '',
+        followUp      = j['follow_up']?.toString() ?? '',
+        notes         = j['notes']?.toString() ?? '',
+        enquiryNumber = j['enquiry_number']?.toString() ?? '',
+        enquiryTitle  = j['enquiry_title']?.toString() ?? '',
+        customerName  = j['customer_name']?.toString() ?? '',
+        phone         = j['phone_number']?.toString() ?? '',
+        assignedTo    = j['assigned_to']?.toString() ?? '',
+        daysOverdue   = int.tryParse(j['days_overdue']?.toString() ?? '0') ?? 0;
 }
 
 class LeaveSummary {
@@ -188,12 +188,12 @@ class LeaveSummary {
   final int totalApplications, approved, rejected, pending;
 
   LeaveSummary.fromJson(Map<String, dynamic> j)
-      : employeeId        = j['employee_id'],
-        employeeName      = j['employee_name'],
-        totalApplications = int.tryParse(j['total_applications'].toString()) ?? 0,
-        approved          = int.tryParse(j['approved'].toString()) ?? 0,
-        rejected          = int.tryParse(j['rejected'].toString()) ?? 0,
-        pending           = int.tryParse(j['pending'].toString()) ?? 0;
+      : employeeId        = j['employee_id']?.toString() ?? '',
+        employeeName      = j['employee_name']?.toString() ?? '',
+        totalApplications = int.tryParse(j['total_applications']?.toString() ?? '0') ?? 0,
+        approved          = int.tryParse(j['approved']?.toString() ?? '0') ?? 0,
+        rejected          = int.tryParse(j['rejected']?.toString() ?? '0') ?? 0,
+        pending           = int.tryParse(j['pending']?.toString() ?? '0') ?? 0;
 }
 
 class ReportData {
@@ -208,15 +208,15 @@ class ReportData {
   final List<LeaveSummary> leaveSummary;
 
   ReportData.fromJson(Map<String, dynamic> j)
-      : generatedAt         = j['generated_at'],
-        summary             = ReportSummary.fromJson(j['summary']),
-        employeePerformance = (j['employee_performance'] as List).map((e) => EmployeePerformance.fromJson(e)).toList(),
-        leads               = (j['leads'] as List).map((e) => Lead.fromJson(e)).toList(),
-        tickets             = (j['tickets'] as List).map((e) => Ticket.fromJson(e)).toList(),
-        activeCustomers     = (j['active_customers'] as List).map((e) => Customer.fromJson(e)).toList(),
-        inactiveCustomers   = (j['inactive_customers'] as List).map((e) => Customer.fromJson(e)).toList(),
-        overdueFollowups    = (j['overdue_followups'] as List).map((e) => OverdueFollowup.fromJson(e)).toList(),
-        leaveSummary        = (j['leave_summary'] as List).map((e) => LeaveSummary.fromJson(e)).toList();
+      : generatedAt         = j['generated_at']?.toString() ?? '',
+        summary             = ReportSummary.fromJson(j['summary'] ?? {}),
+        employeePerformance = (j['employee_performance'] as List? ?? []).map((e) => EmployeePerformance.fromJson(e)).toList(),
+        leads               = (j['leads'] as List? ?? []).map((e) => Lead.fromJson(e)).toList(),
+        tickets             = (j['tickets'] as List? ?? []).map((e) => Ticket.fromJson(e)).toList(),
+        activeCustomers     = (j['active_customers'] as List? ?? []).map((e) => Customer.fromJson(e)).toList(),
+        inactiveCustomers   = (j['inactive_customers'] as List? ?? []).map((e) => Customer.fromJson(e)).toList(),
+        overdueFollowups    = (j['overdue_followups'] as List? ?? []).map((e) => OverdueFollowup.fromJson(e)).toList(),
+        leaveSummary        = (j['leave_summary'] as List? ?? []).map((e) => LeaveSummary.fromJson(e)).toList();
 }
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
@@ -268,7 +268,20 @@ class _AnalysisReportPageState extends State<AnalysisReportPage> {
     final to   = '${_toDate.year}-${_toDate.month.toString().padLeft(2,'0')}-${_toDate.day.toString().padLeft(2,'0')}';
     try {
       final url = Uri.parse('${ApiService.baseUrl}/api/user/report.php?from_date=$from&to_date=$to');
+      
+      debugPrint('─────────────────────────────────────────');
+      debugPrint('📤  [ANALYSIS REPORT] Request');
+      debugPrint('   🌐  URL : $url');
+      debugPrint('─────────────────────────────────────────');
+
       final res = await ApiService.get(url).timeout(const Duration(seconds: 15));
+
+      debugPrint('─────────────────────────────────────────');
+      debugPrint('📥  [ANALYSIS REPORT] Response');
+      debugPrint('   🔢  Status : ${res.statusCode}');
+      debugPrint('   📄  Body   : ${res.body}');
+      debugPrint('─────────────────────────────────────────');
+
       if (res.statusCode == 200) {
         final json = jsonDecode(res.body);
         setState(() { _data = ReportData.fromJson(json); _loading = false; });
@@ -311,6 +324,19 @@ class _AnalysisReportPageState extends State<AnalysisReportPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 34, height: 34,
+                decoration: BoxDecoration(
+                  color: _C.background,
+                  borderRadius: BorderRadius.circular(9),
+                  border: Border.all(color: _C.border, width: 1.2),
+                ),
+                child: const Icon(Icons.arrow_back_ios_new_rounded, color: _C.textPrimary, size: 15),
+              ),
+            ),
+            const SizedBox(width: 12),
             Container(
               width: 34, height: 34,
               decoration: BoxDecoration(
@@ -326,9 +352,9 @@ class _AnalysisReportPageState extends State<AnalysisReportPage> {
           ]),
           const SizedBox(height: 12),
           Row(children: [
-            Expanded(child: _DateField(label: 'To',   date: _toDate,   onTap: () => _pickDate(false))),
-            const SizedBox(width: 8),
             Expanded(child: _DateField(label: 'From', date: _fromDate, onTap: () => _pickDate(true))),
+            const SizedBox(width: 8),
+            Expanded(child: _DateField(label: 'To',   date: _toDate,   onTap: () => _pickDate(false))),
             const SizedBox(width: 8),
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -437,7 +463,7 @@ class _AnalysisReportPageState extends State<AnalysisReportPage> {
 
       pdf.addPage(
         pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
+          pageFormat: PdfPageFormat.a4.landscape,
           margin: const pw.EdgeInsets.all(32),
           header: (context) => pw.Column(
             children: [
@@ -465,28 +491,28 @@ class _AnalysisReportPageState extends State<AnalysisReportPage> {
             ],
           ),
           build: (context) => [
-            _pwSection('Leads Summary', 
-              ['No.', 'Title', 'Customer', 'Phone', 'Date', 'Assignees', 'Status'],
-              _data!.leads.map((l) => [l.number, l.title, l.customerName, l.phone, l.addedDate, l.assignedTo, l.status]).toList()
+            ..._pwSection('Leads Summary', 
+              ['No.', 'Title', 'Customer', 'Phone', 'Date', 'Assignee', 'Status', 'Deal', 'FU Date', 'FU Status'],
+              _data!.leads.map((l) => [l.number, l.title, l.customerName, l.phone, l.addedDate, l.assignedTo, l.status, l.currentDeal ?? '—', l.lastFollowupDate ?? '—', l.lastFollowupStatus ?? '—']).toList()
             ),
-            _pwSection('Tickets Summary', 
-              ['No.', 'Type', 'Priority', 'Title', 'Customer', 'Handler', 'Status'],
-              _data!.tickets.map((t) => [t.number, t.type, t.priority, t.title, t.customerName, t.taskHandler, t.status]).toList()
+            ..._pwSection('Tickets Summary', 
+              ['No.', 'Type', 'Pri', 'Title', 'Customer', 'Handler', 'Date', 'Jobs (T/D/P/V)'],
+              _data!.tickets.map((t) => [t.number, t.type, t.priority, t.title, t.customerName, t.taskHandler, t.addedDate, '${t.totalJobs}/${t.completedJobs}/${t.pendingJobs}/${t.verifiedJobs}']).toList()
             ),
-            _pwSection('Active Customers', 
-              ['Name', 'Phone', 'Enquiries', 'Followups', 'Last Activity'],
-              _data!.activeCustomers.map((c) => [c.name, c.phone, '${c.totalEnquiries}', '${c.totalFollowups}', c.lastActivityDate ?? '—']).toList()
+            ..._pwSection('Active Customers', 
+              ['Name', 'Phone', 'Email', 'Enq', 'FU', 'Last Activity', 'Days'],
+              _data!.activeCustomers.map((c) => [c.name, c.phone, c.email ?? '—', '${c.totalEnquiries}', '${c.totalFollowups}', c.lastActivityDate ?? '—', '${c.daysSinceActivity ?? '—'}']).toList()
             ),
-            _pwSection('Inactive Customers', 
-              ['Name', 'Phone', 'Enquiries', 'Followups', 'Last Activity'],
-              _data!.inactiveCustomers.map((c) => [c.name, c.phone, '${c.totalEnquiries}', '${c.totalFollowups}', c.lastActivityDate ?? '—']).toList()
+            ..._pwSection('Inactive Customers', 
+              ['Name', 'Phone', 'Email', 'Enq', 'FU', 'Last Activity', 'Days'],
+              _data!.inactiveCustomers.map((c) => [c.name, c.phone, c.email ?? '—', '${c.totalEnquiries}', '${c.totalFollowups}', c.lastActivityDate ?? '—', '${c.daysSinceActivity ?? '—'}']).toList()
             ),
-            _pwSection('Overdue Follow-ups', 
-              ['Enq No.', 'Title', 'Customer', 'Phone', 'Assigned To', 'Overdue'],
-              _data!.overdueFollowups.map((f) => [f.enquiryNumber, f.enquiryTitle, f.customerName, f.phone, f.assignedTo, '${f.daysOverdue} days']).toList()
+            ..._pwSection('Overdue Follow-ups', 
+              ['Enq No.', 'Title', 'Customer', 'Phone', 'Assigned To', 'Notes', 'Overdue'],
+              _data!.overdueFollowups.map((f) => [f.enquiryNumber, f.enquiryTitle, f.customerName, f.phone, f.assignedTo, f.notes, '${f.daysOverdue} days']).toList()
             ),
-            _pwSection('Leave Summary', 
-              ['Employee', 'Total', 'Approved', 'Rejected', 'Pending'],
+            ..._pwSection('Leave Summary', 
+              ['Employee', 'Total', 'Appr', 'Rej', 'Pend'],
               _data!.leaveSummary.map((l) => [l.employeeName, '${l.totalApplications}', '${l.approved}', '${l.rejected}', '${l.pending}']).toList()
             ),
           ],
@@ -501,27 +527,24 @@ class _AnalysisReportPageState extends State<AnalysisReportPage> {
     }
   }
 
-  pw.Widget _pwSection(String title, List<String> headers, List<List<String>> data) {
-    if (data.isEmpty) return pw.SizedBox();
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.SizedBox(height: 15),
-        pw.Text(title.toUpperCase(), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blue700)),
-        pw.SizedBox(height: 6),
-        pw.Table.fromTextArray(
-          headers: headers,
-          data: data.map((row) => row.map((cell) => cell.capitalize()).toList()).toList(),
-          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
-          cellStyle: const pw.TextStyle(fontSize: 7),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-          cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-          columnWidths: {
-            0: const pw.IntrinsicColumnWidth(),
-          },
-        ),
-      ],
-    );
+  List<pw.Widget> _pwSection(String title, List<String> headers, List<List<String>> data) {
+    if (data.isEmpty) return [];
+    return [
+      pw.SizedBox(height: 15),
+      pw.Text(title.toUpperCase(), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue700)),
+      pw.SizedBox(height: 6),
+      pw.Table.fromTextArray(
+        headers: headers,
+        data: data.map((row) => row.map((cell) => cell.capitalize()).toList()).toList(),
+        headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 7),
+        cellStyle: const pw.TextStyle(fontSize: 6.5),
+        headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+        cellPadding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+        columnWidths: {
+          0: const pw.IntrinsicColumnWidth(),
+        },
+      ),
+    ];
   }
 }
 

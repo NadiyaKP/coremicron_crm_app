@@ -376,7 +376,7 @@ class _ReassignLeadPageState extends State<ReassignLeadPage> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'Enquiry #${widget.enquiryNumber}',
+                  '#${widget.enquiryNumber}',
                   style: const TextStyle(
                       color:      AppColors.primary,
                       fontSize:   11.5,

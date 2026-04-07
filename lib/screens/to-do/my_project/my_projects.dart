@@ -10,6 +10,9 @@ import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
 import 'package:coremicron_crm_app/screens/ticket/tickets.dart' show Ticket;
 import 'package:coremicron_crm_app/screens/ticket/assign_ticket.dart';
+import 'package:coremicron_crm_app/screens/ticket/amc_details.dart';
+import 'package:coremicron_crm_app/screens/ticket/ticket_view.dart';
+import 'package:coremicron_crm_app/screens/Registation/customer/contact_list.dart';
 import 'my_project_view.dart';
 
 // ── Ticket Model ───────────────────────────────────────────────────────────
@@ -364,18 +367,29 @@ class _MyProjectsPageState extends State<MyProjectsPage> {
           // ── Top row: ticket badge + date + priority ────────────────────
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color:        AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(6),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TicketViewPage(ticket: t),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color:        AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text('#${t.ticketNumber}',
+                      style: const TextStyle(
+                          color:      AppColors.primary,
+                          fontSize:   11,
+                          fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.underline)),
                 ),
-                child: Text('#${t.ticketNumber}',
-                    style: const TextStyle(
-                        color:      AppColors.primary,
-                        fontSize:   11,
-                        fontWeight: FontWeight.w700)),
               ),
               const SizedBox(width: 6),
               Row(
@@ -437,13 +451,29 @@ class _MyProjectsPageState extends State<MyProjectsPage> {
                   size: 11, color: AppColors.textMuted),
               const SizedBox(width: 3),
               Expanded(
-                child: Text(
-                  t.customerName.capitalize(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color:    AppColors.textSecondary,
-                      fontSize: 12),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ContactListPage(
+                          customerId:   t.customerId,
+                          customerName: t.customerName,
+                          readOnly:     true,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    t.customerName.capitalize(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color:      AppColors.primary,
+                        fontSize:   12,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -461,10 +491,26 @@ class _MyProjectsPageState extends State<MyProjectsPage> {
           const Divider(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 7),
 
-          // ── Bottom row: view first, then assign task ───────────────────
+          // ── Bottom row: view first, then assign task or AMC Details ───────
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              // Ticket type badge
+              if (t.typeOfTickets.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color:        const Color(0xFFF0F0F5),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(t.typeOfTickets,
+                      style: const TextStyle(
+                          color:      AppColors.textLabel,
+                          fontSize:   10.5,
+                          fontWeight: FontWeight.w500)),
+                ),
+              const Spacer(),
               // View
               _actionIcon(
                 icon:    Icons.visibility_outlined,
@@ -477,26 +523,42 @@ class _MyProjectsPageState extends State<MyProjectsPage> {
                       ticketId:     t.ticketId,
                       ticketNumber: t.ticketNumber,
                       title:        t.title,
+                      typeOfTicket: t.typeOfTickets,
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: 6),
-              // Assign Task
-              _actionIcon(
-                icon:    Icons.person_add_outlined,
-                color:   const Color(0xFF6A1B9A),
-                bgColor: const Color(0xFFF3E5F5),
-                onTap:   () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AssignTicketPage(ticket: t),
+              // Conditional Action: Assign Task or AMC Details
+              t.typeOfTickets.toUpperCase() == 'AMC'
+                  ? _actionIcon(
+                      icon:    Icons.list_alt_rounded,
+                      color:   AppColors.primary,
+                      bgColor: AppColors.primaryLight,
+                      onTap:   () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AmcDetailsPage(
+                            ticketId:     t.ticketId,
+                            ticketNumber: t.ticketNumber,
+                          ),
+                        ),
+                      ),
+                    )
+                  : _actionIcon(
+                      icon:    Icons.person_add_outlined,
+                      color:   const Color(0xFF6A1B9A),
+                      bgColor: const Color(0xFFF3E5F5),
+                      onTap:   () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AssignTicketPage(ticket: t),
+                          ),
+                        );
+                        _fetchTickets();
+                      },
                     ),
-                  );
-                  _fetchTickets();
-                },
-              ),
             ],
           ),
             ],

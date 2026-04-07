@@ -9,6 +9,7 @@ import 'package:coremicron_crm_app/screens/login.dart' show kTokenKey;
 import 'package:coremicron_crm_app/screens/home.dart';
 import 'package:coremicron_crm_app/screens/ticket/tickets.dart' show Ticket;
 import 'package:coremicron_crm_app/screens/ticket/ticket_view.dart';
+import 'package:coremicron_crm_app/screens/Registation/customer/contact_list.dart';
 import 'package:coremicron_crm_app/screens/to-do/my_task/tasks_view.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
 
@@ -367,18 +368,22 @@ class _MyTasksPageState extends State<MyTasksPage> {
                           fontSize: 11)),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color:        AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(6),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TicketViewPage(ticket: t),
+                  ),
                 ),
-                child: Text(t.ticketNumber,
-                    style: const TextStyle(
-                        color:      AppColors.primary,
-                        fontSize:   11,
-                        fontWeight: FontWeight.w700)),
+                child: Text(
+                  t.ticketNumber,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
               ),
             ],
           ),
@@ -411,12 +416,28 @@ class _MyTasksPageState extends State<MyTasksPage> {
                   size: 11, color: AppColors.textMuted),
               const SizedBox(width: 3),
               Expanded(
-                child: Text(t.customerName.capitalize(),
+                child: GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ContactListPage(
+                        customerId:   t.customerId,
+                        customerName: t.customerName,
+                        readOnly:     true,
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    t.customerName.capitalize(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        color:    AppColors.textSecondary,
-                        fontSize: 12)),
+                        color:      AppColors.primary,
+                        fontSize:   12,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline),
+                  ),
+                ),
               ),
               const SizedBox(width: 10),
               const Icon(Icons.phone_outlined,
@@ -435,31 +456,32 @@ class _MyTasksPageState extends State<MyTasksPage> {
           Row(
             children: [
               // Priority badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 7, vertical: 3),
-                decoration: BoxDecoration(
-                  color:        priorityBg,
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(
-                      color: priorityClr.withOpacity(0.3), width: 1),
+              if (t.priority.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color:        priorityBg,
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(
+                        color: priorityClr.withOpacity(0.3), width: 1),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.flag_outlined,
+                          size: 10, color: priorityClr),
+                      const SizedBox(width: 3),
+                      Text(t.priority.capitalize(),
+                          style: TextStyle(
+                              color:      priorityClr,
+                              fontSize:   10.5,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.flag_outlined,
-                        size: 10, color: priorityClr),
-                    const SizedBox(width: 3),
-                    Text(t.priority.capitalize(),
-                        style: TextStyle(
-                            color:      priorityClr,
-                            fontSize:   10.5,
-                            fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 6),
+                const SizedBox(width: 6),
+              ],
 
               // Type badge
               if (t.typeOfTickets.isNotEmpty)

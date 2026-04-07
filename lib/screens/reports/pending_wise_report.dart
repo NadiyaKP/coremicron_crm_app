@@ -209,14 +209,6 @@ class _PendingWiseReportPageState extends State<PendingWiseReportPage> {
         String toDo = job.toDo;
         String employeeName = job.employeeName.capitalize();
 
-        // Truncate long text to prevent wrapping
-        if (toDo.length > 60) {
-          toDo = toDo.substring(0, 57) + '...';
-        }
-        if (employeeName.length > 25) {
-          employeeName = employeeName.substring(0, 22) + '...';
-        }
-
         tableData.add([
           (i + 1).toString(),
           job.ticketNumber,
@@ -229,7 +221,7 @@ class _PendingWiseReportPageState extends State<PendingWiseReportPage> {
 
       pdf.addPage(
         pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
+          pageFormat: PdfPageFormat.a4.landscape,
           margin: const pw.EdgeInsets.all(20),
           build: (pw.Context context) {
             return [

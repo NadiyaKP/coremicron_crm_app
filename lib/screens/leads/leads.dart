@@ -886,28 +886,55 @@ class _LeadsPageState extends State<LeadsPage> {
 
               // ── Row 4: Assign To tap button ────────────────────────────
               const SizedBox(height: 6),
-              GestureDetector(
-                onTap: () => _showAssignedEmployeesPopup(
-                    context, l.assignedEmployees),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.badge_outlined,
-                        size: 12, color: AppColors.primary),
-                    const SizedBox(width: 4),
-                    const Text(
-                      'Assign To',
-                      style: TextStyle(
-                          color:      AppColors.primary,
-                          fontSize:   12,
-                          fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(width: 3),
-                    const Icon(Icons.arrow_forward_ios_rounded,
-                        size: 10, color: AppColors.primary),
-                  ],
-                ),
-              ),
+              Builder(builder: (context) {
+                final names = l.assignedEmployees
+                    .split(',')
+                    .map((e) => e.trim())
+                    .where((e) => e.isNotEmpty)
+                    .toList();
+
+                return GestureDetector(
+                  onTap: () => _showAssignedEmployeesPopup(
+                      context, l.assignedEmployees),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.badge_outlined,
+                          size: 12, color: AppColors.primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        names.isEmpty
+                            ? 'Assign To'
+                            : names.first.capitalize(),
+                        style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600),
+                      ),
+                      if (names.length > 1) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '+${names.length - 1}',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(width: 3),
+                      const Icon(Icons.arrow_forward_ios_rounded,
+                          size: 10, color: AppColors.primary),
+                    ],
+                  ),
+                );
+              }),
 
               const SizedBox(height: 8),
               const Divider(height: 1, color: AppColors.borderLight),

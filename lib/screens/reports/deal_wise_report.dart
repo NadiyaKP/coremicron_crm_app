@@ -167,7 +167,7 @@ class _DealWiseReportPageState extends State<DealWiseReportPage> {
       context:     context,
       initialDate: initial,
       firstDate:   DateTime(2020),
-      lastDate:    DateTime(2030),
+      lastDate:    DateTime.now(),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(
@@ -322,16 +322,7 @@ class _DealWiseReportPageState extends State<DealWiseReportPage> {
         String title = e.title.toUpperCase();
         String employeeName = e.employeeName.toUpperCase();
         
-        // Truncate long customer names to prevent wrapping (optional)
-        if (customerName.length > 30) {
-          customerName = customerName.substring(0, 27) + '...';
-        }
-        if (title.length > 25) {
-          title = title.substring(0, 22) + '...';
-        }
-        if (employeeName.length > 20) {
-          employeeName = employeeName.substring(0, 17) + '...';
-        }
+        
         
         tableData.add([
           (i + 1).toString(),
@@ -346,7 +337,7 @@ class _DealWiseReportPageState extends State<DealWiseReportPage> {
 
       pdf.addPage(
         pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
+          pageFormat: PdfPageFormat.a4.landscape,
           margin: const pw.EdgeInsets.all(20),
           build: (pw.Context context) {
             return [

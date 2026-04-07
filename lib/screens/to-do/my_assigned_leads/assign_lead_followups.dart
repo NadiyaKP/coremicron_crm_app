@@ -766,9 +766,7 @@ class _AssignLeadFollowUpPageState extends State<AssignLeadFollowUpPage>
                       letterSpacing: -0.3),
                 ),
                 Text(
-                  widget.title.isNotEmpty
-                      ? '${widget.title} · #${widget.enquiryNumber}'
-                      : '#${widget.enquiryNumber}',
+                  '#${widget.enquiryNumber}',
                   style: const TextStyle(
                       color:    AppColors.textSecondary,
                       fontSize: 12),

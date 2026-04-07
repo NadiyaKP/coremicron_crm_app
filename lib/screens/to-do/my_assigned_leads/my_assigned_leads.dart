@@ -11,6 +11,8 @@ import 'package:coremicron_crm_app/common/string_extensions.dart';
 import 'package:coremicron_crm_app/screens/to-do/my_assigned_leads/assigned_lead_view.dart';
 import 'package:coremicron_crm_app/screens/to-do/my_assigned_leads/assign_lead_followups.dart';
 import 'package:coremicron_crm_app/screens/to-do/my_assigned_leads/reassign_lead.dart';
+import 'package:coremicron_crm_app/screens/leads/lead_view.dart';
+import 'package:coremicron_crm_app/screens/Registation/customer/contact_list.dart';
 
 // ── Assigned Lead Model ────────────────────────────────────────────────────
 class AssignedLead {
@@ -258,7 +260,7 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
                 const Divider(height: 1, color: AppColors.borderLight),
                 const SizedBox(height: 12),
                 _dialogRow(Icons.tag_rounded,
-                    'Enquiry No', l.enquiryNumber),
+                    'Lead No', l.enquiryNumber),
                 const SizedBox(height: 7),
                 _dialogRow(Icons.person_outline_rounded,
                     'Customer', l.customerName.capitalize()),
@@ -629,19 +631,26 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
                           fontSize: 11)),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color:        AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(6),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LeadViewPage(
+                      enquiryId:     l.enquiryId,
+                      enquiryNumber: l.enquiryNumber,
+                      dealName:      l.dealName,
+                      dealColor:     l.dealColor,
+                    ),
+                  ),
                 ),
                 child: Text(
-                  l.enquiryNumber,
+                  '#${l.enquiryNumber}',
                   style: const TextStyle(
-                      color:      AppColors.primary,
-                      fontSize:   11,
-                      fontWeight: FontWeight.w700),
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
             ],
@@ -675,13 +684,27 @@ class _MyAssignedLeadsPageState extends State<MyAssignedLeadsPage> {
                   size: 11, color: AppColors.textMuted),
               const SizedBox(width: 3),
               Expanded(
-                child: Text(
-                  l.customerName.capitalize(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color:    AppColors.textSecondary,
-                      fontSize: 12),
+                child: GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ContactListPage(
+                        customerId:   l.customerId,
+                        customerName: l.customerName,
+                        readOnly:     true,
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    l.customerName.capitalize(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color:      AppColors.primary,
+                        fontSize:   12,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),

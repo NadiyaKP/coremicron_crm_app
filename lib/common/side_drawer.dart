@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:coremicron_crm_app/common/theme.dart';
 import 'package:coremicron_crm_app/screens/Registation/customer/customers.dart';
 import 'package:coremicron_crm_app/screens/Registation/department/departments.dart';
-import 'package:coremicron_crm_app/screens/Registation/team/teams.dart';
 import 'package:coremicron_crm_app/screens/Registation/attendance_machine/attendance_machines.dart';
 import 'package:coremicron_crm_app/screens/Registation/deals/deals.dart';
 import 'package:coremicron_crm_app/screens/Registation/employee/employee.dart';
@@ -28,7 +27,6 @@ import 'package:coremicron_crm_app/screens/reports/leave_application_report.dart
 import 'package:coremicron_crm_app/screens/reports/amc_wise_report.dart';
 import 'package:coremicron_crm_app/screens/reports/analysis_report.dart';
 import 'package:coremicron_crm_app/screens/settings/change_password.dart';
-import 'package:coremicron_crm_app/screens/settings/api_url.dart'; 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:coremicron_crm_app/screens/login.dart';
 import 'package:coremicron_crm_app/common/api_service.dart';
@@ -63,7 +61,6 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
     _DrawerMenuItem(icon: Icons.person_outline_rounded, label: 'Customer'),
     _DrawerMenuItem(icon: Icons.badge_outlined,         label: 'Employee'),
     _DrawerMenuItem(icon: Icons.handshake_outlined,     label: 'Deals'),
-    _DrawerMenuItem(icon: Icons.groups_outlined,        label: 'Teams'),
     _DrawerMenuItem(icon: Icons.fingerprint_rounded,    label: 'Attendance Machines'),
   ];
 
@@ -97,7 +94,6 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
 
   final List<_DrawerMenuItem> _settingsItems = [
     _DrawerMenuItem(icon: Icons.lock_outline_rounded, label: 'Change Password'),
-    _DrawerMenuItem(icon: Icons.link_rounded,         label: 'API URL'),
     _DrawerMenuItem(icon: Icons.logout_rounded,       label: 'Logout'),
   ];
 
@@ -348,13 +344,6 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                     builder: (_) =>
                         CustomersPage(username: widget.username)));
             break;
-          case 'Teams':
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        TeamsPage(username: widget.username)));
-            break;
           case 'Employee':
             Navigator.push(
                 context,
@@ -537,12 +526,6 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                 MaterialPageRoute(
                     builder: (_) => const ChangePasswordPage()));
             break;
-          case 'API URL':
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const ApiUrlPage()));
-            break;
           case 'Logout':
             _handleLogout();
             break;
@@ -613,47 +596,21 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 38, height: 38,
-                decoration: BoxDecoration(
-                  color:        Colors.white.withOpacity(0.20),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                      color: Colors.white.withOpacity(0.25), width: 1),
-                ),
-                child: const Icon(Icons.layers_rounded,
-                    color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 10),
-              RichText(
-                text: const TextSpan(
-                  children: [
-                    TextSpan(
-                      text: 'Core',
-                      style: TextStyle(
-                          color:         Colors.white,
-                          fontSize:      18,
-                          fontWeight:    FontWeight.w800,
-                          letterSpacing: -0.2),
-                    ),
-                    TextSpan(
-                      text: 'micron',
-                      style: TextStyle(
-                          color:         Color(0xFFAAD4FF),
-                          fontSize:      18,
-                          fontWeight:    FontWeight.w800,
-                          letterSpacing: -0.2),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          // ── Logo image (replaces icon + "Coremicron" text) ───────────
+          Center(
+            child: Image.asset(
+              'assets/images/cm_logo.png',
+              height: 48,
+              fit: BoxFit.contain,
+            ),
           ),
-          const SizedBox(height: 18),
+
+          const SizedBox(height: 20),
+
+          // ── User info row ────────────────────────────────────────────
           Row(
             children: [
+              // Person icon avatar (replaces first-letter initial)
               Container(
                 width: 42, height: 42,
                 decoration: BoxDecoration(
@@ -662,16 +619,10 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                   border: Border.all(
                       color: Colors.white.withOpacity(0.30), width: 1.5),
                 ),
-                child: Center(
-                  child: Text(
-                    widget.username.isNotEmpty
-                        ? widget.username[0].toUpperCase()
-                        : 'U',
-                    style: const TextStyle(
-                        color:      Colors.white,
-                        fontSize:   18,
-                        fontWeight: FontWeight.w700),
-                  ),
+                child: const Icon(
+                  Icons.person_rounded,
+                  color: Colors.white,
+                  size: 24,
                 ),
               ),
               const SizedBox(width: 12),

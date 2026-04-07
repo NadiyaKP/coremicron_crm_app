@@ -6,6 +6,7 @@ import 'package:coremicron_crm_app/common/theme.dart';
 import 'package:coremicron_crm_app/screens/home.dart';
 import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
+import 'package:coremicron_crm_app/screens/ticket/ticket_view.dart';
 
 // ── Pending Job Model ──────────────────────────────────────────────────────
 class _PendingJob {
@@ -398,18 +399,34 @@ class _PendingWorksPageState extends State<PendingWorksPage> {
           // ── Top row: ticket badge + priority badge ─────────────────
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color:        AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(6),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TicketViewPage(
+                        ticketId:     job.ticketId,
+                        ticketNumber: job.ticketNumber,
+                        priority:     job.priority,
+                        customerName: job.customerName,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color:        AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text('#${job.ticketNumber}',
+                      style: const TextStyle(
+                          color:      AppColors.primary,
+                          fontSize:   11,
+                          fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.underline)),
                 ),
-                child: Text('#${job.ticketNumber}',
-                    style: const TextStyle(
-                        color:      AppColors.primary,
-                        fontSize:   11,
-                        fontWeight: FontWeight.w700)),
               ),
               const Spacer(),
               Container(

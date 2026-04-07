@@ -248,9 +248,6 @@ class _TasksViewPageState extends State<TasksViewPage> {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ── Build ───────────────────────────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     final size     = MediaQuery.of(context).size;

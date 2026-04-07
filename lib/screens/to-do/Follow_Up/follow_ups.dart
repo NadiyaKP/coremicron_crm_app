@@ -10,6 +10,7 @@ import 'package:coremicron_crm_app/common/pagination.dart';
 import 'package:coremicron_crm_app/common/string_extensions.dart';
 import 'package:coremicron_crm_app/screens/to-do/my_assigned_leads/assigned_lead_view.dart';
 import 'package:coremicron_crm_app/screens/to-do/my_assigned_leads/assign_lead_followups.dart';
+import 'package:coremicron_crm_app/screens/leads/lead_view.dart';
 import 'package:coremicron_crm_app/screens/Registation/customer/contact_list.dart';
 
 // ── Follow-Up Model ────────────────────────────────────────────────────────
@@ -147,11 +148,11 @@ class _FollowUpsPageState extends State<FollowUpsPage> {
   }
 
   // ── Mark complete ──────────────────────────────────────────────────────────
-  Future<void> _markComplete(String comId) async {
+  Future<void> _markComplete(String comId, String notes) async {
     try {
       final url  = Uri.parse(
           '${ApiService.baseUrl}/api/leads/followup_complete.php');
-      final body = {'comid': comId};
+      final body = {'comid': comId, 'notes': notes};
 
       final res = await ApiService.post(url, body: jsonEncode(body))
           .timeout(const Duration(seconds: 15));
@@ -434,19 +435,25 @@ class _FollowUpsPageState extends State<FollowUpsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color:        AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(6),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LeadViewPage(
+                      enquiryId:     f.enquiryId,
+                      enquiryNumber: f.enquiryNumber,
+                      dealName:      f.dealsName,
+                      dealColor:     f.dealColor,
+                    ),
+                  ),
                 ),
                 child: Text(
                   '#${f.enquiryNumber}',
                   style: const TextStyle(
                       color:      AppColors.primary,
-                      fontSize:   11,
-                      fontWeight: FontWeight.w700),
+                      fontSize:   12,
+                      fontWeight: FontWeight.w700,
+                      decoration: TextDecoration.underline),
                 ),
               ),
               Container(
@@ -580,8 +587,8 @@ class _FollowUpsPageState extends State<FollowUpsPage> {
                   ),
                 ),
               ),
-              // Tick — only when not completed
-              if (!isCompleted) ...[
+              // Tick icon - hide if completed
+              if (f.followupStatus.toLowerCase() != 'completed') ...[
                 const SizedBox(width: 6),
                 _actionIcon(
                   icon:    Icons.check_circle_outline_rounded,
@@ -616,6 +623,8 @@ class _FollowUpsPageState extends State<FollowUpsPage> {
 
   // ── Complete confirm dialog ────────────────────────────────────────────────
   void _showCompleteConfirm(_FollowUp f) {
+    final notesCtrl = TextEditingController();
+
     showDialog(
       context: context,
       builder: (dCtx) => AlertDialog(
@@ -625,7 +634,7 @@ class _FollowUpsPageState extends State<FollowUpsPage> {
         contentPadding: EdgeInsets.zero,
         insetPadding:
             const EdgeInsets.symmetric(horizontal: 32, vertical: 60),
-        content: Padding(
+        content: SingleChildScrollView(
           padding: const EdgeInsets.all(22),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -646,46 +655,57 @@ class _FollowUpsPageState extends State<FollowUpsPage> {
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
-                    child: Text('Mark as Completed',
+                    child: Text('Complete Follow-Up',
                         style: TextStyle(
                             color:      AppColors.textPrimary,
-                            fontSize:   14.5,
+                            fontSize:   15,
                             fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
               const Text(
-                'Are you sure you want to mark this follow-up as completed?',
+                'Are you sure you want to mark this follow-up as complete?',
                 style: TextStyle(
                     color:    AppColors.textSecondary,
                     fontSize: 13,
                     height:   1.5),
               ),
-              const SizedBox(height: 10),
-              const Divider(height: 1, color: AppColors.borderLight),
-              const SizedBox(height: 10),
-              // Enquiry number only
-              Row(
-                  children: [
-                    const Icon(Icons.tag_rounded,
-                        size: 13, color: AppColors.textMuted),
-                    const SizedBox(width: 5),
-                    const Text('Enquiry No  ',
-                        style: TextStyle(
-                            color:      AppColors.textMuted,
-                            fontSize:   12,
-                            fontWeight: FontWeight.w500)),
-                    Text(
-                      f.enquiryNumber,
-                      style: const TextStyle(
-                          color:      AppColors.primary,
-                          fontSize:   12.5,
-                          fontWeight: FontWeight.w700),
-                    ),
-                  ],
+              const SizedBox(height: 16),
+              // Notes field
+              const Text('Completion Notes',
+                  style: TextStyle(
+                      color:      AppColors.textLabel,
+                      fontSize:   12,
+                      fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              Container(
+                decoration: BoxDecoration(
+                  color:        Colors.white,
+                  borderRadius: BorderRadius.circular(11),
+                  border: Border.all(
+                      color: AppColors.border, width: 1.2),
                 ),
-              const SizedBox(height: 18),
+                child: TextField(
+                  controller:  notesCtrl,
+                  maxLines:    3,
+                  minLines:    2,
+                  cursorColor: AppColors.primary,
+                  style: const TextStyle(
+                      color:    AppColors.textPrimary,
+                      fontSize: 13.5),
+                  decoration: const InputDecoration(
+                    hintText:  'Enter completion notes…',
+                    hintStyle: TextStyle(
+                        color:    AppColors.textHint,
+                        fontSize: 13),
+                    border:         InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
               // Buttons
               Row(
                 children: [
@@ -712,7 +732,7 @@ class _FollowUpsPageState extends State<FollowUpsPage> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(dCtx);
-                        _markComplete(f.comId);
+                        _markComplete(f.comId, notesCtrl.text.trim());
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2E7D32),
@@ -722,11 +742,11 @@ class _FollowUpsPageState extends State<FollowUpsPage> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text('Complete',
+                      child: const Text('Complete Follow-Up',
                           style: TextStyle(
                               color:      Colors.white,
                               fontWeight: FontWeight.w700,
-                              fontSize:   13.5)),
+                              fontSize:   12.5)),
                     ),
                   ),
                 ],

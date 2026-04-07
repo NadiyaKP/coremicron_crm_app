@@ -151,7 +151,7 @@ class _AmcReportPageState extends State<AmcReportPage> {
       context: context,
       initialDate: initial,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      lastDate: DateTime.now(),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(
@@ -281,20 +281,6 @@ class _AmcReportPageState extends State<AmcReportPage> {
         String employeeName = e.employeeName.toUpperCase();
         String toDo = e.toDo;
         String completedDate = e.completedDate != '—' ? _fmtDate(e.completedDate) : '—';
-
-        // Truncate long text to prevent wrapping
-        if (customerName.length > 25) {
-          customerName = customerName.substring(0, 22) + '...';
-        }
-        if (serviceTitle.length > 20) {
-          serviceTitle = serviceTitle.substring(0, 17) + '...';
-        }
-        if (employeeName.length > 15) {
-          employeeName = employeeName.substring(0, 12) + '...';
-        }
-        if (toDo.length > 25) {
-          toDo = toDo.substring(0, 22) + '...';
-        }
 
         tableData.add([
           (i + 1).toString(),

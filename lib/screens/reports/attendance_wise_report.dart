@@ -190,7 +190,7 @@ class _AttendanceWiseReportPageState
       context:     context,
       initialDate: initial,
       firstDate:   DateTime(2020),
-      lastDate:    DateTime(2030),
+      lastDate:    DateTime.now(),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(
@@ -327,7 +327,6 @@ class _AttendanceWiseReportPageState
       for (int i = 0; i < _filtered.length; i++) {
         final r = _filtered[i];
         String empName = r.employeeName.toUpperCase();
-        if (empName.length > 22) empName = '${empName.substring(0, 19)}...';
         tableData.add([
           (i + 1).toString(),
           _fmtDate(r.date),
@@ -340,7 +339,7 @@ class _AttendanceWiseReportPageState
 
       pdf.addPage(
         pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
+          pageFormat: PdfPageFormat.a4.landscape,
           margin:     const pw.EdgeInsets.all(20),
           build: (pw.Context ctx) => [
             pw.Center(

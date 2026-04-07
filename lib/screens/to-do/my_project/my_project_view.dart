@@ -48,6 +48,7 @@ class MyProjectViewPage extends StatefulWidget {
   final String ticketNumber;
   final String title;
   final String? highlightId;
+  final String typeOfTicket;
 
   const MyProjectViewPage({
     super.key,
@@ -55,6 +56,7 @@ class MyProjectViewPage extends StatefulWidget {
     required this.ticketNumber,
     this.title = '',
     this.highlightId,
+    this.typeOfTicket = '',
   });
 
   @override
@@ -1042,14 +1044,15 @@ class _MyProjectViewPageState extends State<MyProjectViewPage> {
                   onTap:   () => _showRejectDialog(job),
                 ),
               if (!isRejected) const SizedBox(width: 6),
-              // Extend — always shown
-              _textActionBtn(
-                label:   'Extend',
-                color:   AppColors.primary,
-                bgColor: AppColors.primaryLight,
-                icon:    Icons.update_rounded,
-                onTap:   () => _showExtendDialog(job),
-              ),
+              // Extend — hidden for AMC
+              if (widget.typeOfTicket.toUpperCase() != 'AMC')
+                _textActionBtn(
+                  label:   'Extend',
+                  color:   AppColors.primary,
+                  bgColor: AppColors.primaryLight,
+                  icon:    Icons.update_rounded,
+                  onTap:   () => _showExtendDialog(job),
+                ),
             ],
           ),
         ],
