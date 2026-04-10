@@ -1,4 +1,4 @@
-package com.example.coremicron_crm_app
+package com.crm.coremicron_crm_app
 
 import io.flutter.embedding.android.FlutterActivity
 
