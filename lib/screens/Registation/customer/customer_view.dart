@@ -538,7 +538,7 @@ class _CustomerViewPageState extends State<CustomerViewPage>
                         unselectedLabelStyle: const TextStyle(
                             fontSize: 13.5, fontWeight: FontWeight.w500),
                         tabs: [
-                          Tab(text: 'Enquiries (${_enquiries.length})'),
+                          Tab(text: 'Leads (${_enquiries.length})'),
                           Tab(text: 'Tickets (${_tickets.length})'),
                         ],
                       ),
@@ -733,7 +733,7 @@ class _CustomerViewPageState extends State<CustomerViewPage>
   // ── Enquiries List ─────────────────────────────────────────────────────────
   Widget _buildEnquiriesList(double hPad) {
     if (_enquiries.isEmpty) {
-      return _buildTabEmpty('No enquiries found for this customer.');
+      return _buildTabEmpty('No leads found for this customer.');
     }
     return ListView.separated(
       padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 20),

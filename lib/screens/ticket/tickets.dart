@@ -452,281 +452,278 @@ class _TicketsPageState extends State<TicketsPage> {
     );
   }
 
-  // ── Ticket card ────────────────────────────────────────────────────────────
   Widget _ticketCard(Ticket t) {
-    final priorityClr = _priorityColor(t.priority);
-    final priorityBg  = _priorityBg(t.priority);
-    final bool isHighlighted = widget.highlightId == t.ticketId;
+  final priorityClr = _priorityColor(t.priority);
+  final priorityBg  = _priorityBg(t.priority);
+  final bool isHighlighted = widget.highlightId == t.ticketId;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-      decoration: BoxDecoration(
-        color:        Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isHighlighted ? AppColors.primary : AppColors.borderLight,
-          width: isHighlighted ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-              color:      Colors.black.withOpacity(0.03),
-              blurRadius: 6,
-              offset:     const Offset(0, 2)),
-        ],
+  return Container(
+    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+    decoration: BoxDecoration(
+      color:        Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: isHighlighted ? AppColors.primary : AppColors.borderLight,
+        width: isHighlighted ? 2 : 1,
       ),
-      child: Stack(
-        children: [
-          if (isHighlighted)
-            Positioned(
-              top: 0, left: 0,
-              child: Container(
-                width: 8, height: 8,
-                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-              ),
+      boxShadow: [
+        BoxShadow(
+            color:      Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset:     const Offset(0, 2)),
+      ],
+    ),
+    child: Stack(
+      children: [
+        if (isHighlighted)
+          Positioned(
+            top: 0, left: 0,
+            child: Container(
+              width: 8, height: 8,
+              decoration: const BoxDecoration(
+                  color: Colors.red, shape: BoxShape.circle),
             ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-          // ── Top row: date (left) + ticket number badge (right) ──────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.calendar_today_outlined,
-                      size: 11, color: AppColors.textMuted),
-                  const SizedBox(width: 3),
-                  Text(_fmtDate(t.addedDate),
-                      style: const TextStyle(
-                          color:    AppColors.textMuted,
-                          fontSize: 11)),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color:        AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(6),
+          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            // ── Row 1: date (left) + type badge + ticket number (right) ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.calendar_today_outlined,
+                        size: 11, color: AppColors.textMuted),
+                    const SizedBox(width: 3),
+                    Text(_fmtDate(t.addedDate),
+                        style: const TextStyle(
+                            color: AppColors.textMuted, fontSize: 11)),
+                  ],
                 ),
-                child: Text(t.ticketNumber,
-                    style: const TextStyle(
-                      color:      AppColors.primary,
-                      fontSize:   11,
-                      fontWeight: FontWeight.w700,
-                    )),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 6),
-
-          // ── Title ────────────────────────────────────────────────────
-          Text(
-            t.title.isEmpty ? '(No title)' : t.title.capitalize(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color:      t.title.isEmpty
-                  ? AppColors.textMuted
-                  : AppColors.textPrimary,
-              fontSize:   13.5,
-              fontWeight: FontWeight.w600,
-              fontStyle:  t.title.isEmpty
-                  ? FontStyle.italic
-                  : FontStyle.normal,
-            ),
-          ),
-
-          const SizedBox(height: 5),
-
-          // ── Customer + phone ──────────────────────────────────────────
-          Row(
-            children: [
-              const Icon(Icons.person_outline_rounded,
-                  size: 11, color: AppColors.textMuted),
-              const SizedBox(width: 3),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    // Navigate directly to ContactListPage (read-only)
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ContactListPage(
-                          customerId:   t.customerId,
-                          customerName: t.customerName,
-                          readOnly:     true,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Type badge
+                    if (t.typeOfTickets.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color:        const Color(0xFFF0F0F5),
+                          borderRadius: BorderRadius.circular(5),
                         ),
+                        child: Text(t.typeOfTickets,
+                            style: const TextStyle(
+                                color:      AppColors.textLabel,
+                                fontSize:   10,
+                                fontWeight: FontWeight.w500)),
                       ),
-                    );
+                    if (t.typeOfTickets.isNotEmpty)
+                      const SizedBox(width: 5),
+                    // Ticket number badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color:        AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(t.ticketNumber,
+                          style: const TextStyle(
+                            color:      AppColors.primary,
+                            fontSize:   11,
+                            fontWeight: FontWeight.w700,
+                          )),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 5),
+
+            // ── Row 2: Title ─────────────────────────────────────────────
+            Text(
+              t.title.isEmpty ? '(No title)' : t.title.capitalize(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color:      t.title.isEmpty
+                    ? AppColors.textMuted
+                    : AppColors.textPrimary,
+                fontSize:   13,
+                fontWeight: FontWeight.w600,
+                fontStyle:  t.title.isEmpty
+                    ? FontStyle.italic
+                    : FontStyle.normal,
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            // ── Row 3: Customer + phone ───────────────────────────────────
+            Row(
+              children: [
+                const Icon(Icons.person_outline_rounded,
+                    size: 11, color: AppColors.textMuted),
+                const SizedBox(width: 3),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ContactListPage(
+                            customerId:   t.customerId,
+                            customerName: t.customerName,
+                            readOnly:     true,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      t.customerName.capitalize(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color:      AppColors.primary,
+                        fontSize:   12,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Icon(Icons.phone_outlined,
+                    size: 11, color: AppColors.textMuted),
+                const SizedBox(width: 3),
+                Text(t.phoneNumber,
+                    style: const TextStyle(
+                        color:    AppColors.textSecondary,
+                        fontSize: 12)),
+              ],
+            ),
+
+            const SizedBox(height: 6),
+            const Divider(height: 1, color: AppColors.borderLight),
+            const SizedBox(height: 6),
+
+            // ── Row 4: Priority (left) + action buttons (right) ──────────
+            Row(
+              children: [
+                // Priority badge (hide for AMC)
+                if (t.typeOfTickets.toUpperCase() != 'AMC')
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color:        priorityBg,
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(
+                          color: priorityClr.withOpacity(0.3), width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.flag_outlined,
+                            size: 10, color: priorityClr),
+                        const SizedBox(width: 3),
+                        Text(t.priority.capitalize(),
+                            style: TextStyle(
+                                color:      priorityClr,
+                                fontSize:   10,
+                                fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+
+                const Spacer(),
+
+                // Action buttons
+                _actionIcon(
+                  icon:    Icons.visibility_outlined,
+                  color:   const Color(0xFF2E7D32),
+                  bgColor: const Color(0xFFE8F5E9),
+                  onTap:   () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TicketViewPage(ticket: t),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                _actionIcon(
+                  icon:    Icons.edit_outlined,
+                  color:   AppColors.primary,
+                  bgColor: AppColors.primaryLight,
+                  onTap:   () async {
+                    if (t.typeOfTickets.toUpperCase() == 'AMC') {
+                      final result = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AmcTicketPage(
+                              username: widget.username, ticket: t),
+                        ),
+                      );
+                      if (result == true) _fetchTickets();
+                    } else {
+                      final result = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => NewTicketPage(
+                              username: widget.username, ticket: t),
+                        ),
+                      );
+                      if (result == true) _fetchTickets();
+                    }
                   },
-                  child: Text(
-                    t.customerName.capitalize(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.primary, // Changed to primary to indicate it's clickable
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      decoration: TextDecoration.underline, // Add underline for clarity
-                    ),
-                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              const Icon(Icons.phone_outlined,
-                  size: 11, color: AppColors.textMuted),
-              const SizedBox(width: 3),
-              Text(t.phoneNumber,
-                  style: const TextStyle(
-                      color:    AppColors.textSecondary,
-                      fontSize: 12)),
-            ],
-          ),
-
-          const SizedBox(height: 7),
-
-          // ── Priority + Type badges ────────────────────────────────────
-          Row(
-            children: [
-              // Priority (hide for AMC)
-              if (t.typeOfTickets.toUpperCase() != 'AMC')
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color:        priorityBg,
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(
-                        color: priorityClr.withOpacity(0.3), width: 1),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.flag_outlined,
-                          size: 10, color: priorityClr),
-                      const SizedBox(width: 3),
-                      Text(t.priority.capitalize(),
-                          style: TextStyle(
-                              color:      priorityClr,
-                              fontSize:   10.5,
-                              fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                ),
-
-              const Spacer(),
-
-              // Type badge
-              if (t.typeOfTickets.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color:        const Color(0xFFF0F0F5),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(t.typeOfTickets,
-                      style: const TextStyle(
-                          color:      AppColors.textLabel,
-                          fontSize:   10.5,
-                          fontWeight: FontWeight.w500)),
-                ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-          const Divider(height: 1, color: AppColors.borderLight),
-          const SizedBox(height: 7),
-
-          // ── Action buttons row ────────────────────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // View
-              _actionIcon(
-                icon:    Icons.visibility_outlined,
-                color:   const Color(0xFF2E7D32),
-                bgColor: const Color(0xFFE8F5E9),
-                onTap:   () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => TicketViewPage(ticket: t),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              // Edit
-              _actionIcon(
-                icon:    Icons.edit_outlined,
-                color:   AppColors.primary,
-                bgColor: AppColors.primaryLight,
-                onTap:   () async {
-                  if (t.typeOfTickets.toUpperCase() == 'AMC') {
-                    final result = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AmcTicketPage(
-                            username: widget.username, ticket: t),
-                      ),
-                    );
-                    if (result == true) _fetchTickets();
-                  } else {
-                    final result = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => NewTicketPage(
-                            username: widget.username, ticket: t),
-                      ),
-                    );
-                    if (result == true) _fetchTickets();
-                  }
-                },
-              ),
-              const SizedBox(width: 6),
-              // Assign to or AMC Details
-              t.typeOfTickets.toUpperCase() == 'AMC'
-                  ? _actionIcon(
-                      icon: Icons.list_alt_rounded,
-                      color: AppColors.primary,
-                      bgColor: AppColors.primaryLight,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AmcDetailsPage(
-                              ticketId: t.ticketId, ticketNumber: t.ticketNumber),
+                const SizedBox(width: 6),
+                t.typeOfTickets.toUpperCase() == 'AMC'
+                    ? _actionIcon(
+                        icon:    Icons.list_alt_rounded,
+                        color:   AppColors.primary,
+                        bgColor: AppColors.primaryLight,
+                        onTap:   () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AmcDetailsPage(
+                                ticketId:     t.ticketId,
+                                ticketNumber: t.ticketNumber),
+                          ),
+                        ),
+                      )
+                    : _actionIcon(
+                        icon:    Icons.person_add_outlined,
+                        color:   const Color(0xFF6A1B9A),
+                        bgColor: const Color(0xFFF3E5F5),
+                        onTap:   () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AssignTicketPage(ticket: t),
+                          ),
                         ),
                       ),
-                    )
-                  : _actionIcon(
-                      icon: Icons.person_add_outlined,
-                      color: const Color(0xFF6A1B9A),
-                      bgColor: const Color(0xFFF3E5F5),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AssignTicketPage(ticket: t),
-                        ),
-                      ),
-                    ),
-              const SizedBox(width: 6),
-              // Delete
-              _actionIcon(
-                icon:    Icons.delete_outline_rounded,
-                color:   AppColors.error,
-                bgColor: const Color(0xFFFFF1F1),
-                onTap:   () => _showDeleteDialog(t),
-              ),
-            ],
-          ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+                const SizedBox(width: 6),
+                _actionIcon(
+                  icon:    Icons.delete_outline_rounded,
+                  color:   AppColors.error,
+                  bgColor: const Color(0xFFFFF1F1),
+                  onTap:   () => _showDeleteDialog(t),
+                ),
+              ],
+            ),
+
+          ],
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _actionIcon({
     required IconData     icon,

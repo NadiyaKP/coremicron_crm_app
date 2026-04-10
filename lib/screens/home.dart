@@ -478,9 +478,9 @@ class _HomePageState extends State<HomePage>
           physics:     const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount:     2,
-            mainAxisSpacing:    12,
-            crossAxisSpacing:   12,
-            childAspectRatio:   isTablet ? 1.8 : 1.45,
+            mainAxisSpacing:    8,
+            crossAxisSpacing:   8,
+            childAspectRatio:   isTablet ? 2.7 : 2.3,
           ),
           itemCount: stats.length,
           itemBuilder: (_, i) => _statCard(stats[i]),
@@ -490,63 +490,69 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget _statCard(_Stat s) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color:        Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight, width: 1),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03),
-              blurRadius: 10, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(s.label.toUpperCase(),
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+    decoration: BoxDecoration(
+      color:        Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: AppColors.borderLight, width: 1),
+      boxShadow: [
+        BoxShadow(color: Colors.black.withOpacity(0.03),
+            blurRadius: 10, offset: const Offset(0, 2)),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,           // ← don't stretch to fill
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(s.label.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       color:    AppColors.textMuted,
-                      fontSize: 9.5,
+                      fontSize: 8.0,
                       fontWeight: FontWeight.w800)),
-              Icon(s.icon, size: 15, color: s.color.withOpacity(0.7)),
-            ],
-          ),
-          const Spacer(),
-          Text('${s.value}',
-              style: const TextStyle(
-                  color:      AppColors.textPrimary,
-                  fontSize:   24,
-                  fontWeight: FontWeight.w900)),
-          if (s.sub != null && s.sub!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: s.sub!.map((txt) => Container(
-                  margin: const EdgeInsets.only(right: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color:        s.color.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(txt,
-                      style: TextStyle(
-                          color:    s.color,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w700)),
-                )).toList(),
-              ),
             ),
+            const SizedBox(width: 4),
+            Icon(s.icon, size: 12, color: s.color.withOpacity(0.7)),
           ],
+        ),
+        const SizedBox(height: 2),             // ← fixed small gap, no Spacer
+        Text('${s.value}',
+            style: const TextStyle(
+                color:      AppColors.textPrimary,
+                fontSize:   18,                // ← 20 → 18
+                fontWeight: FontWeight.w900,
+                height:     1.1)),
+        if (s.sub != null && s.sub!.isNotEmpty) ...[
+          const SizedBox(height: 3),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: s.sub!.map((txt) => Container(
+                margin: const EdgeInsets.only(right: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color:        s.color.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(txt,
+                    style: TextStyle(
+                        color:    s.color,
+                        fontSize: 7.5,
+                        fontWeight: FontWeight.w700)),
+              )).toList(),
+            ),
+          ),
         ],
-      ),
-    );
-  }
-
+      ],
+    ),
+  );
+}
 
 
 
@@ -632,137 +638,227 @@ class _HomePageState extends State<HomePage>
   }
 
 
+Widget _buildTaskLineChart() {
+  final chart     = _dash?.taskChart ?? {};
+  final labels    = (chart['labels']    as List? ?? []).map((e) => e.toString()).toList();
+  final assigned  = (chart['assigned']  as List? ?? []).map((e) => double.tryParse(e.toString()) ?? 0.0).toList();
+  final completed = (chart['completed'] as List? ?? []).map((e) => double.tryParse(e.toString()) ?? 0.0).toList();
 
-
-  // ── Task Analysis Line Chart ───────────────────────────────────────────────
-  Widget _buildTaskLineChart() {
-    final chart    = _dash?.taskChart ?? {};
-    final labels   = (chart['labels']    as List? ?? []).map((e) => e.toString()).toList();
-    final assigned = (chart['assigned']  as List? ?? []).map((e) => double.tryParse(e.toString()) ?? 0.0).toList();
-    final completed= (chart['completed'] as List? ?? []).map((e) => double.tryParse(e.toString()) ?? 0.0).toList();
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-      decoration: BoxDecoration(
-        color:        Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03),
-              blurRadius: 20, offset: const Offset(0, 8)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Task Analysis',
-                  style: TextStyle(color: AppColors.textPrimary,
-                      fontSize: 16, fontWeight: FontWeight.w800)),
-              Row(
-                children: [
-                  _legendDot(AppColors.primary, 'Assigned'),
-                  const SizedBox(width: 12),
-                  _legendDot(const Color(0xFF2E7D32), 'Completed'),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 180,
-            child: labels.isNotEmpty ? LineChart(
-              LineChartData(
-                gridData: const FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 28,
-                      interval: 0.5,
-                      getTitlesWidget: (val, meta) => Text(val.toStringAsFixed(1),
-                          style: const TextStyle(color: AppColors.textMuted, fontSize: 8)),
-
+  return Container(
+    padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+    decoration: BoxDecoration(
+      color:        Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: AppColors.borderLight),
+      boxShadow: [
+        BoxShadow(color: Colors.black.withOpacity(0.03),
+            blurRadius: 20, offset: const Offset(0, 8)),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Task Analysis',
+                style: TextStyle(color: AppColors.textPrimary,
+                    fontSize: 16, fontWeight: FontWeight.w800)),
+            Row(
+              children: [
+                _legendDot(AppColors.primary, 'Assigned'),
+                const SizedBox(width: 12),
+                _legendDot(const Color(0xFF2E7D32), 'Completed'),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          height: 180,
+          child: labels.isNotEmpty
+              ? LineChart(
+                  LineChartData(
+                    gridData: const FlGridData(show: false),
+                    titlesData: FlTitlesData(
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 28,
+                          interval: 0.5,
+                          getTitlesWidget: (val, meta) => Text(
+                            val.toStringAsFixed(1),
+                            style: const TextStyle(
+                                color: AppColors.textMuted, fontSize: 8),
+                          ),
+                        ),
+                        axisNameWidget: const Text('Tasks',
+                            style: TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700)),
+                        axisNameSize: 18,
+                      ),
+                      topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (val, meta) {
+                            int idx = val.toInt();
+                            if (idx >= 0 && idx < labels.length) {
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(labels[idx],
+                                    style: const TextStyle(
+                                        color: AppColors.textMuted,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w600)),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                          reservedSize: 28,
+                        ),
+                        axisNameWidget: const Text('Timeline',
+                            style: TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700)),
+                        axisNameSize: 18,
+                      ),
                     ),
-                    axisNameWidget: const Text('Tasks',
-                        style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w700)),
-                    axisNameSize: 18,
+                    borderData: FlBorderData(show: false),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: List.generate(assigned.length,
+                            (i) => FlSpot(i.toDouble(), assigned[i])),
+                        isCurved: true,
+                        color: AppColors.primary,
+                        barWidth: 3,
+                        isStrokeCapRound: true,
+                        dotData: const FlDotData(show: true),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: AppColors.primary.withOpacity(0.05),
+                        ),
+                      ),
+                      LineChartBarData(
+                        spots: List.generate(completed.length,
+                            (i) => FlSpot(i.toDouble(), completed[i])),
+                        isCurved: true,
+                        color: const Color(0xFF2E7D32),
+                        barWidth: 3,
+                        isStrokeCapRound: true,
+                        dotData: const FlDotData(show: true),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: const Color(0xFF2E7D32).withOpacity(0.05),
+                        ),
+                      ),
+                    ],
                   ),
-
-                  topTitles:  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (val, meta) {
-                        int idx = val.toInt();
-                        if (idx >= 0 && idx < labels.length) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(labels[idx],
-                                style: const TextStyle(
-                                    color: AppColors.textMuted,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600)),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                      reservedSize: 28,
-                    ),
-                    axisNameWidget: const Text('Timeline',
-                        style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w700)),
-                    axisNameSize: 18,
-                  ),
-                ),
-
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: List.generate(assigned.length, (i) => FlSpot(i.toDouble(), assigned[i])),
-                    isCurved: true,
-                    color: AppColors.primary,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: const FlDotData(show: true),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: AppColors.primary.withOpacity(0.05),
-                    ),
-                  ),
-                  LineChartBarData(
-                    spots: List.generate(completed.length, (i) => FlSpot(i.toDouble(), completed[i])),
-                    isCurved: true,
-                    color: const Color(0xFF2E7D32),
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: const FlDotData(show: true),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: const Color(0xFF2E7D32).withOpacity(0.05),
-                    ),
-                  ),
-                ],
-              ),
-            ) : Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                )
+              : Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Icon(Icons.bar_chart_rounded, size: 40, color: AppColors.textMuted.withOpacity(0.3)),
-                    const SizedBox(height: 8),
-                    const Text('Performance data not available',
-                        style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                    LineChart(
+                      LineChartData(
+                        gridData: const FlGridData(show: false),
+                        titlesData: FlTitlesData(
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 28,
+                              interval: 2,
+                              getTitlesWidget: (val, meta) => Text(
+                                val.toInt().toString(),
+                                style: const TextStyle(
+                                    color: AppColors.textMuted, fontSize: 8),
+                              ),
+                            ),
+                            axisNameWidget: const Text('Tasks',
+                                style: TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700)),
+                            axisNameSize: 18,
+                          ),
+                          topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 28,
+                              getTitlesWidget: (val, meta) {
+                                const placeholders = [
+                                  'Jan', 'Feb', 'Mar', 'Apr', 'May'
+                                ];
+                                final idx = val.toInt();
+                                if (idx >= 0 && idx < placeholders.length) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Text(placeholders[idx],
+                                        style: const TextStyle(
+                                            color: AppColors.textMuted,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w600)),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
+                            axisNameWidget: const Text('Timeline',
+                                style: TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700)),
+                            axisNameSize: 18,
+                          ),
+                        ),
+                        borderData: FlBorderData(
+                          show: true,
+                          border: Border(
+                            left: BorderSide(
+                                color: AppColors.textMuted.withOpacity(0.3),
+                                width: 1),
+                            bottom: BorderSide(
+                                color: AppColors.textMuted.withOpacity(0.3),
+                                width: 1),
+                            top: BorderSide.none,
+                            right: BorderSide.none,
+                          ),
+                        ),
+                        minX: 0,
+                        maxX: 4,
+                        minY: 0,
+                        maxY: 10,
+                        lineBarsData: const [],
+                      ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.bar_chart_rounded,
+                            size: 36,
+                            color: AppColors.textMuted.withOpacity(0.3)),
+                        const SizedBox(height: 6),
+                        const Text('Performance data not available',
+                            style: TextStyle(
+                                color: AppColors.textMuted, fontSize: 12)),
+                      ],
+                    ),
                   ],
                 ),
-              ),
-          ),
-        ],
-      ),
-    );
-  }
-
+        ),
+      ],
+    ),
+  );
+}
   Widget _legendDot(Color color, String label) {
     return Row(
       mainAxisSize: MainAxisSize.min,

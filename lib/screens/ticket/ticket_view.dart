@@ -383,9 +383,6 @@ class _TicketViewPageState extends State<TicketViewPage>
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // ── Tab 2 : Job History ────────────────────────────────────────────────────
-  // ══════════════════════════════════════════════════════════════════════════
   Widget _buildJobHistory(double hPad) {
     if (_jobs.isEmpty) {
       return Center(

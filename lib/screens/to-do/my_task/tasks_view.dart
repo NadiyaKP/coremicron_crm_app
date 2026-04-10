@@ -217,9 +217,52 @@ class _TasksViewPageState extends State<TasksViewPage> {
     final jobId = job['job_id']?.toString() ?? '';
     if (jobId.isEmpty) return;
 
+    final isAmc = widget.ticket?.typeOfTickets.toUpperCase() == 'AMC';
+
+    if (isAmc && !_isCompleted(job)) {
+      final noteCtrl = TextEditingController();
+      final bool? confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Completion Notes', 
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          content: TextField(
+            controller: noteCtrl,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              hintText: 'Enter completion notes...',
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.all(10),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              child: const Text('Save', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+      await _submitJobCompletion(jobId, noteCtrl.text.trim());
+    } else {
+      await _submitJobCompletion(jobId, null);
+    }
+  }
+
+  Future<void> _submitJobCompletion(String jobId, String? note) async {
     try {
       final url  = Uri.parse('${ApiService.baseUrl}/api/ticket/job_complete.php');
-      final body = {'job_id': jobId};
+      final Map<String, dynamic> body = {'job_id': jobId};
+      if (note != null && note.isNotEmpty) {
+        body['note'] = note;
+      }
 
       final response = await ApiService.post(url, body: jsonEncode(body))
           .timeout(const Duration(seconds: 15));
@@ -687,6 +730,7 @@ class _TasksViewPageState extends State<TasksViewPage> {
                 const Spacer(),
 
                 // ── Reply button → navigates to TasksReplyPage ──────────
+                if (widget.ticket?.typeOfTickets.toUpperCase() != 'AMC')
                 GestureDetector(
                   onTap: () => _openReplyPage(job),   // ← CHANGED
                   child: Container(

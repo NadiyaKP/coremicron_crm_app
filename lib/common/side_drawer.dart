@@ -636,11 +636,6 @@ class _AppSideDrawerState extends State<AppSideDrawer> {
                           fontWeight:    FontWeight.w700,
                           letterSpacing: -0.2)),
                   const SizedBox(height: 2),
-                  Text('CRM User',
-                      style: TextStyle(
-                          color:      Colors.white.withOpacity(0.65),
-                          fontSize:   12,
-                          fontWeight: FontWeight.w500)),
                 ],
               ),
             ],

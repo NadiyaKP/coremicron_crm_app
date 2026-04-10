@@ -76,7 +76,7 @@ class _MyTasksPageState extends State<MyTasksPage> {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
       final url =
-          Uri.parse('${ApiService.baseUrl}/api/ticket/list.php?mod=my_jobs');
+          Uri.parse('${ApiService.baseUrl}/api/ticket/list.php?mode=my_jobs');
 
       final response = await ApiService.get(url).timeout(const Duration(seconds: 15));
 
